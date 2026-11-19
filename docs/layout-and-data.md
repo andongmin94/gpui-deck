@@ -129,77 +129,97 @@ table from the same retained state used by the other controls.
 
 ## Resizable
 
-Resizable divides a bounded frame into two continuously mounted panes. Its
-state owns the first pane's ratio, resize limits, and one divider focus handle.
-The remaining share belongs to the second pane:
+Resizable divides a bounded frame into two or more continuously laid out
+panels separated by focusable dividers. Its state owns panel sizes, each
+panel's constraints, and one focus handle per divider:
 
 ```rust
 let split = cx.new(|cx| {
-    ResizableState::new(Axis::Vertical, cx)
-        .limits(0.3..=0.7)
-        .default_ratio(0.5)
+    ResizableState::new(
+        Axis::Horizontal,
+        [
+            ResizablePanel::new(0.25).limits(0.15..=0.4).collapsible(0.),
+            ResizablePanel::new(0.5).limits(0.3..=1.),
+            ResizablePanel::new(0.25).limits(0.15..=0.4),
+        ],
+        cx,
+    )
 });
 
-Resizable::new("notes-and-preview", &split)
-    .w_full()
-    .h(px(280.))
-    .first(notes)
-    .second(preview)
-    .handle(|handle| {
+Resizable::new("workspace", &split)
+    .size_full()
+    .panel(sidebar)
+    .panel(editor)
+    .panel(inspector)
+    .handle(|index, handle| {
         handle
-            .accessibility_label("Space for session notes")
-            .h(px(10.))
+            .accessibility_label(["Sidebar width", "Editor width"][index])
+            .w(px(6.))
             .bg(divider_color)
     })
 ```
 
-`Axis::Horizontal` places panes left/right and uses the handle's width.
-`Axis::Vertical` places them top/bottom and uses its height. Set an actual handle
-thickness and bound the frame's dimensions. The ratio divides the usable pane
-space after that thickness, so a 50/50 split shares the available space equally
-and stays proportional when the parent resizes. Frame padding is supported;
-the internal layout has no gap, and main-axis divider margins are reserved.
-Put spacing inside the application's pane contents.
+Supply one `panel` per configured panel, in order. `handle` builds every
+divider from its index, which is the index of the panel before it.
+`Axis::Horizontal` places panels left to right and uses the handle's width;
+`Axis::Vertical` places them top to bottom and uses its height. Bound the frame's
+dimensions and give handles an actual thickness. Sizes are fractions of the
+usable space after divider thicknesses, sum to one, and stay proportional when
+the parent resizes. Frame padding is supported; the internal layout has no gap.
 
-The default ratio is 0.5 with limits 0.1–0.9. `limits` accepts finite fractions
-with `0 < minimum < maximum < 1`, and `default_ratio` clamps the initial value.
-For example, limits 0.3–0.7 guarantee both panes retain at least 30% of the usable
-space. They are proportions, not pixel minimums. Panes clip overflow; use
-ScrollArea inside a pane when its content should scroll. Nest independent
-two-pane groups for more complex layouts.
+`ResizablePanel::new(default)` starts free between zero and one. `limits`
+bounds the expanded size and `collapsible(size)` allows a smaller collapsed
+size. Constructing a state panics when defaults violate a panel's constraints
+or do not sum to one. Constraints are proportions, not pixel minimums.
+
+Moving a divider grows the panel on one side and shrinks the panels on the
+other side nearest first, so a panel at its minimum passes the move to the next
+one. A move no panel can absorb leaves the divider in place. Dragging past
+halfway between a collapsible panel's minimum and collapsed size snaps it
+closed; dragging back past that point reopens it at its minimum.
 
 | Input | Result |
 | --- | --- |
-| Drag the divider | Resize from the actual press position, bounded by the ratio limits |
-| Left / Right in a horizontal group | Decrease / increase the first pane by two percentage points |
-| Up / Down in a vertical group | Decrease / increase the first pane by two percentage points |
-| Home / End | Reach the minimum / maximum first-pane ratio |
-| Tab / Shift+Tab | Traverse the divider and pane controls in ordinary document order |
+| Drag a divider | Resize from the actual press position, cascading within constraints |
+| Left / Right in a horizontal group | Shrink / grow the panel before the divider by two percentage points |
+| Up / Down in a vertical group | Shrink / grow the panel before the divider by two percentage points |
+| Arrow toward a collapsed panel | Reopen it at its minimum |
+| Arrow against a collapsible panel at its minimum | Collapse it |
+| Home / End | Give the panel before the divider its smallest / largest allowed size |
+| Enter | Collapse a collapsible panel before the divider, or restore its last size |
+| Tab / Shift+Tab | Traverse dividers and panel controls in ordinary document order |
 
-Only the divider owns the resize key context. Text editing, selection, and
-scrolling inside panes retain their own behavior. Pointer dragging uses GPUI's
-existing drag lifecycle and identifies its owning state, so independent or
-nested groups do not react to another group's drag.
+Home, End and Enter follow the
+[APG window splitter pattern](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/).
+Only dividers own the resize key context. Text editing, selection, and scrolling
+inside panels retain their own behavior. Pointer dragging uses GPUI's drag
+lifecycle and identifies its owning state and divider, so independent or nested
+groups do not react to another divider's drag.
 
-The divider has a native Splitter role with numeric value, limits, and step in
-percent. Native orientation describes the divider line: a left/right layout has
-a vertical divider, while a top/bottom layout has a horizontal divider. Give it
-a label identifying the pane it adjusts and keep its grip children non-interactive.
-The application supplies hover/focus/disabled styling and all pane content.
+Each divider has a native Splitter role whose numeric value, limits, and step
+describe the panel before it, in percent. Native orientation describes the
+divider line. Give each divider a label naming the panel it adjusts and keep its
+grip children non-interactive. The application supplies all styling.
 
-Observe the state to update presentation. `ratio()`, `min_ratio()`, `max_ratio()`,
-`axis()`, `focus_handle()`, and `is_disabled()` expose its contract.
-`set_ratio(ratio, window, cx)` clamps a finite value and emits
-`ResizableEvent::Change` only when the ratio changes, including programmatic
-updates. `set_disabled` blocks pointer, keyboard, and accessibility resizing and
-normal Tab entry. A divider already focused retains its binding so Tab can leave;
-application updates through `set_ratio` remain available.
+A panel collapsed to zero size unmounts its content, so it contributes no focus
+stops or accessibility nodes. If focus was inside, it moves to the adjacent
+divider (or the group itself while resizing is disabled). A non-zero collapsed
+size, such as an icon rail, keeps its content mounted.
 
-The Schedule example reuses the same notes state as Preferences in the first
-pane and puts its plan table in a two-axis ScrollArea in the second. Closing or
-switching tabs preserves text and ratio because the application retains their
-states. The component does not implement zero-size collapse, pixel constraints,
-an arbitrary multi-pane solver, or automatic storage/persistence.
+Observe the state to update presentation. `sizes()`, `panel_count()`,
+`is_collapsed(index)`, `axis()`, `handle_focus(index)`, and `is_disabled()`
+expose its contract. `set_sizes` replaces the whole layout and panics on an
+invalid one; use it to restore a layout the application stored.
+`collapse(index)` and `expand(index)` act on collapsible panels and do nothing
+when the neighbors cannot absorb the change. Each layout change emits one
+`ResizableEvent::Change(sizes)`, including programmatic updates. `set_disabled`
+blocks pointer, keyboard, and accessibility resizing and normal Tab entry; a
+focused divider retains its binding so Tab can leave.
+
+The Schedule example puts the shared notes in a collapsible first panel and the
+plan table in a two-axis ScrollArea in the second. Closing or switching tabs
+preserves text and sizes because the application retains their states. Storage
+and pixel-unit constraints are not supplied.
 
 ## Carousel
 

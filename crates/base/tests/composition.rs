@@ -3267,7 +3267,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         let demo = demo.read(cx);
         assert!(demo.notes.focus_handle(cx).is_focused(window));
         assert_eq!(
-            demo.schedule_split.read(cx).ratio(),
+            demo.schedule_split.read(cx).sizes()[0],
             0.5,
             "editing keys do not resize panes"
         );
@@ -3279,10 +3279,10 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     cx.update(|window, cx| {
         let demo = demo.read(cx);
         let split = demo.schedule_split.read(cx);
-        assert!(split.focus_handle().is_focused(window));
-        assert!((split.ratio() - 0.52).abs() < 0.001);
+        assert!(split.handle_focus(0).is_focused(window));
+        assert!((split.sizes()[0] - 0.52).abs() < 0.001);
         assert!(demo.schedule_scroll.bounds().size.height < old_table_height);
-        let id = (gpui::ElementId::from("schedule-panes"), "handle").into();
+        let id = (gpui::ElementId::from("schedule-panes"), "handle-0").into();
         let handle = test_support::find(window, &[], &id).unwrap();
         assert_eq!(handle.role(), Some(Role::Splitter));
         assert_eq!(handle.label(), Some("Space for session notes"));
@@ -3361,7 +3361,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
             NaiveDate::from_ymd_opt(2026, 12, 10)
         );
         assert!(!demo.date_picker.read(cx).is_open(cx));
-        assert!((demo.schedule_split.read(cx).ratio() - 0.52).abs() < 0.001);
+        assert!((demo.schedule_split.read(cx).sizes()[0] - 0.52).abs() < 0.001);
         assert_eq!(demo.notes.read(cx).value(), "Prepare the workshop demo.");
         assert!(test_support::texts(window).iter().any(|text| {
             text.path().contains(&"plan-date".into()) && text.text() == "2026-12-10"
@@ -3645,7 +3645,7 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
                 demo.read(cx)
                     .schedule_split
                     .read(cx)
-                    .focus_handle()
+                    .handle_focus(0)
                     .is_focused(window)
             )
         });

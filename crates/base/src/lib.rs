@@ -140,7 +140,7 @@ pub use progress::Progress;
 pub use questionnaire::{Questionnaire, QuestionnaireStage, QuestionnaireState};
 pub use radio_group::{RadioGroup, RadioGroupEvent, RadioGroupState, RadioItem, RadioOption};
 pub use reduce_motion::apply_system_reduce_motion;
-pub use resizable::{Resizable, ResizableEvent, ResizableHandle, ResizableState};
+pub use resizable::{Resizable, ResizableEvent, ResizableHandle, ResizablePanel, ResizableState};
 pub use root::Root;
 pub use scroll_area::ScrollArea;
 pub use scroll_bounce::{ScrollBounce, ScrollBounceMotion};

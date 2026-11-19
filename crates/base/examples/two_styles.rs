@@ -19,12 +19,12 @@ use gpui_design::{
     DatePickerState, Dialog, DialogBackdrop, DialogClose, DialogDescription, DialogPopup,
     DialogState, DialogTitle, DropdownMenu, Field, HoverCard, HoverCardState, Input, InputBase,
     Label, MenuEvent, MenuItem, MenuOption, MenuState, NaiveDate, Popover, PopoverState, Progress,
-    RadioGroup, RadioGroupState, RadioItem, RadioOption, Resizable, ResizableState, ScrollArea,
-    ScrollbarAxis, ScrollbarMode, SearchItem, Select, SelectItem, SelectOption, SelectState,
-    Separator, Slider, SliderState, SliderThumb, Switch, Tab, TabItem, TabList, TabPanel, Table,
-    TableCaption, TableCell, TableColumn, TableRow, TabsState, TestSupportExt as _,
-    TestTextExt as _, Textarea, TextareaState, Toggle, ToggleGroup, ToggleGroupState, ToggleItem,
-    ToggleOption, Tooltip, TooltipState,
+    RadioGroup, RadioGroupState, RadioItem, RadioOption, Resizable, ResizablePanel, ResizableState,
+    ScrollArea, ScrollbarAxis, ScrollbarMode, SearchItem, Select, SelectItem, SelectOption,
+    SelectState, Separator, Slider, SliderState, SliderThumb, Switch, Tab, TabItem, TabList,
+    TabPanel, Table, TableCaption, TableCell, TableColumn, TableRow, TabsState,
+    TestSupportExt as _, TestTextExt as _, Textarea, TextareaState, Toggle, ToggleGroup,
+    ToggleGroupState, ToggleItem, ToggleOption, Tooltip, TooltipState,
     input::{InputAccessibility, InputEditorStyle, InputEvent, InputState},
 };
 
@@ -228,9 +228,14 @@ impl Demo {
         });
         let date_picker = cx.new(|cx| DatePickerState::new(&calendar, window, cx));
         let schedule_split = cx.new(|cx| {
-            ResizableState::new(Axis::Vertical, cx)
-                .limits(0.3..=0.7)
-                .default_ratio(0.5)
+            ResizableState::new(
+                Axis::Vertical,
+                [
+                    ResizablePanel::new(0.5).limits(0.3..=0.7).collapsible(0.),
+                    ResizablePanel::new(0.5).limits(0.3..=1.),
+                ],
+                cx,
+            )
         });
         let help = cx.new(PopoverState::new);
         let menu_items = [
@@ -693,8 +698,8 @@ impl Demo {
                 Resizable::new("schedule-panes", &self.schedule_split)
                     .w_full()
                     .h(px(280.))
-                    .first(notes)
-                    .handle(|handle| {
+                    .panel(notes)
+                    .handle(move |_, handle| {
                         handle
                             .accessibility_label("Space for session notes")
                             .h(px(10.))
@@ -705,7 +710,7 @@ impl Demo {
                             .focus_visible(|style| style.bg(palette.highlight))
                             .child(div().w_8().h(px(2.)).bg(palette.border))
                     })
-                    .second(
+                    .panel(
                         ScrollArea::new("recording-plan-scroll", &self.schedule_scroll)
                             .axis(ScrollbarAxis::Both)
                             .accessibility_label("Recording plan columns and rows")

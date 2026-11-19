@@ -53,7 +53,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Separator** | Semantic or decorative separation, with horizontal/vertical orientation | Length, thickness, color, and spacing |
 | **Table** | Shared fixed/flexible columns, header/body/footer structure, native row/cell semantics, row selection and header sort metadata | Width, cell content, typography, borders, and data operations |
 | **ScrollArea** | Native viewport, existing overlay scrollbar, retained offsets, and descendant reveal on enabled axes | Viewport dimensions, content layout, and scrollbar appearance |
-| **Resizable** | Two-pane ratio, pointer/keyboard resizing, fractional limits, retained sizes, and native splitter semantics | Frame size, pane content, divider thickness, and grip styling |
+| **Resizable** | Multi-panel sizes, cascading pointer/keyboard resizing, per-panel limits, collapsible panels, retained sizes, and native splitter semantics | Frame size, pane content, divider thickness, and grip styling |
 | **Direction** | Scoped logical direction, nested overrides, and consistent horizontal keys/pointer geometry | Logical row layout through `Direction::row`, application spacing and typography |
 | **InputOtp** | One numeric editor, native selection/paste/delete/undo, digit slots and completion events | Slot/group presentation and application verification |
 | **Menubar** | One top-level focus entry, menu switching, opening and shared command trees | Menu labels, surfaces, commands and styling |
@@ -287,7 +287,7 @@ retained hover/focus lifecycle without taking focus from the trigger.
 Calendar composes Button for day activation and uses the already locked Chrono
 date type for Gregorian arithmetic. DatePicker coordinates that Calendar with
 Popover's focus and dismissal lifecycle; it has no duplicate date value or popup
-engine. Resizable uses GPUI flex layout and native dragging for two retained panes.
+engine. Resizable uses GPUI flex layout and native dragging for retained multi-panel groups.
 Table uses shared GPUI column tracks and
 native table semantics. ScrollArea composes GPUI's ScrollHandle viewport with the
 retained Scrollbar implementation, without another scrolling engine.

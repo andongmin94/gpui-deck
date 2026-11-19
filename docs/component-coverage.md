@@ -66,7 +66,7 @@ in the [form guide](form-controls.md),
 | Popover | Available | Non-modal content with corner or collision-aware side/alignment placement, retained open state, dismissal, normal focus traversal, and return focus. |
 | Progress | Available | Controlled known progress or an indeterminate state; the application owns fill geometry and animation. |
 | Radio Group | Available | Fixed items, exclusive selection, roving Tab entry, and immediate arrow selection. |
-| Resizable | Available | Two retained panes, horizontal/vertical arrangement, pointer/keyboard resizing, fractional limits, and native splitter values. Groups can nest; collapse, pixel-based minimums, automatic persistence, and arbitrary multi-pane solving are not supplied. |
+| Resizable | Available | Two or more panels, horizontal/vertical arrangement, per-panel fractional limits, cascading pointer/keyboard resizing, collapsible panels with snap, Enter toggle and size restore, programmatic layout restore, and native splitter values. Storage and pixel-unit constraints are application-owned or not supplied. |
 | Scroll Area | Available | Native viewport with existing overlay scrollbar, vertical/horizontal/both axes, retained offsets, and scoped descendant reveal. No virtualization, streaming anchoring, or separate keyboard scroll focus. |
 | Select | Available | Fixed ordered options, one committed value, separate popup cursor, Home/End, buffered Unicode label typeahead and atomic programmatic set/clear. Closed typing commits; open typing only highlights. Editable query, item replacement and multiple selection are not included. |
 | Separator | Available | Horizontal/vertical, semantic or decorative separation; the application supplies its visual style. |
