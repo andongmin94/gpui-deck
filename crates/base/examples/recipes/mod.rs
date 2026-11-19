@@ -33,7 +33,9 @@ pub(crate) use badge::Badge;
 pub(crate) use button_group::ButtonGroup;
 pub(crate) use card::Card;
 pub(crate) use code_block::CodeBlock;
-pub(crate) use data_table::{DataTable, DataTableColumn, DataTableRow, DataTableState};
+pub(crate) use data_table::{
+    DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState,
+};
 pub(crate) use empty::EmptyState;
 pub(crate) use input_group::InputGroup;
 pub(crate) use item::Item;

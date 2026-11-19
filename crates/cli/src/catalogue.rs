@@ -45,7 +45,13 @@ pub(crate) const RECIPES: &[Recipe] = &[
     recipe!(
         "data-table",
         data_table,
-        [DataTable, DataTableColumn, DataTableRow, DataTableState],
+        [
+            DataTable,
+            DataTableCell,
+            DataTableColumn,
+            DataTableRow,
+            DataTableState
+        ],
         ["empty", "input-group", "pagination"]
     ),
     recipe!("empty", empty, [EmptyState], []),

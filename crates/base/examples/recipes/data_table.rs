@@ -1,6 +1,6 @@
 //! Application-owned text-table operations over shared native controls.
 
-use std::{cmp::Reverse, collections::HashSet, rc::Rc};
+use std::{cmp::Ordering, collections::HashSet, rc::Rc};
 
 use gpui::{
     App, AppContext as _, Context, Div, ElementId, Entity, Focusable as _, InteractiveElement as _,
@@ -10,17 +10,18 @@ use gpui::{
 };
 use gpui_design::{
     Button, Checkbox, CheckboxState, DropdownMenu, Field, Input, InputBase, InputState, MenuEvent,
-    MenuItem, MenuOption, MenuState, ScrollArea, ScrollbarAxis, Table, TableCaption, TableCell,
-    TableColumn, TableRow,
+    MenuItem, MenuOption, MenuState, NaiveDate, ScrollArea, ScrollbarAxis, Table, TableCaption,
+    TableCell, TableColumn, TableRow,
 };
 
 use super::super::Palette;
 use super::{EmptyState, InputGroup, Pagination};
 
-/// One fixed-width text column. Values are sorted as case-insensitive text.
+/// One fixed-width column. Cells sort by their [`DataTableCell`] keys.
 pub(crate) struct DataTableColumn {
     label: SharedString,
     width: Pixels,
+    align_end: bool,
 }
 
 impl DataTableColumn {
@@ -29,25 +30,124 @@ impl DataTableColumn {
         Self {
             label: label.into(),
             width,
+            align_end: false,
+        }
+    }
+
+    /// Aligns heading and values to the end edge, as for numeric amounts.
+    pub(crate) fn align_end(mut self) -> Self {
+        self.align_end = true;
+        self
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum SortKey {
+    Text(String),
+    Number(f64),
+    Date(NaiveDate),
+}
+
+impl SortKey {
+    fn rank(&self) -> u8 {
+        match self {
+            Self::Number(_) => 0,
+            Self::Date(_) => 1,
+            Self::Text(_) => 2,
+        }
+    }
+
+    fn compare(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Self::Number(a), Self::Number(b)) => a.total_cmp(b),
+            (Self::Date(a), Self::Date(b)) => a.cmp(b),
+            (Self::Text(a), Self::Text(b)) => a.cmp(b),
+            _ => self.rank().cmp(&other.rank()),
         }
     }
 }
 
-/// An immutable row with a stable application ID and one text value per column.
+/// Displayed text and the value it sorts by. Text sorts case-insensitively;
+/// numbers and dates sort by value whatever their displayed format.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct DataTableCell {
+    text: SharedString,
+    key: SortKey,
+}
+
+impl DataTableCell {
+    pub(crate) fn text(text: impl Into<SharedString>) -> Self {
+        let text = text.into();
+        Self {
+            key: SortKey::Text(text.to_lowercase()),
+            text,
+        }
+    }
+
+    /// A finite number shown as formatted text, such as `$1,250.00`.
+    pub(crate) fn number(text: impl Into<SharedString>, value: f64) -> Self {
+        assert!(value.is_finite(), "a sortable number must be finite");
+        Self {
+            text: text.into(),
+            key: SortKey::Number(value),
+        }
+    }
+
+    /// A calendar date shown as formatted text, such as `Dec 10, 2026`.
+    pub(crate) fn date(text: impl Into<SharedString>, value: NaiveDate) -> Self {
+        Self {
+            text: text.into(),
+            key: SortKey::Date(value),
+        }
+    }
+}
+
+impl From<&str> for DataTableCell {
+    fn from(text: &str) -> Self {
+        Self::text(text.to_string())
+    }
+}
+
+impl From<String> for DataTableCell {
+    fn from(text: String) -> Self {
+        Self::text(text)
+    }
+}
+
+impl From<SharedString> for DataTableCell {
+    fn from(text: SharedString) -> Self {
+        Self::text(text)
+    }
+}
+
+fn align(cell: TableCell, end: bool) -> TableCell {
+    if end { cell.flex().justify_end() } else { cell }
+}
+
+/// An immutable row with a stable application ID and one cell per column.
 pub(crate) struct DataTableRow {
     id: SharedString,
     cells: Vec<SharedString>,
+    keys: Vec<SortKey>,
     disabled: bool,
 }
 
 impl DataTableRow {
     pub(crate) fn new(
         id: impl Into<SharedString>,
-        cells: impl IntoIterator<Item = impl Into<SharedString>>,
+        cells: impl IntoIterator<Item = impl Into<DataTableCell>>,
     ) -> Self {
+        let (cells, keys) = cells
+            .into_iter()
+            .map(|cell| {
+                let cell = cell.into();
+                (cell.text, cell.key)
+            })
+            .unzip();
         Self {
             id: id.into(),
-            cells: cells.into_iter().map(Into::into).collect(),
+            cells,
+            keys,
             disabled: false,
         }
     }
@@ -66,7 +166,7 @@ impl DataTableRow {
     }
 }
 
-/// Retained client-side filtering, one-column text sorting, and pagination.
+/// Retained client-side filtering, one-column sorting, and pagination.
 ///
 /// The native InputState is the query's source of truth. Matching indices are
 /// derived only when query text or sort order changes. Each whitespace-separated
@@ -287,14 +387,13 @@ impl DataTableState {
             })
             .collect();
         if let Some(column) = self.sort_column {
-            if self.descending {
-                self.filtered.sort_by_cached_key(|&index| {
-                    Reverse(self.rows[index].cells[column].to_lowercase())
-                });
-            } else {
-                self.filtered
-                    .sort_by_cached_key(|&index| self.rows[index].cells[column].to_lowercase());
-            }
+            let rows = &self.rows;
+            let descending = self.descending;
+            // Stable in both directions, so equal keys keep source order.
+            self.filtered.sort_by(|&a, &b| {
+                let order = rows[a].keys[column].compare(&rows[b].keys[column]);
+                if descending { order.reverse() } else { order }
+            });
         }
         self.page = 0;
         self.reset_vertical_scroll();
@@ -531,28 +630,31 @@ impl RenderOnce for DataTable {
             };
             let owner = self.state.clone();
             header = header.cell(
-                TableCell::new((self.id.clone(), format!("heading-{index}")))
-                    .accessibility_label(column.label.clone())
-                    .sort_direction((state.sort_column == Some(index)).then_some(
-                        if state.descending {
-                            SortDirection::Descending
-                        } else {
-                            SortDirection::Ascending
-                        },
-                    ))
-                    .p_1()
-                    .child(Self::button(
-                        palette,
-                        Button::new((self.id.clone(), format!("sort-{index}")))
-                            .accessibility_label(format!(
-                                "{}, {}; sort {}",
-                                column.label, current, next
-                            ))
-                            .on_click(move |_, _, cx| {
-                                owner.update(cx, |state, cx| state.sort_by_column(index, cx))
-                            })
-                            .child(format!("{} {marker}", column.label)),
-                    )),
+                align(
+                    TableCell::new((self.id.clone(), format!("heading-{index}")))
+                        .accessibility_label(column.label.clone())
+                        .sort_direction((state.sort_column == Some(index)).then_some(
+                            if state.descending {
+                                SortDirection::Descending
+                            } else {
+                                SortDirection::Ascending
+                            },
+                        ))
+                        .p_1(),
+                    column.align_end,
+                )
+                .child(Self::button(
+                    palette,
+                    Button::new((self.id.clone(), format!("sort-{index}")))
+                        .accessibility_label(format!(
+                            "{}, {}; sort {}",
+                            column.label, current, next
+                        ))
+                        .on_click(move |_, _, cx| {
+                            owner.update(cx, |state, cx| state.sort_by_column(index, cx))
+                        })
+                        .child(format!("{} {marker}", column.label)),
+                )),
             );
         }
         header = header.cell(
@@ -614,14 +716,17 @@ impl RenderOnce for DataTable {
             if current || selected {
                 rendered = rendered.bg(palette.highlight);
             }
-            for (visible_index, &(index, _)) in visible_columns.iter().enumerate() {
+            for (visible_index, &(index, column)) in visible_columns.iter().enumerate() {
                 let cell = &row.cells()[index];
                 rendered = rendered.cell(
-                    TableCell::new((row_id.clone(), format!("column-{index}")))
-                        .row_header(visible_index == 0)
-                        .accessibility_label(cell.clone())
-                        .p_2()
-                        .child(cell.clone()),
+                    align(
+                        TableCell::new((row_id.clone(), format!("column-{index}")))
+                            .row_header(visible_index == 0)
+                            .accessibility_label(cell.clone())
+                            .p_2(),
+                        column.align_end,
+                    )
+                    .child(cell.clone()),
                 );
             }
             let value = row.id().clone();
@@ -808,6 +913,74 @@ mod tests {
                 table.set_column_visible(0, true, cx);
                 assert!(table.is_column_visible(0));
                 assert_eq!(table.visible_rows().next().unwrap().id().as_ref(), "c");
+            });
+        });
+    }
+
+    #[gpui::test]
+    fn numbers_and_dates_sort_by_value_not_display_text(cx: &mut TestAppContext) {
+        let window = cx.add_empty_window();
+        window.update(|window, cx| {
+            let date = |day| NaiveDate::from_ymd_opt(2026, 12, day).unwrap();
+            let table = cx.new(|cx| {
+                DataTableState::new(
+                    [
+                        DataTableColumn::new("Name", px(100.)),
+                        DataTableColumn::new("Amount", px(100.)).align_end(),
+                        DataTableColumn::new("Due", px(100.)),
+                    ],
+                    [
+                        DataTableRow::new(
+                            "a",
+                            [
+                                DataTableCell::text("Alpha"),
+                                DataTableCell::number("$900.00", 900.),
+                                DataTableCell::date("Dec 9, 2026", date(9)),
+                            ],
+                        ),
+                        DataTableRow::new(
+                            "b",
+                            [
+                                DataTableCell::text("Beta"),
+                                DataTableCell::number("$1,250.00", 1250.),
+                                DataTableCell::date("Dec 10, 2026", date(10)),
+                            ],
+                        ),
+                        DataTableRow::new(
+                            "c",
+                            [
+                                DataTableCell::text("Charlie"),
+                                DataTableCell::number("-$5.00", -5.),
+                                DataTableCell::date("Dec 1, 2026", date(1)),
+                            ],
+                        ),
+                    ],
+                    5,
+                    window,
+                    cx,
+                )
+            });
+            table.update(cx, |table, cx| {
+                let order = |table: &DataTableState| {
+                    table
+                        .visible_rows()
+                        .map(|row| row.id().to_string())
+                        .collect::<Vec<_>>()
+                };
+                // Text order would put "$1,250.00" first and "-$5.00" last.
+                table.sort_by_column(1, cx);
+                assert_eq!(order(table), ["c", "a", "b"]);
+                table.sort_by_column(1, cx);
+                assert_eq!(order(table), ["b", "a", "c"]);
+                // Text order would put "Dec 10" before "Dec 9".
+                table.sort_by_column(2, cx);
+                assert_eq!(order(table), ["c", "a", "b"]);
+                // Filtering still searches the displayed text.
+                table
+                    .input
+                    .update(cx, |input, cx| input.set_value("1,250", window, cx));
+                table.sync_query(cx);
+                assert_eq!(order(table), ["b"]);
             });
         });
     }

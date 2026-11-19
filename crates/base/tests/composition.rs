@@ -3823,7 +3823,7 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         );
     });
     // The current preset can be independently selected and unselected.
-    cx.simulate_keystrokes("tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     activate_key(cx, "space");
     cx.update(|window, cx| {
         assert_eq!(
@@ -3872,7 +3872,7 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         assert_eq!(page.label(), Some("Page 2, current page"));
     });
     cx.simulate_keystrokes(
-        "shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab",
+        "shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab          shift-tab",
     );
     draw(cx);
     cx.update(|window, cx| {
@@ -3985,7 +3985,7 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             "presentation"
         );
     });
-    cx.simulate_keystrokes("tab tab tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab");
     draw(cx);
     let row = gpui::ElementId::from((id.clone(), "row-presentation"));
     let action = gpui::ElementId::from((row, "action"));

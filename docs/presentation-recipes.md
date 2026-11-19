@@ -309,7 +309,7 @@ owns no retained page or data; routing and fetching belong to the application.
 ## Data Table
 
 [`data_table.rs`](../crates/base/examples/recipes/data_table.rs) provides a working
-client-side text-table composition. It uses the existing native Input/Field,
+client-side table composition. It uses the existing native Input/Field,
 Table, ScrollArea, Checkbox, DropdownMenu, and Button, plus the InputGroup, EmptyState, and Pagination
 recipes. Columns and immutable rows belong to the consuming application.
 
@@ -319,8 +319,10 @@ let state = cx.new(|cx| {
         [
             DataTableColumn::new("Preset", px(180.)),
             DataTableColumn::new("Description", px(280.)),
+            DataTableColumn::new("Bitrate", px(110.)).align_end(),
+            DataTableColumn::new("Updated", px(130.)),
         ],
-        rows, // DataTableRow::new(stable_id, [name, description]).disabled(false)
+        rows, // DataTableRow::new(stable_id, [cells…]).disabled(false)
         2,    // Rows per page; must be positive.
         window,
         cx,
@@ -340,10 +342,13 @@ DataTable::new("preset-catalogue", &state, palette)
 
 Keep the state entity in the application and observe it to redraw the parent.
 Apply the application's `InputEditorStyle` to `query_input()`, as the two-style
-example does. A row has a unique stable ID and one text value per column. The
+example does. A row has a unique stable ID and one `DataTableCell` per column.
+`DataTableCell::text` (or a plain string) sorts case-insensitively;
+`DataTableCell::number(display, value)` and `DataTableCell::date(display, date)`
+show formatted text such as `$1,250.00` or `Nov 2, 2026` but sort by value.
+`align_end` right-aligns a column's heading and values, as for amounts. The
 initial display order is the supplied row order. Header Buttons toggle one column
-between ascending and descending case-insensitive text order; equal keys retain
-their original order.
+between ascending and descending order; equal keys retain their original order.
 
 The native input owns the query. Every whitespace-separated term must appear in
 the combined cell text, ignoring case. Matching/sorted indices are derived when
@@ -353,7 +358,7 @@ does not reset it. `visible_rows()`, `filtered_count()`, `page_index()`, and
 and page/filter/sort changes return the row viewport to its vertical start.
 
 The example derives its four rows from the same preset definitions used by the
-Combobox. `.selected_value` supplies that Combobox's current value each render;
+Combobox, with an end-aligned numeric bitrate and a formatted update date. `.selected_value` supplies that Combobox's current value each render;
 the table keeps no second selected value. A row action passes the stable ID to
 the application even after filtering, sorting, or paging. Current and unavailable
 rows have disabled action Buttons. The selected value remains in the application
@@ -367,9 +372,9 @@ unmounting; unavailable rows cannot be selected. `is_row_selected` and
 within the current filter, including other pages. Application row actions do not
 change these checkboxes.
 
-Columns opens a native checked menu. Toggle any text column, including all of
+Columns opens a native checked menu. Toggle any data column, including all of
 them; selection and action columns remain mounted. Hiding a column preserves
-filtering, sorting, selection and pagination; filtering still searches its text.
+filtering, sorting, selection and pagination; filtering still searches its displayed text.
 `is_column_visible` exposes each source column's visibility.
 
 An empty result replaces the row viewport with EmptyState and Clear filter.

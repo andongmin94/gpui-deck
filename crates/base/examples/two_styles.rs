@@ -32,9 +32,9 @@ use gpui_design::{
 mod recipes;
 use recipes::{
     Alert, AspectRatio, Attachment, Avatar, Badge, ButtonGroup, Card, CodeBlock, DataTable,
-    DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading, InlineCode, InputGroup,
-    Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, SheetSide, Sidebar, Skeleton, Spinner,
-    Trace,
+    DataTableCell, DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading, InlineCode,
+    InputGroup, Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, SheetSide, Sidebar,
+    Skeleton, Spinner, Trace,
 };
 
 #[path = "presentation.rs"]
@@ -147,13 +147,15 @@ impl Demo {
             .items(cx)
             .iter()
             .map(|item| {
-                DataTableRow::new(
-                    item.value().clone(),
+                DataTableRow::new(item.value().clone(), {
+                    let (megabits, updated) = Self::preset_metrics(item.value());
                     [
-                        item.label().clone(),
-                        SharedString::from(Self::preset_description(item.value())),
-                    ],
-                )
+                        DataTableCell::text(item.label().clone()),
+                        DataTableCell::text(Self::preset_description(item.value())),
+                        DataTableCell::number(format!("{megabits} Mbps"), megabits.into()),
+                        DataTableCell::date(updated.format("%b %-d, %Y").to_string(), updated),
+                    ]
+                })
                 .disabled(item.is_disabled())
             })
             .collect::<Vec<_>>();
@@ -162,6 +164,8 @@ impl Demo {
                 [
                     DataTableColumn::new("Preset", px(180.)),
                     DataTableColumn::new("Description", px(280.)),
+                    DataTableColumn::new("Bitrate", px(110.)).align_end(),
+                    DataTableColumn::new("Updated", px(130.)),
                 ],
                 preset_rows,
                 2,
@@ -374,6 +378,18 @@ impl Demo {
             "quality" => "A preset for detailed visual references.",
             _ => "Choose a recording preset in the session settings.",
         }
+    }
+
+    /// Illustrative bitrate and last-change date for each preset.
+    fn preset_metrics(value: &str) -> (u32, NaiveDate) {
+        let (megabits, month, day) = match value {
+            "balanced" => (8, 11, 2),
+            "broadcast" => (12, 9, 18),
+            "presentation" => (6, 10, 30),
+            "quality" => (20, 11, 14),
+            _ => (0, 1, 1),
+        };
+        (megabits, NaiveDate::from_ymd_opt(2026, month, day).unwrap())
     }
 
     fn input_style(palette: Palette) -> InputEditorStyle {
