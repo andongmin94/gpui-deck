@@ -12,7 +12,7 @@ use gpui::{
 };
 use gpui_design::{
     Button, DialogBackdrop, DialogClose, DialogState, Drawer, DrawerState, InputOtp, InputOtpEvent,
-    InputOtpState, Label, ScrollArea, Toast, ToastClose, ToastState,
+    InputOtpState, Label, ScrollArea, Toast, ToastClose, Toaster, ToasterState,
 };
 
 const SESSION_CODE: &str = "742915";
@@ -20,7 +20,7 @@ const SESSION_CODE: &str = "742915";
 pub struct CatalogueForms {
     otp: Entity<InputOtpState>,
     drawer: Entity<DrawerState>,
-    toast: Entity<ToastState>,
+    toasts: Entity<ToasterState<SharedString>>,
     review_focus: FocusHandle,
     confirm_focus: FocusHandle,
     body_scroll: ScrollHandle,
@@ -40,14 +40,14 @@ impl CatalogueForms {
         let confirm_focus = cx.focus_handle();
         let dialog = cx.new(|cx| DialogState::new(cx).with_initial_focus(&confirm_focus));
         let drawer = cx.new(|cx| DrawerState::with_dialog(dialog, window, cx));
-        let toast = cx.new(|cx| ToastState::new(window, cx));
+        let toasts = cx.new(|_| ToasterState::new());
         let sheet_close = cx.focus_handle();
         let sheet = cx.new(|cx| DialogState::new(cx).with_initial_focus(&sheet_close));
         let subscriptions = vec![
             cx.observe(&sheet, |_, _, cx| cx.notify()),
             cx.observe(&otp, |_, _, cx| cx.notify()),
             cx.observe(&drawer, |_, _, cx| cx.notify()),
-            cx.observe(&toast, |_, _, cx| cx.notify()),
+            cx.observe(&toasts, |_, _, cx| cx.notify()),
             cx.subscribe(&otp, |this, _, _: &InputOtpEvent, cx| {
                 this.confirmed = false;
                 cx.notify();
@@ -56,7 +56,7 @@ impl CatalogueForms {
         Self {
             otp,
             drawer,
-            toast,
+            toasts,
             review_focus: cx.focus_handle(),
             confirm_focus,
             body_scroll: ScrollHandle::new(),
@@ -76,7 +76,7 @@ impl CatalogueForms {
             self.drawer.update(cx, |state, cx| state.open(window, cx));
         } else {
             self.status = "The code does not match. Use the six digits shown above.".into();
-            self.toast.update(cx, |state, cx| state.show(window, cx));
+            self.notify_status(window, cx);
         }
         cx.notify();
     }
@@ -86,8 +86,15 @@ impl CatalogueForms {
         self.status = "Session confirmed in this local example.".into();
         // Closing first lets the modal restore focus before Toast captures it.
         self.drawer.update(cx, |state, cx| state.close(window, cx));
-        self.toast.update(cx, |state, cx| state.show(window, cx));
+        self.notify_status(window, cx);
         cx.notify();
+    }
+
+    /// Each status change stacks a notification; older ones keep their time.
+    fn notify_status(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let status = self.status.clone();
+        self.toasts
+            .update(cx, |toasts, cx| toasts.push(status, window, cx));
     }
 }
 
@@ -97,7 +104,6 @@ impl Render for CatalogueForms {
         let complete = self.otp.read(cx).is_complete(cx);
         let code = self.otp.read(cx).value(cx);
         let dialog = self.drawer.read(cx).dialog().clone();
-        let status = self.status.clone();
         let palette = super::Appearance::Compact.palette();
         let close_focus = self.sheet_close.clone();
         let help = Sheet::new("session-help", &self.sheet, &self.sheet_scroll, "Session help", palette)
@@ -189,33 +195,39 @@ impl Render for CatalogueForms {
                 "All activity stays in this window; no code is sent or remotely verified."
             })
             .child(
-                Toast::new("session-notification", &self.toast)
-                    .accessibility_label(status.clone())
-                    .flex()
-                    .items_center()
-                    .gap_3()
-                    .p_3()
-                    .bg(rgb(0x243c36))
-                    .border_1()
-                    .border_color(rgb(0x648a79))
-                    .rounded_md()
-                    .child(div().flex_1().child(status))
-                    .child(
-                        ToastClose::new("dismiss-session-notification", &self.toast).trigger(
-                            |button| {
-                                button
-                                    .accessibility_label("Dismiss")
-                                    .px_2()
-                                    .py_1()
-                                    .rounded_md()
-                                    .hover(|style| style.bg(rgb(0x334155)))
-                                    .focus_visible(|style| {
-                                        style.bg(rgb(0x93c5fd)).text_color(rgb(0x0b1220))
-                                    })
-                                    .child("Dismiss")
-                            },
-                        ),
-                    ),
+                Toaster::new(
+                    "session-notifications",
+                    &self.toasts,
+                    |key, status, state| {
+                        Toast::new(key, state)
+                            .accessibility_label(status.clone())
+                            .flex()
+                            .items_center()
+                            .gap_3()
+                            .p_3()
+                            .bg(rgb(0x243c36))
+                            .border_1()
+                            .border_color(rgb(0x648a79))
+                            .rounded_md()
+                            .child(div().flex_1().child(status.clone()))
+                            .child(
+                                ToastClose::new((gpui::ElementId::from(key), "dismiss"), state)
+                                    .trigger(|button| {
+                                        button
+                                            .accessibility_label("Dismiss")
+                                            .px_2()
+                                            .py_1()
+                                            .rounded_md()
+                                            .hover(|style| style.bg(rgb(0x334155)))
+                                            .focus_visible(|style| {
+                                                style.bg(rgb(0x93c5fd)).text_color(rgb(0x0b1220))
+                                            })
+                                            .child("Dismiss")
+                                    }),
+                            )
+                    },
+                )
+                .gap_2(),
             )
             .child(
                 Drawer::new("session-confirmation", &self.drawer)

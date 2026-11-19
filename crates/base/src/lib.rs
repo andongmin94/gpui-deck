@@ -159,7 +159,9 @@ pub use switch::{Switch, SwitchStyles};
 pub use table::{Table, TableCaption, TableCell, TableColumn, TableRow};
 pub use tabs::{Tab, TabItem, TabList, TabPanel, TabsEvent, TabsState};
 pub use theme::{InputColors, ScrollbarTheme, Theme};
-pub use toast::{Toast, ToastClose, ToastDismissReason, ToastEvent, ToastState};
+pub use toast::{
+    Toast, ToastClose, ToastDismissReason, ToastEvent, ToastKey, ToastState, Toaster, ToasterState,
+};
 pub use toggle::Toggle;
 pub use toggle_group::{ToggleGroup, ToggleGroupEvent, ToggleGroupState, ToggleItem, ToggleOption};
 pub use tooltip::{Tooltip, TooltipState};

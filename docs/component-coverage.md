@@ -74,7 +74,7 @@ in the [form guide](form-controls.md),
 | Switch | Available | Controlled boolean state, native activation, disabled state, and focus; the application supplies track and thumb. |
 | Tabs | Available | Fixed items, automatic or manual activation, orientation-aware navigation, and active-only panels. |
 | Textarea | Available | Public multiline renderer over the existing `TextareaState` editing engine; no second editor implementation. |
-| Toast | Available | Retained notification lifetime and explicit/timeout dismissal; hover, contained focus and inactive windows pause remaining time. Showing never takes focus; explicit focused dismissal restores prior focus. Applications own message, actions and stacking; no queue service. |
+| Toast | Available | Retained notification lifetime and explicit/timeout dismissal; hover, contained focus and inactive windows pause remaining time. Showing never takes focus; explicit focused dismissal restores prior focus. ToasterState stacks application-owned values with a visible limit, waiting older entries, in-place replacement, dismiss-all and explicit focus entry. Applications own message, actions, placement and type styling. |
 | Toggle | Available | Controlled pressed state composed from Button's activation and focus behavior. |
 | Toggle Group | Available | Fixed items with multiple or optional single selection and roving focus; moving focus does not change the pressed values. |
 | Tooltip | Available | Plain text descriptions for a Button, delayed pointer hover, immediate keyboard focus, Escape dismissal, and native GPUI tooltip positioning. Rich content and touch long-press behavior are not included. |

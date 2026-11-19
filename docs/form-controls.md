@@ -606,8 +606,9 @@ Completion is a length condition, and verification remains application-owned.
 
 The catalogue Forms and feedback view uses the local code `742915`: completing
 entry enables Review session, which opens a real confirmation Drawer; confirming
-closes the modal before showing a timed Toast. Editing the code clears the local
-confirmation state. No remote verification or transport is involved.
+closes the modal before pushing a timed Toast onto a Toaster, and a mismatched
+code also stacks a notification. Editing the code clears the local confirmation
+state. No remote verification or transport is involved.
 
 ## Questionnaire
 

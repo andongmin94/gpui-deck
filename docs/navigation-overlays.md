@@ -712,7 +712,7 @@ with no inertial physics or snap-point configuration.
 nonzero `.with_duration(...)` before mounting if needed. Keep the matching
 `Toast::new(id, &state)` in the view even while closed. Set its accessible message,
 body and ordinary action Buttons; `ToastClose` provides the dismiss action.
-Applications own stacking and content, rather than a second queue service.
+Use one ToastState for a single notification slot, or ToasterState for a stack.
 
 `show` starts or replaces the message without taking focus. The mounted countdown
 pauses on hover, contained focus and window inactivity, then resumes from its
@@ -724,6 +724,46 @@ closes it without restoring captured focus; the application must move focus to a
 surviving control when removing focused content. Native live metadata is
 polite by default and assertive for `.urgent(true)`; actual screen-reader delivery
 must still be checked on each platform.
+
+### Toaster
+
+`ToasterState<T>` keeps a stack of notifications whose values `T` belong to the
+application, each backed by its own ToastState:
+
+```rust
+let toasts = cx.new(|_| ToasterState::<SharedString>::new());
+
+// Anywhere with a window:
+let key = toasts.update(cx, |toasts, cx| toasts.push("Uploading…".into(), window, cx));
+// Later, update the same notification in place and restart its lifetime.
+toasts.update(cx, |toasts, cx| toasts.replace(key, "Upload complete".into(), window, cx));
+
+Toaster::new("notifications", &toasts, |key, message, state| {
+    Toast::new(key, state)
+        .accessibility_label(message.clone())
+        .child(message.clone())
+        .child(ToastClose::new((ElementId::from(key), "close"), state))
+})
+.absolute()
+.bottom_4()
+.right_4()
+.gap_2()
+```
+
+`push` shows a notification without taking focus and returns its `ToastKey`,
+which also converts into an ElementId. Only the newest `visible_limit` entries
+(three by default) are mounted, newest first; older entries wait without spending
+time and appear as newer ones close. `with_duration` sets the lifetime for later
+pushes. Every mounted toast keeps the pause, Escape and focus-restoration
+contract above, and is removed from the stack when it closes for any reason.
+`replace` updates a still-open entry and restarts its lifetime, returning false
+when it already closed. `dismiss(key)` and `dismiss_all` close entries;
+`len`, `is_empty` and `visible` expose the stack.
+
+`focus_latest` moves focus into the newest notification. Bind it to an
+application shortcut, such as Alt+T, rather than calling it when showing.
+Toaster renders a named Group (`Notifications` by default) and leaves placement,
+spacing and appearance to the application.
 
 ## Validation
 

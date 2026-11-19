@@ -58,7 +58,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **InputOtp** | One numeric editor, native selection/paste/delete/undo, digit slots and completion events | Slot/group presentation and application verification |
 | **Menubar** | One top-level focus entry, menu switching, opening and shared command trees | Menu labels, surfaces, commands and styling |
 | **NavigationMenu** | Coordinated disclosures, roving focus and destination Link activation | Destination callbacks, panel content and layout |
-| **Toast** | Retained lifetime, hover/focus/window pause and safe dismissal | Message, action controls, placement and stacking |
+| **Toast** | Retained lifetime, hover/focus/window pause, safe dismissal, and a stacking Toaster with a visible limit | Message, action controls, placement and appearance |
 | **Drawer** | Dialog lifecycle plus bottom drag-to-dismiss through a dedicated handle | Backdrop, grip, surface, scrolling body and confirmation |
 | **Carousel** | Active slide, bounded/looping navigation, discrete swipe, RTL and focus restoration | Slide content, viewport size, controls and indicators |
 | **Chart** | Categorical series, visible-series domain, point inspection and exact native values | Copyable native line/bar/area plot, axes, legend, readout and Table |
@@ -240,7 +240,7 @@ scheduling an actual recording. Its date bounds are 2026–2027.
 The separate [catalogue example](crates/base/examples/catalogue.rs) connects the
 remaining families into five retained views. Navigation demonstrates coordinated
 menus, destination links and collapsible grouped project navigation; Forms and feedback runs numeric code entry through
-a confirmation Drawer into a pausing Toast, plus help Sheets at all four edges; Media and data supplies RTL-aware
+a confirmation Drawer into a stacked, pausing Toast, plus help Sheets at all four edges; Media and data supplies RTL-aware
 Carousel slides and inspectable line/bar/area charts with an exact data table;
 Conversation combines incoming/outgoing bubbles, anchored history/streaming,
 reactions and a validated question/review/complete flow. Selection combines date
