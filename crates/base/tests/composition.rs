@@ -3841,15 +3841,17 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         );
     });
     activate_key(cx, "space");
-    // Disabled Broadcast is skipped; the next page is the next Tab stop.
+    // Disabled Broadcast and Previous are skipped; the current page is next.
+    let first_page = gpui::ElementId::from((pagination.clone(), "page-0"));
+    let second_page = gpui::ElementId::from((pagination.clone(), "page-1"));
     cx.simulate_keystrokes("tab");
     draw(cx);
     cx.update(|window, _| {
-        assert_eq!(
-            test_support::find(window, &[], &next).unwrap().focused(),
-            Some(true)
-        )
+        let page = test_support::find(window, &[], &first_page).unwrap();
+        assert_eq!(page.focused(), Some(true));
+        assert_eq!(page.label(), Some("Page 1, current page"));
     });
+    cx.simulate_keystrokes("tab");
     activate_key(cx, "enter");
     cx.update(|window, cx| {
         let state = demo.read(cx).preset_table.read(cx);
@@ -3865,8 +3867,13 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             test_support::find(window, &[], &next).unwrap().disabled(),
             Some(true)
         );
+        let page = test_support::find(window, &[], &second_page).unwrap();
+        assert_eq!(page.focused(), Some(true));
+        assert_eq!(page.label(), Some("Page 2, current page"));
     });
-    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab");
+    cx.simulate_keystrokes(
+        "shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab",
+    );
     draw(cx);
     cx.update(|window, cx| {
         assert_eq!(
@@ -4006,7 +4013,8 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         assert_eq!(action.disabled(), Some(true));
         assert_eq!(action.focused(), Some(true));
     });
-    cx.simulate_keystrokes("tab");
+    // The single current page remains a Tab stop before the dialog actions.
+    cx.simulate_keystrokes("tab tab");
     draw(cx);
     cx.update(|window, _| {
         assert!(

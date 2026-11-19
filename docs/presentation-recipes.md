@@ -76,8 +76,7 @@ alongside the desired recipe:
 
 | Recipe | Other recipe modules required |
 | --- | --- |
-| Pagination | ButtonGroup |
-| DataTable | InputGroup, EmptyState, Pagination, and ButtonGroup |
+| DataTable | InputGroup, EmptyState, and Pagination |
 | Message | Typography (`Paragraph`) |
 | Trace | Typography (`Paragraph`) |
 
@@ -284,9 +283,9 @@ current inline recipe has no action or media slot; `Styled` controls its frame.
 
 ## Pagination
 
-[`pagination.rs`](../crates/base/examples/recipes/pagination.rs) composes existing
-Button and ButtonGroup controls into named native navigation. The application
-supplies the zero-based page index, page count, and callback.
+[`pagination.rs`](../crates/base/examples/recipes/pagination.rs) composes ordinary
+Buttons into named native navigation. The application supplies the zero-based
+page index, page count, and callback.
 
 ```rust,ignore
 Pagination::new("preset-pages", "Recording preset pages", page, page_count, palette)
@@ -297,12 +296,15 @@ Pagination::new("preset-pages", "Recording preset pages", page, page_count, pale
 
 For a nonempty collection, the page index must be less than the count. Empty
 results use index zero and count zero, display `No pages`, and disable both
-buttons. Otherwise the text is `Page N of M`, Previous is disabled on the first
-page, and Next is disabled on the last. The buttons preserve ordinary Tab and
-activation behavior, including focus on a button that becomes disabled after its
-action. The recipe requests a page change; it owns no retained page or data.
-`Styled` controls the frame. Numbered links, ellipsis, routing, and fetching are
-outside this recipe's scope.
+Previous and Next. Otherwise numbered buttons follow Previous: up to seven pages
+appear directly, and longer collections keep the first and last pages, the
+current page and its neighbors, with each elided run shown as a static
+`More pages` label. The entry count stays at seven while paging, so controls
+do not shift. The current page has native current-page metadata and selected
+styling and does not request a change. Previous is disabled on the first page
+and Next on the last. Buttons keep ordinary Tab and activation behavior,
+including focus on a button that becomes disabled after its action. The recipe
+owns no retained page or data; routing and fetching belong to the application.
 
 ## Data Table
 

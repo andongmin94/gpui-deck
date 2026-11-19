@@ -329,7 +329,7 @@ mod tests {
         add(vec!["data-table".into(), "avatar".into()], &directory.0).unwrap();
         assert_eq!(
             fs::read_to_string(directory.0.join(MANIFEST)).unwrap(),
-            "avatar\nbutton-group\ndata-table\nempty\ninput-group\npagination\n"
+            "avatar\ndata-table\nempty\ninput-group\npagination\n"
         );
         assert_eq!(
             fs::read_to_string(directory.0.join("presentation.rs")).unwrap(),
@@ -345,7 +345,8 @@ mod tests {
         );
         assert!(directory.0.join("assets/preset-avatar.svg").is_file());
         let modules = fs::read_to_string(directory.0.join("recipes/mod.rs")).unwrap();
-        assert!(modules.contains("mod button_group;"));
+        assert!(modules.contains("mod pagination;"));
+        assert!(!modules.contains("mod button_group;"));
         assert!(modules.contains("DataTableState"));
     }
 
