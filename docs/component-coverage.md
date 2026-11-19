@@ -151,7 +151,7 @@ documented. Platform observations are recorded separately from automated checks.
 | 4 | Source distribution and developer experience | A small complete starter, compilable public examples, explicit supported API boundary, and a source-copy workflow that resolves recipe dependencies and tokens | Starter, doctest gate, application tokens and dependency-aware source CLI implemented; supported input/control boundary and consumer test feature documented; unused ThemeAppearance removed |
 | 5 | Release validation | Existing formatting, lint, full behavior suite and native example builds pass; representative native IME, screen-reader, DPI, and visual flows have platform-specific observations | Not complete |
 
-The current Windows checkpoint passed 707 behavior/integration tests, five CLI
+The current Windows checkpoint passed 708 behavior/integration tests, five CLI
 tests, 15 doctests (two existing ignored), formatting, Clippy and all native
 example/CLI builds after multi-panel collapsible Resizable, numbered Pagination,
 value-sorted Data Table cells and the stacking Toaster were added. The
