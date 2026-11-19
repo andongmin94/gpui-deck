@@ -151,11 +151,12 @@ documented. Platform observations are recorded separately from automated checks.
 | 4 | Source distribution and developer experience | A small complete starter, compilable public examples, explicit supported API boundary, and a source-copy workflow that resolves recipe dependencies and tokens | Starter, doctest gate, application tokens and dependency-aware source CLI implemented; supported input/control boundary and consumer test feature documented; unused ThemeAppearance removed |
 | 5 | Release validation | Existing formatting, lint, full behavior suite and native example builds pass; representative native IME, screen-reader, DPI, and visual flows have platform-specific observations | Not complete |
 
-The current Windows checkpoint passed 702 behavior/integration tests, five CLI
-tests, 16 doctests (two existing ignored), formatting, Clippy and affected native
-example/CLI builds. The [three-platform run for 8c538034](https://github.com/andongmin94/gpui-design/actions/runs/42852815564)
-also passed: full checks on Linux, representative composition/CLI tests and native
-builds on Windows/macOS. Modal metadata/input-isolation follow-up is being verified.
+The current Windows checkpoint passed 707 behavior/integration tests, five CLI
+tests, 15 doctests (two existing ignored), formatting, Clippy and all native
+example/CLI builds after multi-panel collapsible Resizable, numbered Pagination,
+value-sorted Data Table cells and the stacking Toaster were added. The
+[three-platform run for 8c538034](https://github.com/andongmin94/gpui-design/actions/runs/42852815564)
+predates these changes; the new commits have not yet run on Linux or macOS.
 All 24 copied recipe modules and their test-feature compilation have standalone
 consumer coverage; source dependencies, exports, assets and 59 local document
 links were audited. [Draft PR #1](https://github.com/andongmin94/gpui-design/pull/1)
