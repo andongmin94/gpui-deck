@@ -252,7 +252,16 @@ logical pixels snaps once per gesture, including a single move followed
 immediately by release. Moving slides out of view, including by shrinking the
 view, returns focus inside them to the carousel scope before unmounting; focus in
 slides that stay visible and on external previous/next controls is kept. There is
-no autoplay, inertia, animated motion or free-scrolling between snaps.
+no inertia, animated motion or free-scrolling between snaps.
+
+`set_autoplay(Some(interval), window, cx)` advances one slide per interval and
+wraps from the last view to the first; `None` or `is_autoplaying()` control and
+report it. Rotation pauses while the pointer is over the carousel, focus is inside
+it, the window is inactive, or reduced motion is on, and keyboard, swipe and
+`CarouselControl` navigation stop it, like Embla's default autoplay plugin.
+Application calls such as pagination `select` do not stop it. Render a visible
+play/pause Button, as the catalogue does with "Play slideshow", so people can
+stop rotation (WCAG 2.2.2).
 
 ## Chart
 

@@ -190,6 +190,7 @@ impl DataCatalogue {
         let visible = model.visible_range();
         let snaps = model.snap_count();
         let per_view = visible.len();
+        let playing = model.is_autoplaying();
         // Visible slides share the row equally, like a 1/n flex basis.
         let mut carousel = self.direction.row(
             Carousel::new(
@@ -335,6 +336,13 @@ impl DataCatalogue {
                 .on_click(cx.listener(move |this, _, window, cx| {
                     this.carousel.update(cx, |state, cx| {
                         state.set_slides_per_view(if per_view == 1 { 2 } else { 1 }, window, cx);
+                    });
+                })))
+            // Rotation needs a visible stop control; it pauses on hover and focus.
+            .child(Self::button("media-autoplay", if playing { "Pause slideshow" } else { "Play slideshow" })
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.carousel.update(cx, |state, cx| {
+                        state.set_autoplay((!playing).then_some(std::time::Duration::from_secs(4)), window, cx);
                     });
                 })))
             .child(carousel)

@@ -1,11 +1,13 @@
 //! A carousel showing one or more slides per view, with native focus, discrete
 //! swiping, and logical navigation.
 
+use std::time::Duration;
+
 use gpui::{
     AnyElement, App, AppContext as _, Axis, Context, DragMoveEvent, ElementId, Empty, Entity,
     EntityId, EventEmitter, FocusHandle, InteractiveElement, IntoElement, KeyBinding, MouseButton,
     ParentElement, Pixels, Point, Render, RenderOnce, Role, SharedString,
-    StatefulInteractiveElement, StyleRefinement, Styled, Window, div, px,
+    StatefulInteractiveElement, StyleRefinement, Styled, Task, Window, div, px,
 };
 
 use crate::{
@@ -49,6 +51,8 @@ pub struct CarouselState {
     slide_focus: Vec<FocusHandle>,
     drag_origin: Point<Pixels>,
     drag_committed: bool,
+    hovered: bool,
+    autoplay: Option<Task<()>>,
 }
 
 impl CarouselState {
@@ -68,6 +72,8 @@ impl CarouselState {
             focus: cx.focus_handle(),
             drag_origin: Point::default(),
             drag_committed: false,
+            hovered: false,
+            autoplay: None,
         }
     }
 
@@ -199,6 +205,61 @@ impl CarouselState {
         };
         self.select(next, window, cx)
     }
+
+    /// Starts or stops automatic advancing. Each `interval` moves one slide
+    /// forward, wrapping from the last view to the first. Rotation pauses while
+    /// the pointer is over the carousel, focus is inside it, the window is
+    /// inactive, or the application asks for reduced motion. Keyboard, swipe and
+    /// [`CarouselControl`] navigation stop it, as does `None`. Render a visible
+    /// control that calls this method so people can stop or restart rotation.
+    pub fn set_autoplay(
+        &mut self,
+        interval: Option<Duration>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.autoplay = interval.map(|interval| {
+            cx.spawn_in(window, async move |state, cx| {
+                loop {
+                    cx.background_executor().timer(interval).await;
+                    if state
+                        .update_in(cx, |state, window, cx| state.autoplay_tick(window, cx))
+                        .is_err()
+                    {
+                        break;
+                    }
+                }
+            })
+        });
+        cx.notify();
+    }
+    pub fn is_autoplaying(&self) -> bool {
+        self.autoplay.is_some()
+    }
+    fn autoplay_tick(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.hovered
+            || !window.is_window_active()
+            || cx.reduce_motion()
+            || self.focus.contains_focused(window, cx)
+            || self.snap_count() < 2
+        {
+            return;
+        }
+        let Some(index) = self.selected else {
+            return;
+        };
+        let next = if index + 1 < self.snap_count() {
+            index + 1
+        } else {
+            0
+        };
+        self.select(next, window, cx);
+    }
+    fn stop_autoplay(&mut self, cx: &mut Context<Self>) {
+        if self.autoplay.take().is_some() {
+            cx.notify();
+        }
+    }
     fn swipe_at_pointer(
         &mut self,
         position: Point<Pixels>,
@@ -216,6 +277,7 @@ impl CarouselState {
             return;
         }
         self.drag_committed = true;
+        self.stop_autoplay(cx);
         let forward = match self.axis {
             Axis::Horizontal => self.direction.horizontal_forward(delta < px(0.)),
             Axis::Vertical => delta < px(0.),
@@ -225,6 +287,7 @@ impl CarouselState {
 
     fn key_advance(&mut self, forward: bool, window: &mut Window, cx: &mut Context<Self>) {
         if self.focus.is_focused(window) {
+            self.stop_autoplay(cx);
             self.advance(forward, window, cx);
         } else {
             cx.propagate();
@@ -235,6 +298,7 @@ impl CarouselState {
             cx.propagate();
             return;
         }
+        self.stop_autoplay(cx);
         if !self.labels.is_empty() {
             self.select(if last { self.last_start() } else { 0 }, window, cx);
         }
@@ -297,12 +361,16 @@ impl RenderOnce for Carousel {
         let first = self.state.clone();
         let last = self.state.clone();
         let previous = self.state.clone();
+        let hover = self.state.clone();
         let next = self.state;
         let base = self
             .base
             .role(Role::Region)
             .aria_label(self.label)
             .track_focus(&focus)
+            .on_hover(move |hovered, _, cx| {
+                hover.update(cx, |state, _| state.hovered = *hovered);
+            })
             .on_action(move |_: &SelectFirst, window, cx| {
                 first.update(cx, |state, cx| state.key_edge(false, window, cx));
             })
@@ -470,6 +538,7 @@ impl RenderOnce for CarouselControl {
             .disabled(!enabled)
             .on_click(move |_, window, cx| {
                 self.state.update(cx, |state, cx| {
+                    state.stop_autoplay(cx);
                     state.advance(self.forward, window, cx);
                 });
             })
@@ -746,5 +815,72 @@ mod tests {
             window.draw(cx).clear(cx);
         });
         assert_eq!(mounted(cx), ["B", "C", "D", "E"]);
+    }
+
+    #[gpui::test]
+    fn autoplay_wraps_pauses_for_hover_focus_and_motion_and_stops_on_navigation(
+        cx: &mut TestAppContext,
+    ) {
+        cx.update(crate::init);
+        let (root, cx) = cx.add_window_view(|window, cx| {
+            let view = cx.new(|cx| {
+                let state = cx
+                    .new(|cx| CarouselState::new(["A", "B", "C", "D", "E"], cx).slides_per_view(3));
+                let subscription = cx.observe(&state, |_, _, cx| cx.notify());
+                MultiHarness {
+                    state,
+                    actions: (0..5).map(|_| cx.focus_handle()).collect(),
+                    _subscription: subscription,
+                }
+            });
+            Root::new(view, window, cx)
+        });
+        let state = root
+            .read_with(cx, |root, _| root.view().clone())
+            .downcast::<MultiHarness>()
+            .unwrap()
+            .read_with(cx, |view, _| view.state.clone());
+        cx.update(|window, cx| {
+            window.activate_window();
+            window.draw(cx).clear(cx);
+            state.update(cx, |state, cx| {
+                state.set_autoplay(Some(Duration::from_secs(1)), window, cx)
+            });
+        });
+        let tick = |cx: &mut gpui::VisualTestContext| {
+            cx.executor().advance_clock(Duration::from_secs(1));
+            cx.run_until_parked();
+            cx.update(|window, cx| {
+                window.draw(cx).clear(cx);
+                state.read(cx).selected_index()
+            })
+        };
+        // The test pointer rests at the window origin, over the carousel, and
+        // the region reported that hover when it was drawn.
+        cx.update(|_, cx| assert!(state.read(cx).hovered));
+        cx.update(|_, cx| state.update(cx, |state, _| state.hovered = false));
+        assert_eq!(tick(cx), Some(1));
+        assert_eq!(tick(cx), Some(2));
+        assert_eq!(tick(cx), Some(0), "the last full view wraps to the first");
+        cx.update(|_, cx| state.update(cx, |state, _| state.hovered = true));
+        assert_eq!(tick(cx), Some(0), "hovering pauses rotation");
+        cx.update(|_, cx| state.update(cx, |state, _| state.hovered = false));
+        assert_eq!(tick(cx), Some(1));
+        cx.update(|_, cx| cx.set_reduce_motion(true));
+        assert_eq!(tick(cx), Some(1), "reduced motion pauses rotation");
+        cx.update(|_, cx| cx.set_reduce_motion(false));
+        cx.update(|window, cx| state.read(cx).focus.clone().focus(window, cx));
+        assert_eq!(tick(cx), Some(1), "focus inside pauses rotation");
+        cx.simulate_keystrokes("right");
+        cx.update(|_, cx| {
+            let state = state.read(cx);
+            assert_eq!(state.selected_index(), Some(2));
+            assert!(
+                !state.is_autoplaying(),
+                "keyboard navigation stops rotation"
+            );
+        });
+        cx.update(|window, cx| window.blur(cx));
+        assert_eq!(tick(cx), Some(2));
     }
 }
