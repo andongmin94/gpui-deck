@@ -1,0 +1,82 @@
+---
+title: Sidebar
+description: "Named grouped navigation, ordinary Buttons, current-page metadata, optional whole/group Collapsible state, and an optional icon rail."
+---
+
+[`sidebar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sidebar.rs) composes named
+navigation from ordinary Buttons and the fixed items and selection of a retained
+`TabsState`:
+
+```rust
+// Create and retain a state dedicated to this Sidebar, and observe its changes.
+let sections = cx.new(|cx| TabsState::new(items, cx));
+
+Sidebar::new("settings-sections", &sections, "Settings sections", palette);
+```
+
+The root exposes native Navigation semantics and the supplied label. Each entry
+is a Button named by its item's label and uses that item's stable
+`tab_focus_handle(index)`. Disabled items retain their disabled presentation and
+are skipped by ordinary Tab traversal. The selected entry sets
+`Button::current(true)`, providing native `AriaCurrent::Page`, independently of
+`Button::selected(...)` and its visual highlight. Entries keep Button roles;
+the navigation does not expose tab-selected metadata.
+
+| Input | Result |
+| --- | --- |
+| Tab / Shift-Tab | Move among enabled entries and surrounding controls without changing the selected section |
+| Enter / Space / click | Select the activated entry through `TabsState::select_value` |
+| Arrow keys | Do not change the selected section |
+
+The application owns content rendering and destination focus. Render only the
+selected section and give it an appropriate named Region; inactive sections
+must not leave controls or accessibility nodes mounted. Keep input entities and
+form values in the application so switching sections preserves them. Selection
+through `select_value` does not move focus; explicit navigation from another
+surface, such as Breadcrumb, must also choose a retained focus target.
+
+Use a fresh `TabsState` for Sidebar and keep it separate from any state used by
+TabList, Tab, or TabPanel. TabList installs automatic focus-selection
+subscriptions that remain with its state after it is unmounted. Reusing that
+state for Sidebar would make focus change selection and break the explicit
+activation contract. This restriction applies to switching between the two
+presentations as well as mounting them together. The example creates a separate
+Demo and state for each fixed appearance.
+
+The default Sidebar is a 10 rem vertical column. `Styled` can change its width,
+spacing, and presentation; the consumer places it beside the current content or
+stacks the two. Settings uses it inside the existing Sheet. At viewport widths
+below 640 px the Sidebar becomes full-width above the current Region. This only
+changes layout: it retains the same Buttons, selected item, keyboard behavior,
+and focus handles. Compact continues to use its own horizontal TabList and
+TabPanel composition. Breadcrumb's Session settings action explicitly selects
+Preferences and focuses its navigation entry in either appearance.
+
+Use `.group("Workspace", ["preferences", "help"])` for named groups with native
+headings. Values must name existing items and occur in at most one group. Items
+outside groups appear first. Grouping changes presentation order, while item IDs
+and focus handles retain their source indices.
+
+Retain and observe `CollapsibleState::new(cx).default_open(true)` to add
+`.collapsible(&sidebar_disclosure)` or
+`.collapsible_group("Session", ["schedule", "presets"], &session_disclosure)`.
+The existing Collapsible owns expanded/disabled metadata, keyboard activation,
+active-only content and focus restoration when closure removes a focused entry.
+The disclosure trigger stays mounted. Closing navigation preserves the selected
+page; the application continues to own its separate Region. The catalogue's
+Project sidebar demonstrates whole and group closure, including narrow layout.
+
+`.rail(&rail_state)` instead collapses the Sidebar to an icon rail, like shadcn's
+`collapsible="icon"`. An open state shows labels; a closed state narrows the
+navigation to 3.5 rem and keeps every entry mounted as an icon-only Button with
+the same accessible name, current-page metadata and focus handle, plus a GPUI
+hover tooltip naming it. Group headings and group disclosures are hidden in the
+rail while the named Groups remain. A CollapsibleTrigger after the entries,
+named `"<label> labels"`, toggles the state and exposes it as expanded/collapsed.
+`.icon(value, || element)` supplies a decorative icon per entry; others show
+their initial in a small frame. Prefer drawn shapes to symbol glyphs, which
+depend on installed fonts. A Sidebar uses either `.rail` or `.collapsible`, not
+both. Settings' Session sections Sidebar demonstrates the rail.
+
+The recipe adds no routing, navigation history or separate selection model.
+Settings uses the existing Sheet's scrolling body and modal focus containment.

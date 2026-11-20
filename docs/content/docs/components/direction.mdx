@@ -1,0 +1,20 @@
+---
+title: Direction
+description: "Scoped logical direction, nested overrides, and consistent horizontal keys/pointer geometry."
+---
+
+<ComponentPreview name="direction" height={360} />
+
+Wrap a subtree with `DirectionProvider::new(Direction::Rtl)` or `Direction::Ltr`.
+Descendant controls resolve the nearest direction while rendering. Nested
+providers restore the enclosing direction for following siblings, and a control's
+explicit `.direction(...)` overrides inheritance. `Direction::current(cx)` is
+available while constructing descendants inside the scope.
+
+Direction controls logical horizontal navigation for Tabs, RadioGroup,
+ToggleGroup, Slider, Carousel, Chart, Menubar and NavigationMenu. Slider also
+mirrors horizontal pointer coordinates. Up/Down and logical Home/End retain
+their normal meaning. Supply matching application layout with
+`direction.row(div())` or `direction.row(TabList::new(...))`; the provider does
+not rewrite arbitrary GPUI flex containers. It aligns text to logical start,
+while GPUI still owns shaping, bidirectional editing and platform IME behavior.

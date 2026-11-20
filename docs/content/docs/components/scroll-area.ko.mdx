@@ -1,0 +1,53 @@
+---
+title: Scroll Area
+description: "네이티브 뷰포트, 기존 오버레이 스크롤바, 유지되는 오프셋, 활성화된 축에서의 하위 요소 노출을 제공합니다."
+---
+
+<ComponentPreview name="scroll-area" height={360} />
+
+뷰에 GPUI ScrollHandle을 유지하고, 스크롤 축에서 뷰포트에 경계가 있는 크기를
+지정합니다. 같은 핸들이 네이티브 휠/트랙패드 스크롤과 기존 오버레이 스크롤바를
+함께 구동합니다.
+
+```rust
+// Store once in the view, not on each render.
+let scroll = gpui::ScrollHandle::new();
+
+ScrollArea::new("session-list", &scroll)
+    .accessibility_label("Sessions")
+    .h(px(240.))
+    .w_full()
+    .content_styles(|style| style.flex().flex_col())
+    .children(rows)
+```
+
+기본 축은 세로입니다. 다른 콘텐츠에는 `.axis(ScrollbarAxis::Horizontal)` 또는
+`Both`를 사용합니다. 넘치는 콘텐츠에는 최소/고정 크기를 지정하거나, 필요하면
+줄어들지 않게 합니다. 일반 GPUI 스타일은 바깥 프레임의 크기와 장식을 지정합니다.
+뷰포트 자식의 레이아웃, 간격, 패딩에는 `content_styles`를 사용합니다. 뷰포트와
+오버레이 스크롤바는 GPUI의 일반 렌더링을 사용하므로 조상의 가시성과 불투명도가
+둘 다에 적용됩니다.
+
+`scrollbar_mode`는 기존 Scrolling, Hover, Always 모드를 받습니다.
+`scrollbar_styles`는 기존의 타입이 지정된 트랙/썸 스타일을 사용합니다. 막대는
+콘텐츠 위에 겹쳐지며 여백을 예약하지 않으므로, 콘텐츠가 막대와 겹치지 않아야 하면
+애플리케이션에서 패딩을 남겨 둡니다. 예를 들어 계획 표는 크기 조절 가능한 뷰포트에
+아래/오른쪽 패딩과 항상 보이는 스크롤바를 사용합니다.
+
+공개 프레임은 네이티브 ScrollView 역할을 노출하고 접근 가능한 레이블을 받습니다.
+독립적인 포커스 스톱이나 키 바인딩은 추가하지 않습니다. 입력의 화살표 키는 계속
+텍스트를 편집하고, Calendar의 화살표 키는 계속 날짜를 탐색합니다. 일반 정적
+콘텐츠는 포인터나 유지되는 핸들로 스크롤할 수 있으며, 별도의 키보드 스크롤
+컨트롤은 이 계약에 포함되지 않습니다.
+
+하위 요소는 prepaint 단계에서 GPUI의 네이티브 `request_autoscroll`을 사용해
+노출을 요청할 수 있습니다. Input, Textarea, Calendar, 그리고 새로 포커스된 Button
+컨트롤은 필요할 때 요청을 보냅니다.
+ScrollArea는 활성화된 축의 오프셋을 범위 안으로 고정하고, 뷰포트를 움직여야 할 때
+새 프레임을 요청합니다. 중첩된 영역에서 조정된 요청은 조상으로 계속 전달되며,
+형제 영역의 대기 중인 요청은 엉뚱한 뷰포트를 스크롤하는 데 쓰이지 않고 보존됩니다.
+비활성화된 축의 오프셋은 지워집니다.
+
+ScrollArea는 GPUI의 일반 스크롤과 유지되는 Scrollbar 포인터 구현을 재사용합니다.
+자식을 가상화하거나, 탄성 스크롤을 추가하거나, 스트리밍/트랜스크립트 콘텐츠를
+고정하지는 않습니다.

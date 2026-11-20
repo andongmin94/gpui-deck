@@ -1,0 +1,27 @@
+---
+title: Layout and data
+description: "Table, ScrollArea, and Resizable provide reusable structure and native behavior."
+---
+
+Table, ScrollArea, and Resizable provide reusable structure and native behavior. Applications
+own their data, layout dimensions, colors, typography, and cell contents. The
+[two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) combines them in its
+Schedule tab and uses ScrollArea for the surrounding form.
+
+## A table inside a scroll area
+
+Set the table's width or minimum width explicitly when columns should exceed
+the viewport. The native example uses three fixed columns totaling 490 pixels
+inside a ScrollArea supporting both axes. Its surrounding settings form scrolls vertically.
+The nested table can move horizontally without altering the form's date or
+scrolling unrelated siblings. Date selection and name/preset edits update the
+table from the same retained state used by the other controls.
+
+## Verification boundary
+
+Focused tests cover column alignment, table metadata, interactive cell children,
+native scrolling and reveal, divider dragging/keyboard behavior, and the
+DatePicker-to-resizable-plan example flow. Existing
+CI also builds the native example on Linux, Windows, and macOS. Automated GPUI
+event/layout checks do not establish native visual, screen-reader, mixed-DPI, or
+performance results.

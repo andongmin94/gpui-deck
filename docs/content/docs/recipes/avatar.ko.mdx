@@ -1,0 +1,42 @@
+---
+title: Avatar
+description: "GPUI의 이미지 로더와 캐시를 사용하며 명시적인 대체 텍스트를 갖는 이름 있는 원형 이미지입니다. 이름 있는 \"+N\" 오버플로를 갖는 겹침형 AvatarGroup도 포함합니다."
+---
+
+[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs)는 명시적인 대체
+텍스트와 애플리케이션이 전달한 폴백 텍스트를 갖는 원형 이미지를 표시합니다.
+
+```rust
+Avatar::new("preset-avatar", "Balanced preset artwork", "BL", palette)
+    .image(preset_artwork)
+    .size(rems(2.5))
+```
+
+`image`는 GPUI의 기존 `ImageSource` 변환을 받습니다. 생략하면 즉시 폴백이 표시되고,
+이미지 오류가 나도 폴백이 표시됩니다. 이미지가 대기 중일 때는 폴백을 표시하기 전에 GPUI의
+네이티브 200 ms 로딩 지연이 적용됩니다. 디코딩, 로딩, 캐싱, 다시 그리기는 GPUI가
+소유합니다. 레시피는 별도의 로딩 작업, 타이머, 캐시, 재시도 정책을 추가하지 않습니다.
+
+루트는 모든 상태에서 네이티브 Image 역할 하나와 지정된 접근 가능한 이름을 제공합니다.
+이미지와 폴백은 별도의 이름이나 포커스 스톱을 추가하지 않습니다. 화면에 보이는 이니셜에
+의존하지 말고 이미지의 의미를 설명하는 이름을 지정하세요. 폴백 텍스트와 현지화는
+애플리케이션이 선택하며, 이 레시피는 이름에서 이니셜을 만들어 내지 않습니다. 기본
+프레임은 2.5 rem 정사각형이며 팔레트 색상과 원형 잘라내기를 사용합니다. `Styled`로 크기와
+색상을 바꿀 수 있으며, 원형을 유지하려면 너비와 높이를 같게 두세요. 이미지는 GPUI의
+cover fit을 사용합니다. 상태 배지, 아바타 그룹, 상호작용 액션은 애플리케이션 조합으로
+남습니다.
+
+예제는 Balanced 프리셋에 [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)를
+포함합니다. 다른 프리셋은 `PR`, `HQ` 같은 명시적인 텍스트를, 선택이 비어 있으면 `?`를
+사용하며, 접근 가능한 이름은 현재 프리셋 레이블에서 만듭니다. 소스는 유지되는 Combobox
+상태로부터 기존 HoverCard를 렌더링하는 동안 선택되며, 두 번째 선택 프리셋 값은 없습니다.
+이 번들 아트워크는 네트워크 요청이 필요하지 않습니다. 레시피를 복사할 때는
+애플리케이션이 자신의 에셋을 제공합니다.
+
+
+`AvatarGroup::new(id, "Team members", palette)`는 shadcn의 avatar group처럼 `.avatar(...)`
+항목을 쌓습니다. 보이는 각 아바타는 표면 색상의 링 안에 놓이며 앞의 아바타와 겹칩니다.
+`.max_visible(n)`은 처음 `n`개를 표시하고 "+N" 칩을 추가합니다. 이 칩의 Label 이름은
+숨겨진 사람들을 나열하므로("2 more: Cy Lee, Di Cho") 보조 기술 사용자에게서 누구도
+빠지지 않습니다. 프레임은 포커스 스톱이 없는 이름 있는 Group입니다. 프리셋 미리 보기는
+다섯 명 중 세 명을 표시합니다.

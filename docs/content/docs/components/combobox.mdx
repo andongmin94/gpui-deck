@@ -1,0 +1,64 @@
+---
+title: Combobox
+description: "Editable single/multiple selection, grouped search results, replaceable options, keyboard/pointer commit, and draft cancellation."
+---
+
+<ComponentPreview name="combobox" height={360} />
+
+Construct `ComboboxState::new(items, window, cx)` with ordered, unique
+`SearchItem::new(value, label)` entries. `.keywords(...)` adds aliases,
+`.disabled(true)` marks an unavailable choice, and `.group(label)` assigns a
+named result group. Keep each group's items contiguous in the source order.
+The shared Command engine owns native query editing, filtering, highlight and
+scrolling; Combobox owns committed selection and its popup lifecycle.
+
+Single selection is the default. `.multiple(true)` allows several committed
+values. `set_selected_values([values...], window, cx)` initializes or replaces
+selection without a user event; an empty iterator clears it. Unknown/disabled
+values and more than one distinct value in single mode are rejected. Read
+`selected_indices()`, `is_selected(index)`, `selected_items(cx)` or
+`selected_values(cx)` for application presentation. User activation emits
+`ComboboxEvent::Change(values)` in item order only when the selection changes.
+
+Render `Combobox::new(id, &state).input(|input| ...).content(surface)`. The input
+builder owns its frame, name, placeholder and `InputStyles`. A named
+`ComboboxList` contains `ComboboxOption` children in `visible_indices(cx)` order,
+optionally inside `ComboboxGroup::new(id, &state, label)` wrappers. Obtain group
+names with `visible_groups(cx)` and matching item indices with
+`visible_group_indices(Some(label), cx)`; `None` gives ungrouped items. Each group
+supplies a named native Group and Heading; `.heading(...)` styles its heading.
+Empty groups disappear, and headings do not enter keyboard navigation. Give the
+list a bounded height and keep empty text outside it.
+
+| Interaction | Result |
+| --- | --- |
+| Pointer or arrow opens a closed input | Shows all options, highlighting the first selected or enabled choice |
+| Typing | Filters suggestions without changing committed values |
+| Up / Down | Moves through enabled results, across groups |
+| Enter / result click, single mode | Commits one choice, closes suggestions and restores its label |
+| Enter / result click, multiple mode | Toggles that choice while keeping the query and suggestions open |
+| Escape, Tab, blur or outside press | Ends the draft; single mode restores its label, multiple mode clears the query |
+
+Only the query is the control's Tab stop. Render selected chips with ordinary
+application Buttons and call `remove_value(value, window, cx)` or
+`clear(window, cx)` for user removal. These operations emit the changed selection,
+return focus to the query and reject disabled controls or active IME composition.
+`set_disabled` closes the popup and blocks ordinary entry. `set_query` starts a
+focused draft. Marked text takes precedence over suggestion navigation/commit;
+Escape unmarks composition first. Headless checks do not establish desktop IME
+behavior.
+
+`set_items(items, window, cx)` replaces source items without a Change event.
+Current selection follows stable values; missing or newly disabled values are
+removed. Active query text, focus and native composition are retained. Closed
+single selection refreshes its display label. Applications own fetching, loading,
+request ordering and errors; no network controller is installed.
+
+Native semantics include the ComboBox query, expanded state, named groups,
+committed selected values and a multiselectable listbox in multiple mode. The
+pinned GPUI API cannot express an input-to-sibling-list active-descendant
+relationship. Free-form committed values are not supplied. Results use Command's
+ranked in-order matching.
+The settings example retains a single preset inside Dialog. The catalogue's
+Selection view demonstrates grouped multiple targets, chip removal and a local
+source update without a second input or selection engine.

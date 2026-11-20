@@ -1,0 +1,20 @@
+---
+title: Direction
+description: "범위가 지정된 논리적 방향, 중첩된 재정의, 일관된 가로 키/포인터 기하."
+---
+
+<ComponentPreview name="direction" height={360} />
+
+하위 트리를 `DirectionProvider::new(Direction::Rtl)` 또는 `Direction::Ltr`로 감쌉니다.
+하위 컨트롤은 렌더링할 때 가장 가까운 방향을 따릅니다. 중첩된 provider는 뒤따르는
+형제 요소에 대해 바깥 방향을 복원하며, 컨트롤에 명시한 `.direction(...)`은 상속을
+재정의합니다. 범위 안에서 하위 요소를 구성하는 동안 `Direction::current(cx)`를 쓸 수
+있습니다.
+
+Direction은 Tabs, RadioGroup, ToggleGroup, Slider, Carousel, Chart, Menubar,
+NavigationMenu의 논리적 가로 탐색을 제어합니다. Slider는 가로 포인터 좌표도
+반전합니다. Up/Down과 논리적 Home/End는 원래 의미를 유지합니다. 이에 맞는
+애플리케이션 레이아웃은 `direction.row(div())` 또는 `direction.row(TabList::new(...))`로
+제공합니다. provider가 임의의 GPUI flex 컨테이너를 다시 쓰지는 않습니다. 텍스트는
+논리적 시작 쪽으로 정렬하지만, 셰이핑, 양방향 편집, 플랫폼 IME 동작은 여전히 GPUI가
+담당합니다.

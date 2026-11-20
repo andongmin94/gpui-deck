@@ -1,0 +1,61 @@
+---
+title: Toast
+description: "유지되는 수명, 호버/포커스/창 상태에 따른 일시 정지, 안전한 닫기, 표시 제한이 있는 쌓이는 Toaster를 제공합니다."
+---
+
+<ComponentPreview name="toast" height={360} />
+
+`ToastState::new(window, cx)`는 5초의 알림 수명을 소유합니다. 필요하면 마운트하기
+전에 0이 아닌 `.with_duration(...)`을 설정합니다. 대응하는 `Toast::new(id, &state)`는
+닫혀 있는 동안에도 뷰에 유지합니다. 접근 가능한 메시지, 본문, 일반 액션 Button을
+설정하며, `ToastClose`가 닫기 액션을 제공합니다. 단일 알림 슬롯에는 ToastState
+하나를, 쌓이는 알림에는 ToasterState를 사용합니다.
+
+`show`는 포커스를 가져가지 않고 메시지를 시작하거나 교체합니다. 마운트된 카운트다운은
+호버, 내부 포커스, 창 비활성화 중에 일시 정지했다가 남은 시간부터 다시 시작합니다.
+`dismiss`, Escape, 닫기 버튼은 명시적인 닫기이며, 시간 초과는 `ToastEvent`로 따로
+보고됩니다. 명시적인 닫기로 포커스된 알림이 제거되면 기록해 둔 이전 포커스가
+복원됩니다. 포커스가 없는 상태의 닫기는 사용자가 쓰고 있는 컨트롤을 그대로 둡니다.
+호스트 전체를 제거하면 기록된 포커스를 복원하지 않고 닫힙니다. 포커스된 콘텐츠를
+제거할 때는 애플리케이션이 남아 있는 컨트롤로 포커스를 옮겨야 합니다. 네이티브
+라이브 메타데이터는 기본적으로 polite이고 `.urgent(true)`이면 assertive입니다.
+실제 스크린리더 전달은 여전히 플랫폼마다 확인해야 합니다.
+
+## Toaster
+
+`ToasterState<T>`는 애플리케이션에 속하는 값 `T`를 가진 알림 스택을 유지하며,
+각 알림은 자체 ToastState를 바탕으로 합니다.
+
+```rust
+let toasts = cx.new(|_| ToasterState::<SharedString>::new());
+
+// Anywhere with a window:
+let key = toasts.update(cx, |toasts, cx| toasts.push("Uploading…".into(), window, cx));
+// Later, update the same notification in place and restart its lifetime.
+toasts.update(cx, |toasts, cx| toasts.replace(key, "Upload complete".into(), window, cx));
+
+Toaster::new("notifications", &toasts, |key, message, state| {
+    Toast::new(key, state)
+        .accessibility_label(message.clone())
+        .child(message.clone())
+        .child(ToastClose::new((ElementId::from(key), "close"), state))
+})
+.absolute()
+.bottom_4()
+.right_4()
+.gap_2()
+```
+
+`push`는 포커스를 가져가지 않고 알림을 표시하며 `ToastKey`를 반환합니다. 이 키는
+ElementId로도 변환됩니다. 가장 최근의 `visible_limit`개 항목(기본값 3개)만 최신
+순으로 마운트됩니다. 오래된 항목은 시간을 소비하지 않고 대기하다가 새 항목이 닫히면
+나타납니다. `with_duration`은 이후에 추가되는 알림의 수명을 설정합니다. 마운트된
+모든 토스트는 위의 일시 정지, Escape, 포커스 복원 계약을 유지하며, 어떤 이유로든
+닫히면 스택에서 제거됩니다. `replace`는 아직 열려 있는 항목을 갱신하고 수명을 다시
+시작하며, 이미 닫혔다면 false를 반환합니다. `dismiss(key)`와 `dismiss_all`은
+항목을 닫고, `len`, `is_empty`, `visible`은 스택을 노출합니다.
+
+`focus_latest`는 가장 최근 알림으로 포커스를 옮깁니다. 알림을 표시할 때 호출하지
+말고 Alt+T 같은 애플리케이션 단축키에 바인딩합니다. Toaster는 이름이 있는
+Group(기본값 `Notifications`)을 렌더링하며, 위치, 간격, 모양은 애플리케이션에
+맡깁니다.

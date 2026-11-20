@@ -1,0 +1,56 @@
+---
+title: Code Block
+description: "Read-only multiline code, an exact full-text Copy action, and bounded two-axis scrolling with keyboard access."
+---
+
+[`code_block.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/code_block.rs) composes read-only
+multiline code with the existing Button, GPUI clipboard, and ScrollArea:
+
+```rust
+CodeBlock::new(
+    "session-configuration",
+    configuration_json,
+    "Session configuration",
+    &configuration_scroll,
+    &configuration_focus,
+    palette,
+);
+```
+
+Retain the `ScrollHandle` and `FocusHandle` in the application. The supplied label
+is shown beside the Copy button, whose accessible name is `Copy {label}`.
+The code exposes native Code semantics and its complete original text as its
+accessible name. The viewport is a keyboard focus target; Copy remains an
+ordinary Button with its existing pointer, Enter, Space, and focus behavior.
+The recipe adds no text-input node, editor state, or selection model.
+
+The default frame is 12 rem high and fills the available width. Its header stays
+outside the bounded code viewport. `Styled` customizes the frame; keep a bounded
+height and width so the ScrollArea can contain long bodies and lines. Code uses
+the palette's code font and foreground. Native GPUI text layout displays the
+supplied lines without soft wrapping; horizontal and vertical overflow remain
+inside the same ScrollArea. The recipe neither parses code nor adds syntax
+highlighting, line numbers, or virtualized rendering.
+
+Copy sends the entire supplied string to `App::write_to_clipboard`, including
+offscreen content and an empty string. It does not trim, normalize, or replace
+spaces, line endings, or a trailing newline. LF, CRLF, and Unicode content are
+preserved in the copied payload. The visible text is shaped by GPUI; the recipe
+does not define an additional tab-stop policy or visual CRLF normalization.
+There is no separate copied-state timer or automatic announcement.
+
+When the code viewport itself has focus, unmodified arrow keys scroll on their
+respective axes, Page Up/Down scroll vertically, Home returns to the top-left,
+and End moves to the bottom-right. Offsets stay inside the content's scroll
+range. Tab and Shift-Tab retain normal traversal, Escape remains available to
+the enclosing modal, and modified keys are left to the application. Copy-button
+key events keep the Button's contract. Wheel gestures over code stay within
+that viewport even at its edges; scroll outside it to move the parent Sheet.
+
+Both appearances use CodeBlock in Help's State ownership panel, before the
+source-path identifier. The consumer serializes current retained settings as
+JSON with the existing `serde_json` dependency. This is a display and copy
+snapshot; copying does not parse or apply configuration. The example keeps its
+consumer builder separate from the main render function and reuses the existing
+Sheet, focus containment, and parent scrolling. Typography continues to handle
+prose and short inline code; CodeBlock owns the bounded multiline presentation.

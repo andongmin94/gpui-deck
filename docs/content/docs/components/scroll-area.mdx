@@ -1,0 +1,53 @@
+---
+title: Scroll Area
+description: "Native viewport, existing overlay scrollbar, retained offsets, and descendant reveal on enabled axes."
+---
+
+<ComponentPreview name="scroll-area" height={360} />
+
+Retain a GPUI ScrollHandle in the view and give the viewport a bounded size on
+its scrolling axes. The same handle drives native wheel/trackpad scrolling and
+the existing overlay scrollbar:
+
+```rust
+// Store once in the view, not on each render.
+let scroll = gpui::ScrollHandle::new();
+
+ScrollArea::new("session-list", &scroll)
+    .accessibility_label("Sessions")
+    .h(px(240.))
+    .w_full()
+    .content_styles(|style| style.flex().flex_col())
+    .children(rows)
+```
+
+The default axis is vertical. Use `.axis(ScrollbarAxis::Horizontal)` or `Both`
+for other content. Give overflowing content a minimum/fixed extent or prevent
+it from shrinking when appropriate. Ordinary GPUI styles size and decorate the
+outer frame. Use `content_styles` for the viewport's child layout, spacing, and
+padding. The viewport and overlay scrollbar use GPUI's normal rendering so
+ancestor visibility and opacity apply to both.
+
+`scrollbar_mode` accepts the existing Scrolling, Hover, or Always modes.
+`scrollbar_styles` uses the existing typed track/thumb styles. The bar overlays
+content and reserves no gutter, so leave application padding if its content
+should not overlap the bar. For example, the plan table uses bottom/right
+padding and always-visible scrollbars for its resizable viewport.
+
+The public frame exposes the native ScrollView role and accepts an accessible label.
+It adds no independent focus stop or key bindings: input arrows keep editing
+text, and Calendar arrows keep navigating dates. Plain static content can be
+scrolled with the pointer or the retained handle; a separate keyboard scrolling
+control is not part of this contract.
+
+Descendants can use GPUI's native `request_autoscroll` during prepaint to request
+reveal. Input, Textarea, Calendar, and newly focused Button controls issue requests
+when needed.
+ScrollArea clamps the offset on its enabled axes and requests a new frame when
+the viewport needs to move. A nested area's adjusted request continues to its
+ancestors, and a sibling's pending request is preserved rather than used to
+scroll the wrong viewport. Offsets on disabled axes are cleared.
+
+ScrollArea reuses GPUI's ordinary scrolling and the retained Scrollbar pointer
+implementation. It does not virtualize children, add elastic scrolling, or
+anchor streaming/transcript content.

@@ -1,0 +1,34 @@
+---
+title: Kbd
+description: "Static named keycaps and +-joined key combinations."
+---
+
+[`kbd.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/kbd.rs) supplies static individual
+keycaps and combinations of keys. Each Kbd uses its visible text as the default
+native Label name. Give symbolic keys a readable name explicitly:
+
+```rust
+Kbd::new("guide-up-key", "↑", palette)
+    .accessibility_label("Arrow up");
+
+KbdGroup::new("context-menu-shortcut", palette)
+    .key(Kbd::new("context-menu-shift", "Shift", palette))
+    .key(Kbd::new("context-menu-f10", "F10", palette));
+```
+
+`KbdGroup` preserves the supplied order and inserts `+` between keycaps. Its
+native Group has no repeated name; each key retains its own readable Label.
+Use a group for keys pressed together, such as Shift+Tab. Arrange independent
+Kbd elements in ordinary application layout when showing alternatives, such as
+Enter or Space, or the arrow keys.
+
+Both types implement `Styled`. The palette supplies the keycap's field color,
+border, corner radius, foreground, and font size, plus muted text for the group
+separator. Applications own key labels and any platform-specific glyph choice.
+The recipe has no focus stop, action, keybinding registration, or shortcut
+dispatch; it displays the bindings already provided by the associated control.
+
+The example's Help → Keyboard guide shows Tab, Shift+Tab, arrows, Enter/Space,
+and Escape alongside descriptions of their existing behavior. The summary
+displays Shift+F10 for its existing ContextMenu. Replacing plain hint text with
+these keycaps does not add keyboard commands or another focus target.

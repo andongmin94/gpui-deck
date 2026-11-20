@@ -1,0 +1,20 @@
+---
+title: Drawer
+description: "Dialog lifecycle plus bottom drag-to-dismiss through a dedicated handle."
+---
+
+<ComponentPreview name="drawer" height={360} />
+
+`DrawerState` composes one `DialogState`. Construct it with `new(window, cx)` or
+adopt a configured Dialog through `with_dialog`; mount that state in one Drawer.
+`open`/`close`, initial focus, containment, Escape, backdrop dismissal and return
+focus remain owned by Dialog. The state forwards `DialogEvent` and exposes
+`dialog()` for ordinary DialogClose controls.
+
+`Drawer::new(id, &state)` places a viewport-limited modal surface at the bottom.
+Supply its `.handle(...)`, optional `.backdrop(...)` and styled body/actions.
+Only a press on the dedicated handle starts a downward drag; scrolling or editing
+in the body does not. Releasing after the displacement threshold closes through
+Dialog; a shorter or cancelled drag returns the surface to its resting position.
+Window deactivation cancels an active drag. This contract has one resting point,
+with no inertial physics or snap-point configuration.

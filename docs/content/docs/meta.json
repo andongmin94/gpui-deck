@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "architecture",
+    "---Components---",
+    "...components",
+    "---Recipes---",
+    "...recipes",
+    "---Guides---",
+    "guides",
+    "---Project---",
+    "coverage",
+    "contributing"
+  ]
+}

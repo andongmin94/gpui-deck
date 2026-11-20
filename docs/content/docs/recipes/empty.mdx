@@ -1,0 +1,21 @@
+---
+title: Empty
+description: "Named static group with a heading, description, optional media and supplied actions."
+---
+
+[`empty.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/empty.rs) exports `EmptyState` to
+avoid confusion with GPUI's `Empty` element. It supplies a named group, level-two
+heading, description, and optional media/action slots.
+
+```rust
+EmptyState::new("empty-results", "No results", "Try another search.", palette)
+    .media(Badge::new("result-count", "0 results", palette))
+    .action(clear_search_button)
+```
+
+The recipe does not own search, loading, notification, or focus state. Supplied
+media owns its accessible description when it conveys information. The example
+places this recipe beside `CommandList`, inside `Command`, so its action is an
+ordinary Button outside the listbox. Clear search calls `CommandState::set_query`
+and returns focus to the existing query input. The dialog remains open and no
+command is dispatched. `Styled` can override the outer frame.

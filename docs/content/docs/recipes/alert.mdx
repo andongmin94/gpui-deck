@@ -1,0 +1,31 @@
+---
+title: Alert
+description: "Inline title and description, with separate destructive styling and explicit urgency."
+---
+
+[`alert.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/alert.rs) presents an inline title and
+description. Ordinary content uses the native `Note` role; `.urgent(true)` selects
+the native `Alert` role. `.destructive(true)` changes colors independently of that
+urgency decision.
+
+```rust
+Alert::new(
+    "session-name-alert",
+    "Session name is missing",
+    "Open Edit session and enter a name or use the default name.",
+    palette,
+)
+.destructive(true)
+.urgent(true)
+```
+
+The Schedule panel uses the default informational form. Closing settings with a
+missing name shows the urgent form on the summary. Reopening settings removes it
+while Field supplies the input's validation details, avoiding two visible copies
+of the same error. Once the name is restored, the summary warning is absent.
+
+Alert does not move focus, open a modal, own dismissal state, or schedule repeated
+announcements. The native accessibility adapter determines how its role is
+presented; exposing that role is not evidence of native screen-reader delivery.
+Use AlertDialog for a modal decision that requires explicit confirmation. The
+current inline recipe has no action or media slot; `Styled` controls its frame.

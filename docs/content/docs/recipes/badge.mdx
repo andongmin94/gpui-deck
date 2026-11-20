@@ -1,0 +1,17 @@
+---
+title: Badge
+description: "Static label with secondary and accent appearances."
+---
+
+[`badge.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/badge.rs) is a static named label.
+The default appearance is secondary; `.accent(true)` uses the palette's accent
+colors. The example displays actual cursor and toolbar settings with these two
+appearances.
+
+```rust
+Badge::new("cursor-status", "Cursor visible", palette).accent(true)
+```
+
+Badge adds no Tab stop, button action, pressed state, or live announcement. Its
+text must explain the state independently of color. Interactive chips should use
+an existing Button or Toggle with application styling.

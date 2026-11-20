@@ -1,0 +1,22 @@
+---
+title: Progress
+description: "제어되는 백분율 또는 불확정 진행 상태, 접근 가능한 이름과 숫자 범위를 제공합니다."
+---
+
+<ComponentPreview name="progress" height={360} />
+
+`Progress::new(id).value(percentage).accessibility_label(...)`는 이름이 있고
+상호작용하지 않는 ProgressIndicator를 0부터 100까지의 숫자 범위로 제공합니다.
+범위를 벗어난 유한한 값은 범위 안으로 고정되고, 유한하지 않은 값은 구성 오류입니다.
+기본값은 0퍼센트의 확정 진행 상태입니다. 진행량을 알 수 없을 때는
+`.indeterminate(true)`를 사용합니다. 이 경우 현재 숫자 값을 생략합니다.
+
+시각적인 트랙과 채움은 일반 GPUI 자식으로 제공합니다. 레이블과 불확정 진행 상태의
+애니메이션도 애플리케이션이 소유합니다. Progress는 포커스 핸들이나 Tab 스톱을
+추가하지 않습니다. 예제는 Slider를 Progress에 연결해, 애플리케이션의 유지되는
+숫자 상태에 따라 제어되는 채움이 갱신되는 모습을 보여 줍니다.
+
+복사해서 쓸 수 있는 [Spinner 레시피](../recipes/spinner.mdx)는 같은 불확정
+Progress를 GPUI 애니메이션과 조합합니다. 예제의 Unknown progress 토글은 숫자
+막대를 Spinner와 장식용 Skeleton으로 바꾸며, 다시 전환하면 유지된 Slider 값을
+사용합니다. Reset preview는 확정 진행 상태를 40%로 명시적으로 복원합니다.

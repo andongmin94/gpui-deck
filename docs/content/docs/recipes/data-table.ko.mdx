@@ -1,0 +1,85 @@
+---
+title: Data Table
+description: "텍스트 필터링/정렬, 페이지 나누기, 페이지/행 체크박스 선택, 열 표시 여부, 안정적인 ID 기반 행 액션을 제공합니다."
+---
+
+[`data_table.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/data_table.rs)는 동작하는
+클라이언트 측 테이블 조합을 제공합니다. 기존 네이티브 Input/Field, Table, ScrollArea,
+Checkbox, DropdownMenu, Button과 함께 InputGroup, EmptyState, Pagination 레시피를
+사용합니다. 열과 변경되지 않는 행은 소비하는 애플리케이션에 속합니다.
+
+```rust
+let state = cx.new(|cx| {
+    DataTableState::new(
+        [
+            DataTableColumn::new("Preset", px(180.)),
+            DataTableColumn::new("Description", px(280.)),
+            DataTableColumn::new("Bitrate", px(110.)).align_end(),
+            DataTableColumn::new("Updated", px(130.)),
+        ],
+        rows, // DataTableRow::new(stable_id, [cells…]).disabled(false)
+        2,    // Rows per page; must be positive.
+        window,
+        cx,
+    )
+});
+
+DataTable::new("preset-catalogue", &state, palette)
+    .accessibility_label("Recording presets")
+    .action_label("Use preset")
+    .selected_value(current_preset)
+    .on_action(move |id, window, cx| {
+        preset.update(cx, |state, cx| {
+            state.set_selected_values([id.as_ref()], window, cx);
+        });
+    })
+```
+
+상태 엔티티는 애플리케이션에 유지하고, 이를 관찰해 부모를 다시 그리세요. two-style 예제처럼
+`query_input()`에 애플리케이션의 `InputEditorStyle`을 적용합니다. 각 행은 고유하고 안정적인
+ID와 열마다 하나의 `DataTableCell`을 갖습니다. `DataTableCell::text`(또는 일반 문자열)는
+대소문자를 구분하지 않고 정렬됩니다. `DataTableCell::number(display, value)`와
+`DataTableCell::date(display, date)`는 `$1,250.00`이나 `Nov 2, 2026` 같은 서식화된 텍스트를
+표시하지만 값으로 정렬됩니다. `align_end`는 금액처럼 열의 제목과 값을 오른쪽으로
+정렬합니다. 초기 표시 순서는 전달된 행 순서입니다. 헤더 Button은 한 열을 오름차순과
+내림차순 사이에서 전환하며, 같은 키는 원래 순서를 유지합니다.
+
+쿼리는 네이티브 입력이 소유합니다. 공백으로 구분된 모든 검색어가 대소문자 구분 없이 셀
+텍스트를 합친 내용에 나타나야 합니다. 일치/정렬 인덱스는 쿼리나 정렬이 바뀔 때 계산됩니다.
+두 변경 모두 첫 페이지로 돌아가며, 포커스를 옮기는 것으로는 초기화되지 않습니다.
+`visible_rows()`, `filtered_count()`, `page_index()`, `page_count()`가 현재 뷰를
+노출합니다. `set_page`는 사용 가능한 범위로 값을 제한하며, 페이지/필터/정렬이 바뀌면 행
+뷰포트가 세로 시작 위치로 돌아갑니다.
+
+예제는 Combobox가 사용하는 것과 같은 프리셋 정의에서 네 개의 행을 만들며, 끝 정렬된 숫자
+비트레이트와 서식화된 업데이트 날짜를 포함합니다. `.selected_value`는 렌더링마다 그
+Combobox의 현재 값을 전달하며, 테이블은 두 번째 선택 값을 보관하지 않습니다. 행 액션은
+필터링, 정렬, 페이지 이동 뒤에도 안정적인 ID를 애플리케이션에 전달합니다. 현재 행과 사용할
+수 없는 행의 액션 Button은 비활성화됩니다. 선택된 값의 행이 필터로 제외되거나 다른 페이지에
+있어도 그 값은 애플리케이션에 남습니다.
+
+체크박스 선택은 현재 프리셋과 독립적입니다. 헤더 체크박스는 표시된 페이지에서 활성화된
+행만 선택하며, 일부만 선택되면 혼합 상태를 표시합니다. 선택된 안정적인 ID는 필터링, 정렬,
+페이지 이동, 마운트 해제 뒤에도 유지되며, 사용할 수 없는 행은 선택할 수 없습니다.
+`is_row_selected`와 `filtered_selected_count`가 선택을 노출합니다. 푸터는 다른 페이지를
+포함해 현재 필터 안에서 선택된 행을 셉니다. 애플리케이션 행 액션은 이 체크박스를 바꾸지
+않습니다.
+
+Columns는 네이티브 체크 메뉴를 엽니다. 모든 데이터 열을 포함해 어떤 열이든 전환할 수 있으며,
+선택 열과 액션 열은 계속 마운트됩니다. 열을 숨겨도 필터링, 정렬, 선택, 페이지 나누기는
+유지되며, 필터링은 여전히 그 열의 표시 텍스트를 검색합니다. `is_column_visible`이 각
+소스 열의 표시 여부를 노출합니다.
+
+결과가 비면 행 뷰포트가 EmptyState와 Clear filter로 바뀝니다. 지우면 행 액션을 적용하지
+않고 행과 쿼리 포커스가 복원됩니다. 결과가 있을 때 포커스는 쿼리 → Columns → 페이지
+체크박스 → 보이는 정렬 Button → 활성화된 행 체크박스/액션 → 활성화된 페이지 Button 순서를
+따릅니다. 가로와 세로 ScrollArea 스크롤이 포커스된 컨트롤을 드러내며, 그리드 방식의 화살표
+내비게이션은 없습니다. 상태 엔티티가 유지되는 동안 쿼리, 정렬, 페이지는 뷰를 마운트 해제해도
+유지됩니다.
+
+네이티브 Table 인덱스는 표시된 페이지를 설명합니다. `TableRow::selected`는 체크박스 선택을
+노출합니다. `TableCell::sort_direction`은 활성 네이티브 열 헤더의 방향을 노출하며,
+본문/푸터 셀은 이를 무시합니다. 헤더 Button 이름도 정렬 설명과 다음 동작을 알려 줍니다.
+열은 고정 너비 텍스트이며 선택 열과 애플리케이션 액션 열이 있습니다. 숫자/날짜 정렬, 사용자
+정의 셀 렌더러, 다중 열 정렬, 열 순서 변경, 변경 가능한 행 소스, 원격 데이터, 가상화는 현재
+범위 밖입니다. 애플리케이션에 다른 데이터 연산이 필요하면 복사한 소스를 수정하세요.

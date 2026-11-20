@@ -1,0 +1,60 @@
+---
+title: Context Menu
+description: "Secondary-click, touch long-press or keyboard opening, pointer placement, and the shared menu tree's commands, navigation, dismissal, and focus."
+---
+
+<ComponentPreview name="context-menu" height={360} />
+
+Use the same `MenuState::new(items, cx)`, `MenuItem`, `MenuOption`, and
+`MenuEvent::Action(value)` contract for commands associated with a visible region.
+Create a distinct state entity for each mounted menu host. The example's
+DropdownMenu and ContextMenu share item definitions and application callbacks,
+but keep their open state, cursor, and return-focus target separate.
+
+```rust
+ContextMenu::new("session-summary", &menu)
+    .target_label("Session summary")
+    .accessibility_label("Session actions")
+    .target(summary_content)
+    .content(menu_surface)
+    .p_2()
+    .border_1()
+    .focus_visible(|style| style.border_color(accent))
+```
+
+The target is a focusable, named region, not an action button. Supply
+noninteractive target content with `.target(...)` and the same ordered
+`MenuOption::new(&menu, index)` elements used by DropdownMenu inside `.content`.
+`target_label` names the region; `accessibility_label` names the menu. Styles and
+interactive style builders apply to the target, while the application styles its
+menu surface separately.
+
+| Input on the target | Behavior |
+| --- | --- |
+| Left click | Focus the region without opening the menu |
+| Right click | Open at the pointer's window coordinate; another request repositions the open menu |
+| Shift-F10 / Menu key | Open a closed menu below the target |
+| Native ShowContextMenu accessibility action | Open below the target |
+| Menu navigation and activation | Use the same enabled-item cursor, typeahead, and action-after-close behavior as DropdownMenu |
+| Escape | Close and return focus to the target |
+| Tab / Shift-Tab | Close through Popover's ordinary target-relative traversal |
+
+The Menu key is available when the platform delivers it. Imperative
+`MenuState::open(window, cx)` also uses target-relative placement. Pointer
+placement uses the existing Popup/Positioner measurement and viewport clamping;
+it does not replace their geometry engine. Outside clicks and parent Dialog
+containment use the same Popover lifecycle. A new context request closes any
+existing submenu branch and focuses the root menu at its first enabled item.
+
+`set_disabled(true, window, cx)` closes the menu and blocks target entry and
+activation. An already focused disabled target retains its binding so Tab can
+leave. If removing the whole target, move focus to a surviving control as part of
+that application update. Retained popup state is dismissed on detachment.
+
+Native metadata includes a named target, expanded/disabled state, the Shift-F10
+shortcut and ShowContextMenu action, plus the shared Menu, MenuItem, and
+MenuItemCheckBox/MenuItemRadio and submenu semantics. The same command tree can
+be supplied to DropdownMenu or ContextMenu. A touch long press on the target
+opens the menu at the press position, like a secondary click, and claims the
+gesture so the release neither pans nor reaches the target. Interactive
+descendant targets are not included.

@@ -1,0 +1,23 @@
+---
+title: Progress
+description: "Controlled percentage or indeterminate progress, accessible name and numeric range."
+---
+
+<ComponentPreview name="progress" height={360} />
+
+`Progress::new(id).value(percentage).accessibility_label(...)` supplies a named,
+non-interactive ProgressIndicator with a numeric range of 0 to 100. Finite values
+outside that range are clamped; non-finite values are configuration errors. The
+default is known progress of zero percent. Use `.indeterminate(true)` when the
+amount of progress is unknown; this omits the current numeric value.
+
+Supply the visual track and fill with ordinary GPUI children. The application
+also owns labels and any animation for unknown progress. Progress adds no focus
+handle or Tab stop. The example connects a Slider to Progress to demonstrate a
+controlled fill updating from the application's retained numeric state.
+
+The copyable [Spinner recipe](../recipes/spinner.mdx) composes this same
+indeterminate Progress with GPUI animation. The example's Unknown progress toggle
+replaces the numeric bar with Spinner and a decorative Skeleton; switching back
+uses the retained Slider value. Reset preview explicitly restores known progress
+at 40%.

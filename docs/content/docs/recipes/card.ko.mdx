@@ -1,0 +1,21 @@
+---
+title: Card
+description: "제목, 설명, 헤더 액션, 본문, 푸터를 갖는 이름 있는 영역입니다."
+---
+
+[`card.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/card.rs)는 수준 2 제목을 갖는
+이름 있는 영역을 제공합니다. 설명은 텍스트를 받고, 헤더 액션, 콘텐츠, 푸터는 각각 요소
+하나를 받으므로 애플리케이션은 `div()` 안에 여러 자식을 조합할 수 있습니다.
+
+```rust
+Card::new("session-card", "Session", palette)
+    .description("Recording preferences")
+    .header_action(Badge::new("toolbar-status", "Toolbar pinned", palette).accent(true))
+    .content(session_summary)
+    .footer(session_controls)
+    .w_full()
+```
+
+카드는 포커스 스톱을 추가하지 않습니다. 슬롯에 넣은 컨트롤은 자신의 키보드와 포인터 동작을
+유지합니다. `Styled` 구현으로 프레임을 재정의할 수 있습니다. 다른 제목 수준이나
+헤더/푸터 레이아웃이 필요하면 복사한 소스를 수정하세요.

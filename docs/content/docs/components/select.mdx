@@ -1,0 +1,29 @@
+---
+title: Select
+description: "Fixed single selection, buffered typeahead, Home/End and arrow navigation, disabled options, commit, and focus."
+---
+
+<ComponentPreview name="select" height={360} />
+
+`SelectState::new(items, cx)` owns a fixed ordered set of unique values, one
+committed value and a separate open-popup cursor. Disabled options are skipped.
+Observe the state for presentation and subscribe to `SelectEvent::Change` for
+committed user changes. `set_selected_value(Some(value), window, cx)` sets an
+enabled value; `None` clears it. Accepted updates close the popup without a user
+event, using its normal focus restoration. Unknown/disabled values return false
+without changing the value, pending cursor or popup. App updates remain available
+while the whole control is disabled.
+
+| Input | Result |
+| --- | --- |
+| Enter / Space | Open the popup, or commit its highlighted option |
+| Up / Down | Open and move among enabled options |
+| Home / End while open | Highlight the first / last enabled option without committing |
+| Printable characters | Commit a matching option while closed; highlight it while open |
+| Escape | Discard the pending choice, close and restore trigger focus |
+
+Typeahead matches case-insensitive label prefixes and resets after one second.
+Repeated letters cycle matching options. Modified shortcuts, native
+character-preferred events and keys from descendant editors do not search.
+Opening/closing clears the prefix. This is a non-editable select; use Combobox
+for a visible native text query, grouped results or multiple selection.

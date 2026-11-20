@@ -1,0 +1,57 @@
+---
+title: Context Menu
+description: "보조 클릭, 터치 길게 누르기 또는 키보드로 열기, 포인터 위치 배치, 공유 메뉴 트리의 명령, 내비게이션, 닫기, 포커스."
+---
+
+<ComponentPreview name="context-menu" height={360} />
+
+보이는 영역과 연결된 명령에도 같은 `MenuState::new(items, cx)`, `MenuItem`, `MenuOption`,
+`MenuEvent::Action(value)` 계약을 사용합니다. 마운트된 메뉴 호스트마다 별도의 상태
+엔티티를 생성합니다. 예제의 DropdownMenu와 ContextMenu는 항목 정의와 애플리케이션
+콜백을 공유하지만, 열림 상태, 커서, 포커스 복귀 대상은 따로 유지합니다.
+
+```rust
+ContextMenu::new("session-summary", &menu)
+    .target_label("Session summary")
+    .accessibility_label("Session actions")
+    .target(summary_content)
+    .content(menu_surface)
+    .p_2()
+    .border_1()
+    .focus_visible(|style| style.border_color(accent))
+```
+
+대상은 액션 버튼이 아니라 포커스 가능한 이름 있는 영역입니다. `.target(...)`에는
+비대화형 대상 콘텐츠를, `.content` 안에는 DropdownMenu에서 쓰는 것과 같은 순서의
+`MenuOption::new(&menu, index)` 요소를 제공합니다. `target_label`은 영역의 이름을,
+`accessibility_label`은 메뉴의 이름을 지정합니다. 스타일과 대화형 스타일 빌더는 대상에
+적용되며, 메뉴 표면의 스타일은 애플리케이션이 따로 지정합니다.
+
+| 대상에서의 입력 | 동작 |
+| --- | --- |
+| Left click | 메뉴를 열지 않고 영역에 포커스를 줍니다 |
+| Right click | 포인터의 창 좌표에서 엽니다. 다시 요청하면 열린 메뉴의 위치를 옮깁니다 |
+| Shift-F10 / Menu key | 닫힌 메뉴를 대상 아래에 엽니다 |
+| 네이티브 ShowContextMenu 접근성 액션 | 대상 아래에 엽니다 |
+| 메뉴 내비게이션과 활성화 | DropdownMenu와 같은 활성화된 항목 커서, 타입어헤드, 닫은 뒤 액션 실행 동작을 사용합니다 |
+| Escape | 닫고 포커스를 대상으로 되돌립니다 |
+| Tab / Shift-Tab | Popover의 일반적인 대상 기준 이동으로 닫습니다 |
+
+Menu 키는 플랫폼이 전달할 때 사용할 수 있습니다. 명령형
+`MenuState::open(window, cx)`도 대상 기준 배치를 사용합니다. 포인터 위치 배치는 기존
+Popup/Positioner 측정과 뷰포트 제한을 사용하며, 그 기하 엔진을 대체하지 않습니다.
+바깥 클릭과 상위 Dialog 가두기도 같은 Popover 수명 주기를 사용합니다. 새 컨텍스트
+요청은 열려 있는 하위 메뉴 분기를 닫고, 첫 번째 활성화된 항목에서 루트 메뉴에
+포커스를 줍니다.
+
+`set_disabled(true, window, cx)`는 메뉴를 닫고 대상 진입과 활성화를 막습니다.
+이미 포커스를 가진 비활성화 대상은 Tab으로 빠져나갈 수 있도록 바인딩을 유지합니다.
+대상 전체를 제거한다면, 그 애플리케이션 업데이트의 일부로 남아 있는 컨트롤에 포커스를
+옮깁니다. 유지되던 팝업 상태는 분리될 때 닫힙니다.
+
+네이티브 메타데이터에는 이름 있는 대상, 펼침/비활성화 상태, Shift-F10 단축키와
+ShowContextMenu 액션, 그리고 공유되는 Menu, MenuItem,
+MenuItemCheckBox/MenuItemRadio, 하위 메뉴 의미 체계가 포함됩니다. 같은 명령 트리를
+DropdownMenu나 ContextMenu에 제공할 수 있습니다. 대상을 터치로 길게 누르면 보조 클릭처럼
+누른 위치에서 메뉴가 열리며, 제스처를 가로채므로 손을 떼도 화면이 이동하거나 대상에
+전달되지 않습니다. 대화형 하위 대상은 포함되지 않습니다.

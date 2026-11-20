@@ -1,0 +1,20 @@
+---
+title: Questionnaire
+description: "Linear question/review/complete flow, validated answers and Back."
+---
+
+<ComponentPreview name="questionnaire" height={360} />
+
+`QuestionnaireState<A>` stores the application's answer type and a fixed linear
+flow. `submit_answer` receives an answer plus the application's validation result,
+retains the answer even when rejected, and advances only after successful
+validation. Validation errors keep the current question available for correction. `back()` returns to
+a previous question/review without discarding answers; `complete()` transitions
+from Review to Complete. An empty questionnaire begins at Review.
+
+`Questionnaire::new(id, label)` supplies a named semantic group for the current
+stage. Compose existing editors and ordinary navigation Buttons, notify the
+owning view after state changes, and move focus before unmounting an editor. The
+catalogue demonstrates two retained Input entities, validation, Back, review and
+completion into the local conversation. There is no schema language, branching
+engine, submission backend or duplicate field registry.

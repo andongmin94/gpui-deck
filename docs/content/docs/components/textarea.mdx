@@ -1,0 +1,31 @@
+---
+title: Textarea
+description: "Multiline editing over the same engine, retained text, wrapping, and normal form Tab traversal."
+---
+
+<ComponentPreview name="textarea" height={360} />
+
+`Textarea::new(&state)` renders the existing multiline editing engine. Construct
+`TextareaState::new(window, cx)` once, using `.rows(3)` for fixed rows or
+`.auto_grow(min, max)` for bounded automatic growth. The state also supports
+placeholder/default text and soft wrapping; selection, undo, scrolling, clipboard,
+and the native text-input interface stay in that same retained entity.
+
+Give it an `InputAccessibility` with `Role::MultilineTextInput` and an accessible
+label. Wrap the renderer in `InputBase` for the application-owned frame, setting
+the frame's `.role(None::<Role>)` and `.semantic_owner::<Textarea>(state.entity_id())` so the
+text entity is the sole native semantic/focus owner. The example uses the same
+application palette for both its single-line field and multiline notes.
+
+Enter inserts a newline by default. Tab and Shift-Tab follow ordinary form
+navigation for both row-based and auto-growing textareas; code-editor indentation
+remains separate. `set_disabled(bool, cx)` prevents edits and ordinary Tab entry.
+A field disabled while focused keeps its binding so Tab can leave. Re-enabling
+restores entry. `set_readonly(bool, cx)` prevents edits while retaining focus and
+selection. Programmatic `set_value` remains available for application updates.
+The native input node exposes its read-only state explicitly, alongside its
+available editing actions.
+
+Keep the state outside a collapsible section, tab panel, or Dialog's render path
+so closing that surface preserves the text. The example retains Session notes
+when the settings dialog is closed and reopened.

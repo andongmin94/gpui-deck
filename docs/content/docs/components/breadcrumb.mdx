@@ -1,0 +1,77 @@
+---
+title: Breadcrumb
+description: "Named navigation, ordered path items, and native current-page metadata."
+---
+
+<ComponentPreview name="breadcrumb" height={360} />
+
+The family supplies three structural elements, each with ordinary `Styled` and
+`ParentElement` support:
+
+| Part | Native contract | Application responsibility |
+| --- | --- | --- |
+| `Breadcrumb::new(id)` | Navigation landmark, named `Breadcrumb` by default | Use `.accessibility_label(...)` to describe or localize the path |
+| `BreadcrumbList::new(id)` | List in supplied child order | Render items in path order and choose direction, wrapping, and spacing |
+| `BreadcrumbItem::new(id)` | ListItem; `.current(true)` adds native `aria_current(Page)` | Mark the current item and supply each location's text or action |
+
+Compose ordinary Button controls for ancestors and native text for the current
+location. The structure creates no focus stop, selected value, navigation event,
+or router. The supplied Buttons retain their usual pointer, Enter/Space, and Tab
+behavior. Each application callback chooses the destination and any focus change.
+
+```rust
+Breadcrumb::new("keyboard-guide-breadcrumb")
+    .accessibility_label("Keyboard guide location")
+    .child(
+        BreadcrumbList::new("keyboard-guide-path")
+            .flex()
+            .items_center()
+            .gap_1()
+            .child(BreadcrumbItem::new("settings-location").child(settings_button))
+            .child(BreadcrumbItem::new("help-location").child(help_button))
+            .child(
+                BreadcrumbItem::new("guide-location")
+                    .current(true)
+                    .child(gpui::text!(id = "keyboard-guide-current-text", "Keyboard guide")),
+            ),
+    )
+```
+
+`gpui::text!` provides native text semantics for the noninteractive current
+location. Plain `&str` or `SharedString` children draw text without their own
+native role; the path uses raw text for its decorative `›` separators.
+The ancestor Buttons already provide their accessible names. Separators, path
+contents, colors, typography, and layout remain application-owned.
+
+The example renders `Session settings > Help > Keyboard guide` inside the
+existing Help Popover. Session settings first closes the Popover, calls
+`TabsState::select_value("preferences", window, cx)`, then focuses the existing
+navigation handle at index zero. Explicit selection works for both Compact's
+TabList and Settings' Sidebar, whose focus alone does not select a section.
+Help closes the Popover and returns focus to its trigger while
+keeping Help selected. Keyboard guide is the current, noninteractive final item.
+These callbacks use the existing Popover and Tabs state instead of a second
+navigation model.
+
+Set `.current(true)` only on the current path item. The default false value
+omits current-page metadata; it does not disable or change the behavior of
+supplied children. The native property is AccessKit's `AriaCurrent::Page` on the
+ListItem itself. That contract does not establish how a particular desktop
+screen reader announces the path.
+
+## Collapsed paths and dropdown items
+
+A collapsed path keeps its hidden ancestors reachable through an ordinary
+[`DropdownMenu`](./dropdown-menu.mdx) inside one `BreadcrumbItem`; the family adds no
+ellipsis element or second menu model. Name the trigger Button for its purpose,
+such as "Show hidden locations", and use the `…` glyph only as its visible
+content. Each hidden ancestor is a `MenuItem` whose value the application maps to
+a destination when the menu reports `MenuEvent::Action`. The menu supplies one Tab
+stop, Down/Enter opening, arrow and single-character navigation, and returns
+focus to the trigger after activation. The same composition gives any crumb a
+dropdown of sibling locations.
+
+The catalogue's Navigation view renders `Home › … › <current page>`. Its ellipsis
+lists Documentation and Components; choosing one changes the local page and the
+current final item, and Home returns to Overview. Decide how many ancestors to
+collapse in application layout; the family does not measure path width.

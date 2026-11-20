@@ -1,0 +1,29 @@
+---
+title: Radio Group
+description: "Single selection, programmatic set/clear, one Tab stop, arrow navigation, disabled options, and focus."
+---
+
+<ComponentPreview name="radio-group" height={360} />
+
+Construct `RadioGroupState::new(items, cx)` once with a fixed ordered collection of
+`RadioItem::new(value, label)`. Values must be unique. Mark unavailable options
+with `.disabled(true)`, and optionally choose an enabled `.default_value(value)`.
+Without a matching enabled default, the group starts unselected.
+
+Render `RadioGroup::new(id, &state)` with an accessible label, and one
+`RadioOption::new(&state, index)` for each item in the same order. Supply each
+option's content and style in the application. The group sets its accessibility
+role and orientation; `.axis(Axis::Horizontal)` changes orientation metadata.
+Use GPUI layout methods such as `.flex()` separately to arrange the options.
+
+The state exposes `items()`, `selected_index()`, `selected_item()`, and
+`option_focus_handle(index)`. Use `set_disabled(disabled, window, cx)` to disable
+the whole group. Disabling preserves the selected value and emits no selection
+event. `RadioGroupEvent::Change(value)` is emitted once when a user selects a
+different value. Selecting the current value does not emit another change.
+
+`set_selected_value(Some(value), window, cx)` applies an enabled application value;
+`None` clears it. Unknown/disabled values return false without changing the
+selection. Accepted updates emit no user event and preserve focus, including
+while the whole group is disabled. If an option currently owns focus, it remains
+the one Tab stop until focus leaves; reentry uses the new selected/first option.

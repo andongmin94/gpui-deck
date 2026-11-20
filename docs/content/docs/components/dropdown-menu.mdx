@@ -1,0 +1,109 @@
+---
+title: Dropdown Menu
+description: "Plain, checked/mixed/radio and nested submenu semantics, navigation, leaf dispatch, dismissal, and focus."
+---
+
+<ComponentPreview name="dropdown-menu" height={360} />
+
+DropdownMenu and ContextMenu share `MenuState`, `MenuItem`, `MenuEvent`, and
+`MenuOption`. Their shared command behavior reuses Popover for open/close state,
+dismissal, traversal, and focus restoration. Create
+`MenuState::new(items, cx)` with fixed, ordered
+`MenuItem::new(value, label)` entries. Values must be unique; use
+`.disabled(true)` for unavailable commands. Empty or entirely disabled collections
+can open but cannot execute a command.
+
+Render `DropdownMenu::new(id, &state)` with:
+
+- `.trigger(|button| ...)` for the native trigger's accessible name and appearance.
+- `.accessibility_label(...)` for the menu's accessible name.
+- `.content(...)` containing one `MenuOption::new(&state, index)` per item,
+  in collection order. Supply its text, spacing, colors, and other visual content.
+- `.anchor(...)` and `.offset(...)` to configure the existing popup positioning.
+
+Observe the state for rendering. Read `highlighted_index()` to style the active
+command and `items()` for labels and disabled state. The menu retains no selected
+value: commands represent actions and may execute repeatedly. Interactive form
+controls belong outside the menu's command content.
+
+## Checked commands
+
+Use `MenuOption::checked(bool)` to render an application-controlled checkbox
+command. Omitting the builder keeps a plain `MenuItem`; `.checked(false)` exposes
+an unchecked `MenuItemCheckBox`, while `.checked(true)` exposes a checked one.
+The application supplies the visible indicator and checked value on each render.
+
+```rust
+MenuOption::new(&menu, index)
+    .checked(show_cursor)
+    .child("Show cursor")
+```
+
+Checked commands use the same navigation, disabled behavior, and
+`MenuEvent::Action(value)` as plain commands. Activation closes the menu and
+restores focus before delivering the event. The application handles that action
+and renders its next checked value; MenuState neither stores nor automatically
+toggles the checked value. Changing the supplied value does not dispatch an action.
+The example's Show cursor and Keep toolbar visible commands share the retained
+application booleans used by its Checkbox and Switch. Both DropdownMenu and
+ContextMenu render those values through the same menu-content composition.
+
+## Shared interaction and lifecycle
+
+| Input | Behavior |
+| --- | --- |
+| Trigger click / Enter / Space / Down | Open at the first enabled command |
+| Trigger Up | Open at the last enabled command |
+| Menu Up / Down | Move the cursor, wrapping and skipping disabled commands |
+| Menu Home / End | Move to the first / last enabled command |
+| One printable character | Cycle through enabled labels starting with that character, ignoring case |
+| Option click / Menu Enter / Space | Execute the command once and close |
+| Escape | Close and restore trigger focus |
+| Tab / Shift-Tab | Close and leave through Popover's normal focus traversal |
+
+Typeahead matches one character at a time; it has no buffered search or timer.
+Ctrl, Alt, platform, and Fn shortcuts do not feed this search. Pointer hover moves
+the same cursor used by keyboard navigation. Disabled commands remain visible
+and carry disabled metadata, but are skipped by navigation and cannot execute.
+
+Subscribe to `MenuEvent::Action(value)` to handle a command in the
+application. The menu closes and restores its trigger before delivering the
+event. A handler can therefore open Dialog, whose close operation later returns
+to the menu trigger. The example uses `cx.subscribe_in` to receive the window
+while handling commands.
+
+State methods include `open`, `close`, `set_disabled`, `focus_handle`, and
+`content_focus_handle`. `is_open(cx)` and `is_disabled(cx)` take an `&App` because
+they read the composed Popover state. There is one owner for the popup lifecycle.
+Options are not separate Tab stops; keyboard focus stays on the menu scope and
+the highlighted option supplies its active descendant. A containing Dialog still
+bounds Tab traversal, and external pointer presses retain their normal action.
+
+Keep the menu host mounted while closed. The same host-removal focus contract as
+Popover applies. `check_state(CheckboxState::Indeterminate)` supplies a mixed
+checkbox command; `radio_checked(bool)` supplies MenuItemRadio semantics. The
+application owns mutually exclusive radio values, grouping, and their rendering.
+
+Native metadata includes a Button trigger with expanded/disabled state, a Menu
+scope, named plain/checkbox/radio commands with their supplied checked state,
+submenu expanded state, and the active descendant. It does not emit a
+native has-popup property or a trigger-to-menu controls relationship. These
+contracts describe the implemented behavior, not a claim of full accessibility
+pattern conformance or completed screen-reader validation.
+
+## Submenus
+
+Create child `MenuState` entities before their parent. A parent item declares
+`.submenu(&child)`; render that item using `MenuSubmenu::new(&parent, index)` with
+`.trigger(|option| ...)` and `.content(...)` containing the child's options.
+The submenu host owns popup positioning and reuses the child's existing Popover
+lifecycle. Menu trees must be acyclic, and a child belongs to one parent.
+
+Native focus on a submenu row synchronizes the parent menu's highlighted item.
+The expansion arrow opens the highlighted submenu; the opposite arrow or Escape
+closes one submenu and restores the parent menu scope. Pointer hover opens the
+corresponding child and closes sibling branches. Plain leaf activation closes
+the whole tree and emits exactly one `MenuEvent::Action` on the root state.
+Tab/Shift-Tab leave the complete menu tree through the root Popover traversal.
+The application subscribes to the root and owns leaf actions and checked/radio
+values. Keep all hosts in the composition while closed.

@@ -1,0 +1,24 @@
+---
+title: Button Group
+description: "Connected horizontal/vertical buttons with an optional text slot."
+---
+
+[`button_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/button_group.rs) gives related
+Buttons one frame and decorative separators. It accepts existing `Button`
+instances, applies connected styling, and preserves their identity, actions,
+disabled state, and individual Tab stops.
+
+```rust
+ButtonGroup::new("calendar-month", "Calendar month", palette)
+    .axis(Axis::Horizontal)
+    .button(previous_month_button)
+    .text("November 2026")
+    .button(next_month_button)
+    .w_full()
+```
+
+Horizontal is the default; `Axis::Vertical` stacks the same parts. `text` is a
+static label with no focus stop. `Styled` allows frame and size overrides.
+Focus uses an accent fill because the group owns the outer border. The group
+adds no arrow-key navigation or pressed-value state; `ToggleGroup` remains the
+control for multiple pressed values with roving focus.

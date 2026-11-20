@@ -1,0 +1,16 @@
+---
+title: Separator
+description: "가로/세로 방향을 지원하는 시맨틱 또는 장식용 구분을 제공합니다."
+---
+
+<ComponentPreview name="separator" height={360} />
+
+`Separator::new(id)`는 시맨틱 가로 구분선을 제공합니다.
+`.axis(Axis::Vertical)`은 네이티브 방향을 바꾸고, `.decorative(true)`는 순수하게
+시각적인 구분을 위해 접근성 노드를 생략합니다. 네이티브 시맨틱 역할은 포커스나
+활성화 액션이 없는 AccessKit의 Splitter입니다. 이 컴포넌트는 정적인 구분선이며,
+Resizable의 패널 구분선 상호작용을 의미하지 않습니다.
+
+크기와 색상에는 일반 GPUI 스타일을 사용합니다. 예를 들어 가로선에는
+`.h(px(1.)).w_full().bg(border)`를 사용합니다. Axis는 시각적 레이아웃을 강제하지
+않습니다. Separator에는 자식이나 Tab 스톱이 없습니다.

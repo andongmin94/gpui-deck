@@ -1,0 +1,38 @@
+---
+title: Collapsible
+description: "하나의 펼침 영역, 열렸을 때만 존재하는 콘텐츠, 비활성화 트리거, 콘텐츠 닫힘 시 포커스 처리."
+---
+
+<ComponentPreview name="collapsible" height={360} />
+
+하나의 펼침 영역마다 `CollapsibleState::new(cx)`를 한 번 생성합니다. 닫힌 상태로
+시작하며, `.default_open(true)`는 이벤트를 내보내지 않고 처음부터 엽니다. 렌더링을 위해
+상태를 관찰하고, 콘텐츠가 제거되었다가 다시 마운트되어도 값이 유지되도록 자식
+엔티티는 애플리케이션 뷰에 둡니다.
+
+`Collapsible::new(id, &state)`로 하나의
+`CollapsibleTrigger::new(&state)`와 하나의 `CollapsibleContent::new(&state)`를 감싸
+렌더링합니다. 닫혀 있는 동안에도 루트와 트리거는 마운트해 둡니다. 트리거와 콘텐츠
+모두에 `accessibility_label`을 지정하고, 애플리케이션이 소유하는 스타일과 자식을
+제공합니다. 트리거는 Button을 조합하며 펼침/비활성화 상태를 노출합니다. 열린
+콘텐츠는 이름 있는 Region이며, 닫힌 콘텐츠에는 레이아웃, 포커스 스톱, 접근성 노드가
+없습니다. 트리거와 콘텐츠 사이의 명시적인 네이티브 관계는 고정된 GPUI API에서
+내보내지 않습니다.
+
+Click, Enter, Space는 펼침 영역을 토글합니다. 열어도 포커스는 트리거에 남으며, 일반
+Tab 이동으로 자식에 들어갑니다. 이 컴포넌트는 제목이나 화살표/Home/End 키 처리를
+도입하지 않습니다. 정적 콘텐츠 자체가 포커스를 받아야 한다면 콘텐츠에
+`.tab_stop(true)`를 사용합니다.
+
+상태 메서드에는 `is_open`, `is_disabled`, `trigger_focus_handle`,
+`content_focus_handle`, `set_open(open, window, cx)`, `toggle(window, cx)`,
+`set_disabled(disabled, window, cx)`가 있습니다. `CollapsibleEvent::Change(bool)`는
+실제 변경만 보고하며, 반복된 요청은 이벤트를 내보내지 않습니다. 비활성화는 사용자의
+토글을 막지만 현재 표시 상태를 유지하고 콘텐츠를 비활성화하지는 않습니다.
+비활성화된 동안에도 프로그래밍 방식의 `set_open`은 사용할 수 있습니다.
+
+포커스를 가진 콘텐츠를 닫으면 포커스는 여전히 마운트된 트리거로 이동합니다. 그
+트리거가 비활성화되어 있으면, Tab으로 빠져나갈 수 있도록 기존의 Tab 스톱이 아닌
+루트 범위가 포커스를 받습니다. 펼침 영역 바깥의 포커스는 유지됩니다. Accordion과
+마찬가지로 호스트 전체를 제거하려면 애플리케이션이 먼저 남아 있는 컨트롤에 포커스를
+주어야 합니다.

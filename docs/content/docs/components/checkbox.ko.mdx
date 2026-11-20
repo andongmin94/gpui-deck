@@ -1,0 +1,36 @@
+---
+title: Checkbox와 Switch
+description: "제어되는 해제/선택/혼합 상태, 활성화, 비활성화 상태, 포커스."
+---
+
+<ComponentPreview name="checkbox" height={360} />
+
+이진 체크박스에는 `.checked(bool)`를 사용합니다. 집계 선택에는
+`.state(CheckboxState::Indeterminate)`로 혼합 상태를 노출합니다. 혼합 상태의 체크박스를
+활성화하면 `CheckboxState::Checked`를 요청합니다. 라이브러리는 자식 선택을 추론하거나
+바꾸지 않습니다. Switch는 항상 불리언 상태를 사용합니다.
+
+두 컨트롤 모두 `.disabled(bool)`, `.accessibility_label(...)`,
+`.track_focus(&handle)`, `.tab_index(...)`, `.tab_stop(...)`을 받습니다. 변경
+콜백은 다음 값, 네이티브 클릭 이벤트, 창, 앱 컨텍스트를 받습니다. 예를 들어 불리언
+`show_cursor`를 저장하는 뷰 안에서는 다음과 같습니다.
+
+```rust
+let owner = cx.entity();
+Checkbox::new("show-cursor")
+    .checked(self.show_cursor)
+    .accessibility_label("Show cursor")
+    .on_change(move |next, _, _, cx| {
+        owner.update(cx, |this, cx| {
+            this.show_cursor = next == CheckboxState::Checked;
+            cx.notify();
+        });
+    })
+    .child("Show cursor")
+```
+
+이것이 동작 연결입니다. GPUI 스타일과 표시기는 애플리케이션이 자식으로 추가합니다.
+Checkbox는 체크 표시를, Switch는 트랙이나 썸을 제공하지 않습니다. 루트의
+`.styles(...)` 빌더는 선택/비활성화 세부 스타일을 노출하며, Checkbox는 추가로
+불확정 스타일을 노출합니다. Switch의 접근 가능한 레이블은 상태가 바뀌어도 그대로
+유지합니다. 선택 메타데이터가 이미 켜짐/꺼짐을 설명하기 때문입니다.

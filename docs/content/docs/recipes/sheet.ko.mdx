@@ -1,0 +1,63 @@
+---
+title: Sheet
+description: "Dialog 위에 네 가장자리 중 하나로 표시되는 모달 화면 표현으로, 뷰포트로 제한된 크기, 고정된 헤더/푸터, 스크롤되는 본문 하나를 갖습니다."
+---
+
+[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs)는 기존 Dialog
+콘텐츠를 선택한 창 가장자리에 표시하며, 기본값은 전체 높이의 오른쪽 패널입니다.
+
+```rust
+Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", palette)
+    .side(SheetSide::Right)
+    .description("Choose the session's drawing and toolbar settings.")
+    .child(form_fields)
+    .footer(
+        DialogClose::new(&dialog)
+            .trigger(|button| button.child("Done")),
+    )
+```
+
+닫혀 있는 동안에도 Sheet를 `gpui_design::Root` 아래에 마운트해 두세요. 전달된
+`Entity<DialogState>`와 `ScrollHandle`은 모두 애플리케이션이 소유하고 유지합니다. 초기
+포커스는 그 기존 DialogState에서 구성하고, `open`과 `close` 메서드를 사용하세요. 모달 포커스
+가두기, Escape와 배경 클릭 닫기, 포커스 복귀는 계속 Dialog가 소유합니다. Sheet는 열림 상태나
+선택 모델을 추가하지 않습니다. 제목과 선택적인 설명은 보이는 헤더이자 내부 Dialog의 접근
+가능한 이름과 설명이 됩니다.
+
+선호 너비는 `palette.dialog_width`이며 뷰포트 너비로 제한됩니다. 기본 팝업은 뷰포트 높이를
+채우고, 모서리가 각지며, 왼쪽 가장자리에 테두리 하나를 사용합니다. 헤더와 선택적인 푸터는
+단일 세로 ScrollArea 본문 밖에 놓입니다. 각 `.child(...)`는 그 본문에 들어가며, 본문의 안쪽
+여백, 간격, 스크롤바 색상은 소비자 팔레트에서 옵니다. 본문은 남은 높이를 차지하며
+애플리케이션이 유지하는 스크롤 핸들을 사용합니다. 다시 열 때 초기 포커스 대상을 네이티브로
+드러내면서 오프셋이 조정될 수 있습니다. 소비자는 헤더와 푸터 콘텐츠를 합친 높이가 뷰포트
+높이를 넘지 않도록 해야 합니다. 긴 폼 콘텐츠는 스크롤되는 본문에 넣으세요.
+
+가장자리는 `.side(SheetSide::Left | Right | Top | Bottom)`으로 선택합니다. 왼쪽/오른쪽은
+높이를 채우고 `palette.dialog_width`를 선호 너비로 사용하며, 위/아래는 너비를 채우고 같은
+토큰을 선호 높이로 사용합니다. 두 치수 모두 뷰포트로 제한됩니다. `Styled` 재정의는 가장자리
+기본값 뒤에 적용되므로, 빌더 순서와 관계없이 `.w(...)`는 세로 패널의 선호 너비를,
+`.h(...)`는 가로 패널의 높이를 바꿉니다. 뷰포트 제한과 flex 레이아웃은 유지하세요. 모든
+가장자리는 같은 고정 헤더/푸터와 스크롤되는 본문을 유지합니다. 드래그 제스처와 전환
+애니메이션은 이 레시피의 범위 밖이며, 드래그 상호작용은 Drawer가 소유합니다.
+
+카탈로그의 Forms 섹션은 유지되는 DialogState와 ScrollHandle 하나로 네 가장자리 모두에서
+현재 세션 도움말을 엽니다. 닫으면 선택한 트리거로 포커스가 돌아갑니다. 도움말 텍스트와
+세션 값은 애플리케이션이 소유합니다.
+
+`DialogClose`와 그 비활성화 상태를 포함한 푸터 컨트롤은 애플리케이션이 제공합니다. 키보드
+상호작용은 전달된 컨트롤과 Dialog의 기존 Tab 가두기가 담당합니다. ScrollArea는 활성화된 축에서
+포커스된 자손을 드러내고 네이티브 포인터 스크롤을 제공하며, 독립적인 스크롤 포커스 대상이나
+스크롤 키 바인딩은 추가하지 않습니다.
+
+이제 두 모양 모두 기존 Session settings 폼에 Sheet를 사용합니다. 예제는 DialogState, 이름
+입력의 초기 포커스, 본문 스크롤 핸들, Preferences/Help/Schedule/Presets 섹션, Done
+유효성 검사 규칙을 재사용합니다. Compact는 22 rem Sheet 안에 TabList/Tab/TabPanel을
+유지합니다. Settings는 46 rem 선호 너비를 지정하고, 선택된 이름 있는 Region과 함께 Sidebar를
+사용합니다. 두 너비 모두 뷰포트로 제한되며, 더 넓은 화면 표현에서는 내비게이션과 폼
+콘텐츠가 나란히 놓일 공간이 생깁니다. 닫았다가 다시 열어도 같은 입력, 선택, 테이블 상태가
+유지됩니다. 기존 Edit 트리거와 메뉴/명령 액션이 그 상태를 열며, 레시피는 별도의 선택을
+추가하지 않습니다. Avatar와 AspectRatio는 여전히 HoverCard 미리 보기에서 유지되는 프리셋을
+렌더링합니다. Search commands와 Reset preview는 가운데 정렬된 Dialog와 AlertDialog 화면
+표현을 유지합니다.
+예제는 지연된 Select, Combobox, Calendar, Help 팝업의 너비도 창 기준으로 제한합니다. 이
+표면들은 Sheet의 너비 제한을 상속하지 않습니다.

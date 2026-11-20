@@ -1,0 +1,30 @@
+---
+title: Introduction
+description: A source-owned, headless UI foundation for Rust and GPUI.
+---
+
+The library owns control behavior, state, focus and accessibility semantics.
+Applications own their component source, layout, colors, typography and assets.
+Headless separates control behavior from application-owned presentation; the
+examples render native GPUI windows, and the previews on this site run the same
+components in the browser through GPUI's web backend.
+
+GPUI Design currently includes 42 public library families and 23 copyable
+presentation recipes. Every entry of the shadcn/ui catalogue has an implemented
+scope or a platform mapping, with its limits recorded in
+[Coverage and status](./coverage.mdx).
+
+<Cards>
+  <Card title="Installation" href="./installation.mdx">
+    Toolchain, native prerequisites, the examples, and adding the crate.
+  </Card>
+  <Card title="Components" href="./components/index.mdx">
+    Library families with their keyboard, focus and accessibility contracts.
+  </Card>
+  <Card title="Recipes" href="./recipes/index.mdx">
+    Copyable presentation source you install with the local CLI and then own.
+  </Card>
+  <Card title="Architecture" href="./architecture.mdx">
+    How rendering, headless behavior and your presentation divide the work.
+  </Card>
+</Cards>

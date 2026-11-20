@@ -1,0 +1,34 @@
+---
+title: Marker
+description: "One named date/status label between decorative separators, with wrapping text and no focus stop."
+---
+
+[`marker.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/marker.rs) places a static label
+between two existing decorative Separators. Supply the text appropriate to the
+application's date or status boundary:
+
+```rust
+Marker::new("schedule-marker", "Selected date · 2026-11-09", palette);
+```
+
+The label exposes native Label semantics and uses its complete visible text as
+its accessible name. The containing layout has no role or name, and both
+Separators use `decorative(true)`, omitting their native role and orientation.
+The marker therefore contributes one meaningful label, with no duplicated
+separator semantics. It adds no focus handle, Tab stop, action, or live-region
+announcement.
+
+The frame fills the available width. The centered label uses the palette's body
+size and muted color, a line height of 1.5 times its font size, normal wrapping,
+and at most 75% of the frame width. The two horizontal rules are one pixel thick,
+use the palette's border color, and share the remaining space. Long text can grow
+vertically without truncation. `Styled` controls the frame and inherited text
+presentation; supply a bounded width and allow the label's height to grow. The
+recipe uses GPUI's existing text layout and adds no text renderer or timeline state.
+
+Both appearances place Marker between Schedule's DatePicker and its notes/plan
+panes. The consumer reads `CalendarState::selection().first_date()` and formats
+`Selected date · YYYY-MM-DD`, or `No date selected` when the selection is empty.
+Moving the calendar cursor without committing a selection does not change this
+boundary. Date formatting remains application-owned, and the marker does not
+start a recording or maintain a second selected date.

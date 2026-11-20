@@ -1,0 +1,52 @@
+---
+title: Navigation and overlays
+description: "The two-style example combines the same settings behavior with compact dark and spacious light presentation."
+---
+
+The [two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) combines the same
+settings behavior with compact dark and spacious light presentation. Its
+Session actions menu and the summary's ContextMenu can open Dialog, toggle
+application values, or request a preview reset through AlertDialog. HoverCard
+previews the current preset, date, and notes status while the preset button keeps
+its ordinary settings action. A Collapsible holds the preview controls.
+Search commands opens a Command query and result list inside Dialog; both menus
+dispatch the same application actions. Separator provides semantic division
+between content regions, and the settings form includes retained multiline notes.
+Compact uses Preferences, Help, Schedule, and Presets tabs with active panels.
+Settings uses the [Sidebar recipe](../recipes/sidebar.mdx) and a named
+Region for the current section. Help contains an Accordion, and its keyboard
+section opens a guide in a non-modal Popover. Breadcrumb shows that guide's
+location, while the application-owned
+[Kbd recipe](../recipes/kbd.mdx) displays the existing keyboard controls.
+All styles live in the example.
+
+Call `gpui_design::init(cx)` and host the window in `gpui_design::Root`. Keep the
+state entities and their observation subscriptions in your view. The example
+shows the complete setup and application-owned styling.
+
+## Validation
+
+The existing GPUI test framework checks selected and disabled metadata, orientation,
+focus traversal, inactive panels, popup dismissal, command dispatch, and the
+representative composed flows across both appearances and the catalogue. Composition tests cover a command
+opening Dialog, header navigation without expansion, collapse of a panel with
+an open Popover, disclosure mounting, and explicit preview reset confirmation.
+The consumer flows cover command search into the multiline settings
+form, normal and disabled-field Tab traversal, and retained notes.
+They also cover the tooltip trigger, Field label/feedback, and searchable preset
+selection inside Dialog, including query cancellation and retained selection.
+The existing flows also exercise keyboard and pointer context-menu commands
+opening that Dialog, and a HoverCard trigger retaining its ordinary action and
+return-focus target. Checked commands use those same flows to verify current
+application values across both menu hosts and unchanged action/focus behavior.
+Primitive tests cover point placement and pointer
+preview timing at their owning layer.
+Breadcrumb's validation scope is its native navigation/list/item roles,
+current-page metadata, and the composed ancestor actions in the existing Help
+flow. That flow also checks that static key hints leave focus with the existing
+controls. These contracts do not establish native screen-reader announcements
+or the visual appearance of the path and keycaps.
+The full suite runs once on Linux, including isolated recipe checks. Windows and
+macOS run the real consumer composition flows with recipe-only tests filtered
+out, and all three platforms build the native example. They do not replace
+native IME, screen reader, DPI, and visual checks on a desktop.

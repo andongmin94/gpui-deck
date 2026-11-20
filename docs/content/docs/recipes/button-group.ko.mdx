@@ -1,0 +1,24 @@
+---
+title: Button Group
+description: "선택적인 텍스트 슬롯을 갖는, 가로/세로로 연결된 버튼입니다."
+---
+
+[`button_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/button_group.rs)는 관련된
+Button들에 하나의 프레임과 장식용 구분선을 제공합니다. 기존 `Button` 인스턴스를 받아
+연결된 스타일을 적용하고, 각 버튼의 식별자, 액션, 비활성화 상태, 개별 Tab 스톱을
+유지합니다.
+
+```rust
+ButtonGroup::new("calendar-month", "Calendar month", palette)
+    .axis(Axis::Horizontal)
+    .button(previous_month_button)
+    .text("November 2026")
+    .button(next_month_button)
+    .w_full()
+```
+
+기본값은 가로이며, `Axis::Vertical`은 같은 부분을 세로로 쌓습니다. `text`는 포커스 스톱이
+없는 정적 레이블입니다. `Styled`로 프레임과 크기를 재정의할 수 있습니다. 그룹이 바깥
+테두리를 소유하므로 포커스는 accent 채우기로 표시됩니다. 그룹은 화살표 키 내비게이션이나
+눌림 값 상태를 추가하지 않습니다. 로빙 포커스로 여러 눌림 값을 다루는 컨트롤은 여전히
+`ToggleGroup`입니다.

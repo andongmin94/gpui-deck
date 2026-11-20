@@ -1,0 +1,65 @@
+---
+title: Hover Card
+description: "호버 시 지연되는 풍부한 미리보기, 터치 길게 누르기 미리보기, 트리거에서 카드로의 포인터 이동, 포커스를 옮기지 않는 포커스 미리보기, 닫기."
+---
+
+<ComponentPreview name="hover-card" height={360} />
+
+HoverCard는 Button의 일반 액션에 대해 풍부하지만 상호작용하지 않는 미리보기를
+제공합니다. 안정적인 트리거 포커스 핸들을 유지하고
+`HoverCardState::new(&trigger_focus, window, cx)`를 만듭니다. 사용하는 쪽을 다시
+그리려면 상태를 관찰합니다. 선택적 `.with_delays(open_duration, close_duration)`는
+마운트 전에 포인터 진입 및 이탈 지연을 구성하며, 기본값은 500 ms와 200 ms입니다.
+
+```rust
+HoverCard::new("preset-preview", &preview)
+    .accessibility_label("Recording preset preview")
+    .offset(px(6.))
+    .trigger(|button| {
+        button
+            .accessibility_label("Recording preset. Edit settings")
+            .on_click(open_settings)
+            .child("Preset: Balanced")
+    })
+    .content(preview_surface)
+```
+
+트리거 빌더는 Button의 액션을 보존하고 모양을 제공합니다. 상태는 포커스 핸들과
+비활성화 상태를 소유하므로, 미리보기와 Button을 함께 맞추려면 `set_disabled`를 씁니다.
+HoverCard의 `Styled` 메서드는 호스트 프레임에 적용됩니다. 애플리케이션이 제공하는
+내용은 따로 스타일을 입히고, 기존 Popup 기하에는 `.anchor(...)`와 `.offset(...)`을
+사용합니다.
+
+| 입력 | 동작 |
+| --- | --- |
+| 포인터가 트리거에 진입 | 포커스를 옮기지 않고 진입 지연 후 열기 |
+| 포인터가 트리거와 카드를 벗어남 | 트리거가 키보드 포커스를 유지하지 않는 한 이탈 지연 후 닫기 |
+| 포인터가 카드에 진입하거나 트리거로 돌아옴 | 지연된 닫기를 취소 |
+| 키보드 포커스가 트리거에 진입 | 즉시 열기, 포커스는 Button에 남음 |
+| Escape | 보이는 미리보기를 닫고 현재 진입 동안 다시 열리지 않게 함 |
+| 클릭 / Enter / Space | 미리보기를 닫음, Button이나 클릭한 컨트롤은 일반 액션을 그대로 수행 |
+| 포커스 변경 / 창 비활성화 | 포커스를 옮기지 않고 닫기 |
+
+닫기 지연 덕분에 포인터가 트리거와 카드 사이의 틈을 건널 수 있습니다. 키보드로 연
+미리보기는 포인터가 멀어져도 blur나 명시적인 닫기 전까지 유지됩니다. Escape는 포커스를
+그대로 두며, 다른 프레임이 그려지거나 같은 트리거 안에서 포인터가 움직였다는 이유만으로
+카드를 다시 열지 않습니다. 새로 트리거에 진입하거나 키보드 포커스를 주면 다시 표시할 수
+있습니다. 아직 표시되지 않은 대기 중인 미리보기를 취소하면 Escape는 감싸는 화면이 쓸 수
+있도록 남겨집니다.
+
+상태 메서드는 `is_open`, `is_disabled`, `focus_handle`, `close(window, cx)`,
+`set_disabled(disabled, window, cx)`입니다. 명시적으로 닫으면 현재 진입이 억제됩니다.
+다시 활성화하면 다음 진입이나 포커스를 기다립니다. 마운트 해제는 지연된 작업을 취소하고
+유지된 표시 상태를 지우며, 마운트된 Escape 구독은 해당 창에만 속합니다.
+
+배치, 뷰포트 안으로의 위치 조정, 지연된 페인팅, 가림 처리는 Popup이 소유합니다. 보이는
+미리보기는 Tab 스톱이 없는 보조 Tooltip 화면이며, 포커스 트랩을 열지 않습니다.
+`accessibility_label`이 그 화면의 이름을 지정합니다. 핵심 정보는 포인터 미리보기에만
+두지 말고 Button의 접근 가능한 설명이나 일반 목적지에서도 얻을 수 있게 합니다. 대화형
+내용은 Popover에 둡니다. 터치에는 호버가 없으므로, 트리거를 길게 누르면 Button을
+활성화하지 않고 즉시 미리보기가 열리고 다음에 어디든 누르면 닫힙니다. 전역 호버
+provider는 제공하지 않습니다.
+
+예제는 현재 녹화 프리셋, 녹화 날짜, 노트 상태를 미리 보여 줍니다. 같은 Button을
+클릭하거나 Enter를 누르면 settings Dialog가 열리고, 닫으면 포커스가 Button으로
+돌아갑니다.

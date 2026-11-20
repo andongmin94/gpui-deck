@@ -1,0 +1,50 @@
+---
+title: Slider
+description: "One or more ordered numeric values, bounded steps, per-thumb focus and accessibility, keyboard/pointer adjustment, disabled state, vertical and RTL geometry."
+---
+
+<ComponentPreview name="slider" height={360} />
+
+Create `SliderState::new(min..=max, step, [values...], cx)` once. A single value
+creates a single-thumb slider; two values describe a range, and more values add
+ordered stops. The nonempty collection fixes the thumb count. Bounds and values
+must be finite, `min < max`, and `step` must be positive. Values are clamped and
+snapped to a step grid starting at the minimum. The range includes both ends.
+
+Render `Slider::new(id, &state).accessibility_label(...)` as the named group and
+rail. Supply the track and fill, and one
+`SliderThumb::new(&state, index).accessibility_label(...)` per value, in order.
+Each thumb owns its native Slider role, focus, keys, and value actions. Give range
+ends distinct names, such as "Trim start" and "Trim end". `percentage(index)`
+gives that thumb's position from 0 to 1. The root bounds define its travel rail; place the thumb
+center at that fraction of the root and offset by half the application's thumb
+size. The example uses a comfortable-height hit area and a thin track centered
+inside it. Neither colors nor control dimensions are imposed by the library.
+
+The state exposes `values`, `min_value`, `max_value`, `step_value`, `percentage`,
+`thumb_focus_handle(index)`, and `is_disabled`. Use
+`set_thumb_value(index, value, window, cx)` or `set_values(values, window, cx)`
+for programmatic updates and `set_disabled(disabled, window, cx)` to control user
+interaction. Programmatic updates remain possible while disabled. Individual
+thumbs stop at their neighbors without exchanging identities; equal values are
+allowed. `SliderEvent::Change(values)` reports the complete ordered values once
+when a normalized value changes. Observe the state to update application visuals.
+
+Rail presses choose the nearest thumb, and dragging keeps that thumb until
+release, including outside the rail. `axis(Axis::Vertical)` places the minimum
+at the bottom; horizontal values follow the logical direction. Each thumb
+exposes its accessible name, orientation, current value, step and numeric bounds
+limited by neighboring thumbs. Applications supply thumb focus presentation.
+
+| Input | Behavior |
+| --- | --- |
+| Left / Down | Decrease by one step |
+| Right / Up | Increase by one step |
+| Home / End | Set the focused thumb's allowed minimum / maximum |
+| PageDown / PageUp | Decrease / increase by ten steps |
+| Tab / Shift-Tab | Visit each enabled thumb in value order, then leave the group |
+
+Disabled sliders ignore user changes and are skipped by Tab. A slider that is
+disabled while focused keeps its focus binding long enough for Tab to leave.
+The session preview uses one thumb; the catalogue's media trim control uses two
+independent ends and switches between horizontal/vertical geometry and RTL.

@@ -1,0 +1,69 @@
+---
+title: Typography
+description: "Named headings with explicit levels, paragraphs with native inline-code text runs, and independently named code elements."
+---
+
+[`typography.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/typography.rs) supplies `Heading`,
+`Paragraph`, and `InlineCode` as one presentation recipe. GPUI owns text shaping,
+layout, and painting. The application supplies the content, outline levels, font
+choice, available width, and surrounding spacing.
+
+```rust
+Heading::new("help-title", "Help", 2, palette);
+
+Paragraph::new("state-ownership", palette)
+    .text("The application retains ")
+    .code("DialogState")
+    .text(" and ")
+    .code("InputState")
+    .text(" while panels are closed.");
+
+InlineCode::new(
+    "help-source",
+    "crates/base/examples/two_styles.rs",
+    palette,
+);
+```
+
+`Heading::new` requires a positive native heading level. Its visible text also
+provides its complete accessible name. Choose the level from the content outline:
+changing it changes the semantic hierarchy independently of the default visual
+size. Every level starts at `1.25 * palette.font_size` with semibold weight.
+Use ordinary `Styled` refinements for a different visual scale, color, or spacing.
+
+`Paragraph::text` and `Paragraph::code` append their supplied text in order,
+without inserting spaces or interpreting markup. Include punctuation and spaces
+in the text segments. One native `StyledText` shapes the complete paragraph, so
+inline code remains part of the same text flow and line wrapping. The paragraph
+defaults to normal wrapping, the palette's body size and foreground, and a line
+height of 1.5 times its font size. Give its parent an available width and leave
+height automatic for long text. The recipe adds no truncation, fixed height, or
+independent scrolling; surrounding Sheet/ScrollArea content owns overflow.
+
+The paragraph exposes native Paragraph semantics and its full concatenated text
+as one accessible name. Its code ranges use the consumer's code font and
+background as native text-run styling. GPUI does not expose an accessibility role
+for each styled range, so these ranges do not create separate Code nodes.
+`InlineCode` provides a separately named native Code element when the code needs
+its own element. Use `Paragraph::code` when code belongs inside a prose sentence.
+All three types are static text and add no focus stop or keyboard action.
+
+The consumer's `palette.code_font_family` selects the requested code font. The
+example requests DejaVu Sans Mono on Linux, Consolas on Windows, and Menlo on
+macOS; applications should supply a font appropriate for their own environment.
+`Styled` controls each element's layout and text presentation. Paragraph code
+ranges retain their explicit code-font and background styling within the body
+text. Changing visible size does not change a Heading's native level or the
+text used for accessible names.
+
+Both appearances use the recipe in the Help tab: a level-two Help heading sits
+above the existing level-three Accordion headings, and the panels contain prose
+about retained application state and an independently named source identifier.
+The keyboard-help popup gains a concise heading while retaining its existing
+Breadcrumb actions and Kbd hints. Longer explanations remain inside the Sheet's
+scrolling body. Consumer builders stay in small helper functions to limit stack
+use during debug rendering.
+
+This recipe supplies text presentation and metadata. Markdown parsing, syntax
+highlighting, code copying, text editing, and a multiline Code Block composition
+remain outside its scope. It introduces no retained state or second text renderer.

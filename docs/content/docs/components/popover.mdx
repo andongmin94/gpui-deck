@@ -1,0 +1,53 @@
+---
+title: Popover
+description: "Non-modal open/close state, corner or collision-aware side/alignment placement, focus, outside dismissal, and Escape."
+---
+
+<ComponentPreview name="popover" height={360} />
+
+`PopoverState` owns the open state, trigger focus, popup focus scope, and disabled
+state. Create it once with `cx.new(PopoverState::new)` and observe it for rendering.
+Optionally use `.with_initial_focus(&handle)` for a control inside the popup.
+Otherwise opening focuses the content scope and Tab enters its first control.
+
+Build `Popover::new(id, &state)` with:
+
+- `.trigger(|button| ...)` to supply the trigger's content, accessible name, and
+  appearance using the existing Button API.
+- `.accessibility_label(...)` to name the popup's non-modal dialog surface.
+- `.content(...)` for application-owned popup contents and surface styling.
+- `.anchor(...)` for corner anchoring and `.offset(...)` for the trigger gap.
+- `.side(Placement::Right).align(Align::Start)` for a side-positioned popup with
+  collision flipping. Calling `.align(...)` alone chooses Bottom; its default
+  side alignment is Center. Top/Bottom Start/End follows the scoped logical
+  direction. The positioner tracks the trigger's current frame and clamps to
+  the viewport. Explicit corner anchors and context-menu pointer coordinates
+  retain their separate placement contracts.
+
+The library owns the trigger's activation, focus, disabled state, and expanded
+metadata. The supplied `id` identifies that trigger. Its button builder should
+provide appearance and an accessible name, while application buttons inside the
+popup can call `PopoverState::close(window, cx)`.
+
+State methods include `open`, `close`, `is_open`, `is_disabled`,
+`set_disabled(disabled, window, cx)`, `focus_handle`, and `content_focus_handle`.
+Disabling closes an open popup and prevents reopening. Keep the Popover mounted
+while closed so its trigger retains identity and its anchoring geometry can be
+measured.
+
+Popover is non-modal: it does not trap focus. Tab visits its contents and then
+moves to the next ordinary control after its trigger, closing the popup. Shift-Tab
+before its first content control closes it and returns to the trigger. A containing
+Dialog continues to bound that traversal.
+
+Escape closes the focused popup and restores trigger focus. If Popover is inside
+Dialog, the first Escape leaves the parent dialog open. A pointer press outside
+closes the popup while allowing the clicked control to receive focus. Focus moved
+elsewhere, parent-surface closure, and window deactivation also dismiss it; the
+popup does not pull focus back after another surface has taken it.
+
+When an application removes the entire focused Popover host, including its
+trigger, it must move focus to a surviving control as part of that update. The
+popup cleans up its open state without choosing an arbitrary replacement target.
+The example's tab switches and Dialog closure already move focus before removing
+the popup surface.

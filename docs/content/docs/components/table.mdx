@@ -1,0 +1,68 @@
+---
+title: Table
+description: "Shared fixed/flexible columns, header/body/footer structure, native row/cell semantics, row selection and header sort metadata."
+---
+
+<ComponentPreview name="table" height={360} />
+
+A Table defines columns once and applies them to its header, body, and footer.
+Each row must provide exactly one cell per column. Use fixed widths for stable
+tracks and positive flexible weights to divide the remaining width:
+
+```rust
+Table::new(
+    "sessions",
+    [TableColumn::fixed(px(180.)), TableColumn::flex(1.)],
+)
+.accessibility_label("Sessions")
+.w_full()
+.header(
+    TableRow::new("sessions-header")
+        .cell(TableCell::new("session-heading").p_2().child("Session"))
+        .cell(TableCell::new("date-heading").p_2().child("Date")),
+)
+.row(
+    TableRow::new("session-1")
+        .cell(TableCell::new("session-1-name").row_header(true).p_2().child("Workshop"))
+        .cell(TableCell::new("session-1-date").p_2().child("2026-11-09")),
+)
+.caption(TableCaption::new("sessions-caption").child("Scheduled sessions"))
+```
+
+`header` and `footer` accept one row each. Append body rows through `row` or
+`rows`; `TableRow::cells` also accepts an iterator. An empty body is valid, so an
+application can render its empty-state explanation alongside the table.
+
+Every part implements `Styled`. Cells and captions accept arbitrary children;
+an application can put an existing Button or Checkbox in a cell. Structural
+table parts add no Tab stops and do not intercept those controls' activation.
+Table owns the row's horizontal layout. Apply spacing inside cells rather than
+adding horizontal row padding, margins, or gaps. Cell styles apply to an inner
+content surface, preserving the shared outer column width even when header and
+body padding differ.
+
+| Part | Native semantics |
+| --- | --- |
+| Table | Table, row count, column count, and an explicit accessible label |
+| Header/body/footer | RowGroup |
+| Row | Row and its zero-based index |
+| Header cell | ColumnHeader with row/column indices |
+| Ordinary cell | Cell with row/column indices |
+| Cell with `row_header(true)` | RowHeader, unless it belongs to the column-header row |
+| Caption | Caption without a focus action |
+
+Indices include the header and footer. A visible caption does not automatically
+name the table; supply `accessibility_label` separately. Cells also accept an
+explicit accessible label when their visible content does not provide one.
+
+This is an ordinary table, without cell navigation or a data controller. Row or
+column spans, automatic intrinsic column sizing, sorting, filtering, pagination,
+selection management, and virtualization are not supplied. `TableRow::selected`
+and `TableCell::sort_direction` project application-owned selection and sorting
+into native metadata; they do not perform data operations. Data operations should be
+composed over this structure when a real application needs them.
+
+The copyable [DataTable recipe](../recipes/data-table.mdx) adds text
+filtering, single-column sorting, pagination, page/row checkbox selection, column
+visibility, empty-state recovery, and stable-ID row actions. The native example uses it to browse and apply recording presets;
+its query and page state belong to the application, outside Table.

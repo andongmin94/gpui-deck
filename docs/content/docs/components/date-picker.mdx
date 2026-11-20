@@ -1,0 +1,97 @@
+---
+title: Date Picker
+description: "Calendar selection inside Popover, selected-date or retained-cursor initial focus, single/complete-range closing, dismissal, disabled state, and typed ISO/relative date parsing."
+---
+
+<ComponentPreview name="date-picker" height={360} />
+
+DatePicker connects an existing Calendar to Popover's trigger, placement,
+dismissal, and focus lifecycle. Calendar remains the only owner of the selected
+date. Construct the calendar with its bounds and optional initial value, then
+create the picker once in the same window:
+
+```rust
+let picker = cx.new(|cx| DatePickerState::new(&calendar, window, cx));
+```
+
+Observe the picker for rendering: it observes both its Calendar and Popover, so
+a separate Calendar observation is unnecessary for the same view. Access the
+selection with `selection(cx)` and the nested date state with `calendar()`.
+Render the Calendar only inside this picker's popup, not simultaneously in a
+second standalone grid.
+
+```rust
+DatePicker::new("recording-date", &picker)
+    .accessibility_label("Choose recording date")
+    .offset(px(6.))
+    .trigger(|button| {
+        button
+            .accessibility_label(format!("Recording date, {formatted_date}"))
+            .child(formatted_date)
+    })
+    .content(calendar_surface)
+```
+
+The application supplies formatted trigger text, the calendar/month controls,
+and the popup's dimensions and appearance. `accessibility_label` names the
+popup; name the Button trigger separately. Ordinary CalendarDay activation is
+enough to finish selection; the application should not duplicate a click-to-close
+handler on every day. Root remains responsible for normal Tab traversal and an
+enclosing Dialog's focus containment.
+
+| Action | Result |
+| --- | --- |
+| Open with a selected date | Reset navigation to that date and focus its current grid slot |
+| Open without selection | Retain and focus the Calendar's last navigation date |
+| Navigate days/months | Change navigation without changing the committed date |
+| Single date activation | Select, close and restore the trigger; the same date also closes |
+| Partial range / multiple date activation | Update selection and keep the popup open |
+| Complete range activation | Close and restore the trigger before emitting the changed range |
+| Escape | Close the picker before an enclosing Dialog, retaining selection |
+| Tab / Shift+Tab past popup contents | Close and continue from the trigger's position |
+| Click outside | Close while preserving the outside control's new focus |
+
+The day focus is resolved immediately before opening because month changes can
+move the selected date to a different focus slot. `DatePickerEvent::Change` is
+emitted only for a changed user selection. Single and complete-range values close
+the popup before the event, so a subscriber can open another surface without
+losing its new focus. Partial-range and multiple values are published while open.
+Public Calendar Change behavior remains
+deduplicated; the composition also observes successful same-date activation.
+
+`open` and `close` provide imperative lifecycle control. `set_disabled` closes
+an open popup and disables both its trigger and Calendar. Use this method to
+coordinate disabled state instead of modifying the nested calendar independently.
+`set_selection(selection, window, cx)` validates the full selection, closes the
+popup and updates Calendar without emitting Change. Invalid values leave the
+picker unchanged. Applications can use this same setter for preset Buttons; the
+Selection catalogue supplies a complete range preset.
+
+## Typed dates
+
+`parse_date_text(text, today)` reads one typed date for an ordinary Input beside
+the picker. It accepts `YYYY-MM-DD` with `-`, `/` or `.` separators and the
+case-insensitive English forms `today`, `tomorrow`, `yesterday`, `in N days|weeks`
+and `N days|weeks ago`, singular units included. The library has no clock, so the
+application passes `today`. Impossible dates and other text return `None`.
+Apply a result with `set_selection`, which still enforces the Calendar's bounds
+and disabled dates:
+
+```rust
+let date = parse_date_text(&input.read(cx).value(), today);
+let applied = date.is_some_and(|date| {
+    picker.update(cx, |picker, cx| {
+        picker.set_selection(CalendarSelection::Single(Some(date)), window, cx)
+    })
+});
+```
+
+The Schedule example adds a "Type a date" Field after the picker. Enter applies
+the text relative to the example's fixed date, rewrites it as ISO text, and an
+unreadable or unavailable date shows a Field error until the next edit. The
+picker and field stay separate Tab stops.
+
+The picker supports single, multiple and range dates with an application-formatted
+Button trigger. It does not fetch presets, parse other languages or free-form
+phrases such as "next Friday", or add locale/timezone rules beyond the Calendar
+contract.
