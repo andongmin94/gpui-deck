@@ -1,0 +1,28 @@
+---
+title: 简介
+description: 源码自有的、面向 Rust 和 GPUI 的无头 UI 基础库。
+---
+
+库负责控件的行为、状态、焦点和无障碍语义。
+应用负责自己的组件源码、布局、颜色、字体和资源。
+无头（headless）把控件行为与应用自有的呈现分离开来；
+示例渲染原生 GPUI 窗口，本站的预览则通过 GPUI 的 web 后端在浏览器中运行同样的组件。
+
+GPUI Design 目前包含 42 个公开的库组件族和 23 个可复制的呈现配方。
+shadcn/ui 目录中的每一项都有已实现的范围或平台映射，其限制记录在
+[覆盖范围与状态](./coverage.mdx)中。
+
+<Cards>
+  <Card title="安装" href="./installation.mdx">
+    工具链、原生前置依赖、示例，以及如何添加该 crate。
+  </Card>
+  <Card title="组件" href="./components/index.mdx">
+    库组件族及其键盘、焦点和无障碍约定。
+  </Card>
+  <Card title="配方" href="./recipes/index.mdx">
+    可复制的呈现源码，通过本地 CLI 安装后归你所有。
+  </Card>
+  <Card title="架构" href="./architecture.mdx">
+    渲染、无头行为与你的呈现层如何分工。
+  </Card>
+</Cards>

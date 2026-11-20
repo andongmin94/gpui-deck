@@ -1,0 +1,19 @@
+---
+title: Direction
+description: "スコープ付きの論理的な方向、ネストした上書き、一貫した水平方向のキー/ポインターのジオメトリに対応します。"
+---
+
+<ComponentPreview name="direction" height={360} />
+
+サブツリーを `DirectionProvider::new(Direction::Rtl)` または `Direction::Ltr` で囲みます。
+子孫のコントロールは、レンダリング中に最も近い方向を解決します。ネストした
+プロバイダーは、後続の兄弟に対して外側の方向を復元し、コントロールの
+明示的な `.direction(...)` は継承を上書きします。`Direction::current(cx)` は、
+スコープ内で子孫を構築している間に利用できます。
+
+Direction は、Tabs、RadioGroup、ToggleGroup、Slider、Carousel、Chart、Menubar、
+NavigationMenu の論理的な水平ナビゲーションを制御します。Slider は水平方向のポインター座標も
+反転します。Up/Down と論理的な Home/End は通常の意味を保ちます。
+`direction.row(div())` や `direction.row(TabList::new(...))` で、対応するアプリケーションのレイアウトを指定してください。プロバイダーは
+任意の GPUI の flex コンテナを書き換えません。テキストは論理的な開始側に揃えますが、
+シェーピング、双方向テキストの編集、プラットフォームの IME の動作は引き続き GPUI が担当します。

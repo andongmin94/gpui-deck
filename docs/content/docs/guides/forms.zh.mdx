@@ -1,0 +1,64 @@
+---
+title: 表单
+description: "原生设置示例是公开 API 的完整使用方。"
+---
+
+[原生设置示例](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)是公开 API 的完整使用方。
+请使用 [README](https://github.com/andongmin94/gpui-design#run-the-example) 中的命令，以任一外观运行它。它把 Button、Input、Select、
+Textarea、Field、Label、Combobox、Calendar、DatePicker、Checkbox、Switch、RadioGroup、Slider、Progress、Toggle 和 ToggleGroup
+与导航和浮层控件组合在一起，
+而不把外观放进库中。[导航与浮层指南](./navigation-overlays.mdx)
+介绍了其标签页和键盘帮助弹出层。[布局与数据指南](./layout-data.mdx)
+涵盖 Schedule 表格以及表单的 ScrollArea 组合。
+
+只需调用一次 `gpui_design::init(cx)`，并把窗口内容托管在 `gpui_design::Root` 中。
+Root 提供 Tab 遍历，并在打开的 Dialog 内限定该遍历。请为每个控件提供稳定的元素 ID 和无障碍标签。
+
+## 状态归属
+
+| 控件 | 状态所有者 | 更新应用 |
+| --- | --- | --- |
+| Textarea | 保留的 `Entity<TextareaState>` | 观察它以更新周围的呈现；现有的 Input 事件会报告编辑 |
+| Field | 应用的标签、帮助文本、必填要求和校验错误 | 在现有的 Input、Textarea 或 Combobox 查询周围渲染当前元数据；不引入新的输入状态 |
+| Label | 应用的文本、目标 FocusHandle 和禁用标志 | 点击时聚焦现有控件；使其无障碍名称和禁用状态保持同步 |
+| Combobox | 保留的 `Entity<ComboboxState>` | 观察它以进行渲染；`ComboboxEvent::Change` 报告用户已提交的选中值 |
+| Calendar | 保留的 `Entity<CalendarState>` | 观察它以进行渲染；`CalendarEvent::Change` 报告变化后的单选/多选/范围选择 |
+| DatePicker | 保留的 `Entity<DatePickerState>`，组合现有的 Calendar/Popover 状态 | 观察它以渲染选择和弹出层；单选和完整范围事件在弹出层关闭后触发，部分范围/多选事件则保持其打开 |
+| Checkbox | 类型为 `CheckboxState` 或 `bool` 的应用字段 | `on_change` 报告下一个状态；保存它并调用 `cx.notify()` |
+| Toggle | 应用的 `bool` | `on_change` 请求下一个按下值；用 `pressed` 把它渲染回来 |
+| ToggleGroup | 保留的 `Entity<ToggleGroupState>` | 观察它以进行渲染；`ToggleGroupEvent::Change` 按项顺序报告选中值 |
+| Switch | 应用的 `bool` | `on_change` 报告下一个值；保存它并调用 `cx.notify()` |
+| RadioGroup | 保留的 `Entity<RadioGroupState>` | 观察该实体以进行渲染；订阅 `RadioGroupEvent::Change` 以获取用户的选择变化 |
+| Select | 保留的 `Entity<SelectState>` | 观察该实体以进行渲染；订阅 `SelectEvent::Change` 以获取用户已提交的变化 |
+| Slider | 保留的 `Entity<SliderState>` | 观察它以进行渲染；`SliderEvent::Change` 报告变化后的有序值 |
+| Progress | 应用的百分比和不确定状态标志 | 每次渲染时传入当前值和状态；没有交互回调 |
+
+Checkbox 和 Switch 是受控的。渲染它们绝不会改变应用状态。
+如果应用在回调之后保持所提供的值不变，控件会继续显示该值。
+程序对字段的更改会在下一次渲染时生效，并且不会调用 `on_change`。
+
+像原生示例那样，把保留的实体及其订阅放在视图中。
+在每次渲染时重新创建 RadioGroupState 会丢弃其选中项和稳定的选项焦点句柄。
+
+## 键盘与禁用行为
+
+| 输入 | Checkbox / Switch | RadioGroup |
+| --- | --- | --- |
+| Tab / Shift-Tab | 进入或离开已启用的控件 | 进入已选中的已启用选项；未选中时进入第一个已启用选项；整个组只有一个 Tab 停靠点 |
+| Space / Enter | 通过原生激活路径请求下一个值 | 选中当前聚焦的选项 |
+| Right / Down | 无选择导航 | 选中并聚焦下一个已启用选项，到末尾时循环 |
+| Left / Up | 无选择导航 | 选中并聚焦上一个已启用选项，到开头时循环 |
+| Escape | 向上传递给所在的容器界面 | 向上传递给所在的容器界面 |
+
+RadioGroup 的方向键选择是即时的。Select 在其弹出层打开时保留一个待定的键盘光标，
+仅在激活时提交。两者都会跳过禁用的选项。空的或全部禁用的 RadioGroup 没有 Tab 停靠点。
+
+禁用的控件会忽略激活，并在 Tab 遍历时被跳过。如果获得焦点的控件变为禁用，
+它会保留其焦点绑定直到焦点离开，这样 Tab 和 Shift-Tab 仍能到达相邻的控件。
+
+## 验证边界
+
+现有的 GPUI 测试涵盖指针和原生按键事件的路由、选中/混合状态元数据、禁用行为、分组导航、
+数值控件，以及跨两种外观的典型设置流程。无头的事件模拟无法验证操作系统的
+IME、屏幕阅读器、混合 DPI 显示器，也无法验证原生窗口的实际渲染外观。
+这些检查与自动化的行为测试是分开的。

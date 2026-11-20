@@ -1,0 +1,42 @@
+---
+title: コントリビュート
+description: "各部分のソースの場所と、変更の検証方法を説明します。"
+---
+
+| 場所 | 責務 |
+| --- | --- |
+| `crates/cli/` | ソースコピー CLI とレシピの依存関係カタログ |
+| `crates/base/src/` | `gpui-design` ライブラリと、その動作レベルのテスト |
+| `crates/base/tests/` | 公開 API を使用する統合テスト |
+| `crates/base/examples/starter.rs` | 公開 API のみを使用する、小さく完結したアプリケーション |
+| `crates/base/examples/two_styles.rs` | ネイティブのサンプルと、アプリケーションが所有するスタイル |
+| `crates/base/examples/presentation.rs` | プレゼンテーションレシピが使用する、コピー可能なライト/ダークのアプリケーショントークン |
+| `crates/base/examples/recipes/` | 23 のカタログレシピと Chart の補助プレゼンテーション。コピー可能で、アプリケーションが所有するソース |
+| `crates/base/examples/assets/` | プリセットプレビューとその画像デコードの回帰テストで使用する、埋め込みのサンプルアートワーク |
+| `docs/` | このドキュメントサイト。Fumapress (Vite 上の Fumadocs) で、ページは `docs/content/docs` にあります |
+| `crates/web-preview/` | GPUI の Web バックエンドで WebAssembly にコンパイルされる、ドキュメントのライブプレビュー |
+| `Cargo.toml` / `Cargo.lock` | ワークスペースと、対応する依存関係のセット |
+
+`gpui_design::init(cx)` でライブラリを初期化し、アプリケーションのコンテンツは
+`gpui_design::Root` 内にホストします。小さな起動処理のリファレンスには starter を、より大きな構成には他のネイティブサンプルを使用してください。
+コンシューマーアプリケーションは、このソースを直接扱い、動作レイヤーを再利用しながら、独自のプレゼンテーションを用意できます。
+
+## 変更を検証する
+
+README の
+[Verify changes](https://github.com/andongmin94/gpui-design#verify-changes) に記載されているフォーマット、Clippy、テスト、ビルドのコマンドを実行してください。Verify ワークフローは、Linux、Windows、macOS で同じマトリクスを実行します。
+
+## ドキュメントサイト
+
+このサイトは `docs/` にある Fumapress アプリ (Vite 上の Fumadocs) で、Cloudflare Workers にデプロイされます。ページは
+`docs/content/docs` の MDX ファイルです。各ページの隣には、翻訳が `name.<lang>.mdx` として置かれます (例: 韓国語は `name.ko.mdx`)。
+ライブプレビューは、WebAssembly にビルドされる `crates/web-preview` から提供されます。
+
+```sh
+cd docs
+npm ci
+npm run preview:build   # cargo build for wasm32 + wasm-bindgen into public/preview
+npm run dev
+npm run lint && npm run typecheck
+npm run build && npm run test:browser
+```

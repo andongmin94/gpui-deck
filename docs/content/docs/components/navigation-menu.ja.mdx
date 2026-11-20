@@ -1,0 +1,20 @@
+---
+title: Navigation Menu
+description: "連携する開閉、ローヴィングフォーカス、移動先 Link のアクティブ化を提供します。"
+---
+
+<ComponentPreview name="navigation-menu" height={360} />
+
+`NavigationMenuState` は、順序付きの `NavigationMenuItem` の値の集合を保持します。
+通常の項目は移動先であり、`.with_popup()` は開閉部分を宣言します。項目ごとに 1 つの `NavigationMenuEntry` を持つ
+名前付きの `NavigationMenu` を描画します。ポップアップの内容は
+通常のグループであり、コマンドメニューでもダイアログでもありません。既存の Link または
+Button と、任意の初期フォーカスを指定します。`NavigationMenuLink` は
+`NavigationMenuEvent::Navigate` を通じて移動先を通知し、ルーティングはアプリケーションが管理します。
+
+最上段の行は、ローヴィングフォーカスと論理的な Left/Right/Home/End キーを使用します。アクティブ化
+または Down で開閉部分が開きます。すでに 1 つが開いている場合は、ポインターの移動で
+ポップアップのエントリ間を切り替えます。閉じているバーの上にホバーしただけでは、
+求められていないコンテンツは開きません。ポップアップのコントロールは通常の Tab 移動と、Popover の
+Escape/外側クリックでの閉鎖/フォーカス復帰の動作を保ちます。移動先の Link は、開いている開閉部分とは独立して
+現在のページを示せます。

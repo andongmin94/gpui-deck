@@ -1,0 +1,110 @@
+---
+title: Dropdown Menu
+description: "普通、选中/混合/单选以及嵌套子菜单的语义、导航、叶子项分发、关闭处理和焦点。"
+---
+
+<ComponentPreview name="dropdown-menu" height={360} />
+
+DropdownMenu 和 ContextMenu 共享 `MenuState`、`MenuItem`、`MenuEvent` 和
+`MenuOption`。它们共享的命令行为复用 Popover 来处理打开/关闭状态、
+关闭处理、遍历和焦点恢复。使用固定且有序的
+`MenuItem::new(value, label)` 条目创建
+`MenuState::new(items, cx)`。值必须唯一；对不可用的命令使用
+`.disabled(true)`。空的或全部被禁用的集合
+可以打开，但无法执行命令。
+
+按如下方式渲染 `DropdownMenu::new(id, &state)`：
+
+- `.trigger(|button| ...)` 用于原生触发器的无障碍名称和外观。
+- `.accessibility_label(...)` 用于菜单的无障碍名称。
+- `.content(...)` 按集合顺序为每个条目包含一个 `MenuOption::new(&state, index)`。
+  请提供其文本、间距、颜色和其他视觉内容。
+- `.anchor(...)` 和 `.offset(...)` 用于配置现有的弹出层定位。
+
+观察该状态以进行渲染。读取 `highlighted_index()` 为活动
+命令设置样式，读取 `items()` 获得标签和禁用状态。菜单不保留选中的
+值：命令代表操作，可以重复执行。交互式的表单
+控件应放在菜单命令内容之外。
+
+## 选中型命令
+
+使用 `MenuOption::checked(bool)` 渲染由应用控制的复选框
+命令。省略该构建器则保持普通的 `MenuItem`；`.checked(false)` 呈现为
+未选中的 `MenuItemCheckBox`，而 `.checked(true)` 呈现为已选中的。
+应用在每次渲染时提供可见的指示器和选中值。
+
+```rust
+MenuOption::new(&menu, index)
+    .checked(show_cursor)
+    .child("Show cursor")
+```
+
+选中型命令使用与普通命令相同的导航、禁用行为和
+`MenuEvent::Action(value)`。激活会关闭菜单，并在传递事件之前
+恢复焦点。应用处理该操作
+并渲染其下一个选中值；MenuState 既不存储也不会自动
+切换选中值。更改所提供的值不会分发操作。
+示例中的 Show cursor 和 Keep toolbar visible 命令共享其 Checkbox 和 Switch 所使用的
+保留的应用布尔值。DropdownMenu 和
+ContextMenu 都通过相同的菜单内容组合来渲染这些值。
+
+## 共享的交互与生命周期
+
+| 输入 | 行为 |
+| --- | --- |
+| 触发器点击 / Enter / Space / 下 | 在第一个已启用的命令处打开 |
+| 触发器上 | 在最后一个已启用的命令处打开 |
+| 菜单上 / 下 | 移动光标，循环并跳过已禁用的命令 |
+| 菜单 Home / End | 移到第一个 / 最后一个已启用的命令 |
+| 一个可打印字符 | 循环切换以该字符开头的已启用标签，忽略大小写 |
+| 点击选项 / 菜单 Enter / Space | 执行该命令一次并关闭 |
+| Escape | 关闭并恢复触发器的焦点 |
+| Tab / Shift-Tab | 关闭，并通过 Popover 正常的焦点遍历离开 |
+
+输入定位一次只匹配一个字符；没有缓冲搜索，也没有计时器。
+Ctrl、Alt、平台键和 Fn 快捷键不会参与此搜索。指针悬停会移动
+与键盘导航相同的光标。已禁用的命令仍然可见
+并带有禁用元数据，但会被导航跳过，且无法执行。
+
+订阅 `MenuEvent::Action(value)` 以在
+应用中处理命令。菜单会在传递
+事件之前关闭并恢复其触发器的焦点。因此处理程序可以打开 Dialog，
+而该 Dialog 关闭时随后会返回
+菜单触发器。示例使用 `cx.subscribe_in` 在
+处理命令时获得窗口。
+
+状态方法包括 `open`、`close`、`set_disabled`、`focus_handle` 和
+`content_focus_handle`。`is_open(cx)` 和 `is_disabled(cx)` 接受 `&App`，因为
+它们读取组合而成的 Popover 状态。弹出层的生命周期只有一个持有者。
+选项不是单独的 Tab 停靠点；键盘焦点停留在菜单范围上，
+而高亮的选项提供其 active descendant。外层的 Dialog 仍会
+限定 Tab 遍历，外部的指针按下仍保留其正常操作。
+
+关闭时请保持菜单宿主处于挂载状态。适用与
+Popover 相同的宿主移除焦点约定。`check_state(CheckboxState::Indeterminate)` 提供混合状态的
+复选框命令；`radio_checked(bool)` 提供 MenuItemRadio 语义。
+互斥的单选值、分组及其渲染由应用负责。
+
+原生元数据包括带展开/禁用状态的 Button 触发器、Menu
+范围、带名称的普通/复选框/单选命令及其所提供的选中状态、
+子菜单展开状态以及 active descendant。它不会输出
+原生的 has-popup 属性，也不会输出触发器到菜单的 controls 关系。这些
+约定描述的是已实现的行为，并不声称完全符合无障碍
+模式规范，也不声称已完成屏幕阅读器验证。
+
+## 子菜单
+
+先于父级创建子级 `MenuState` 实体。父级条目声明
+`.submenu(&child)`；使用 `MenuSubmenu::new(&parent, index)` 渲染该条目，
+并通过 `.trigger(|option| ...)` 和包含子级选项的 `.content(...)` 完成。
+子菜单宿主负责弹出层定位，并复用子级现有的 Popover
+生命周期。菜单树必须是无环的，且一个子级只属于一个父级。
+
+子菜单行上的原生焦点会同步父菜单的高亮项。
+展开方向的方向键会打开高亮的子菜单；相反方向的方向键或 Escape
+会关闭一个子菜单并恢复父菜单的范围。指针悬停会打开
+对应的子级并关闭同级分支。普通叶子项的激活会关闭
+整个菜单树，并在根状态上恰好触发一次 `MenuEvent::Action`。
+Tab/Shift-Tab 会通过根 Popover 的遍历离开整个菜单树。
+应用订阅根状态，并负责叶子项的操作和选中/单选
+值。关闭时请将所有宿主保留在组合中。

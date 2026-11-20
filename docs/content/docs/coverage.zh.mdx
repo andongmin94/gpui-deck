@@ -1,0 +1,249 @@
+---
+title: 覆盖范围与状态
+description: "参考目录检查于 **2026-11-11**：shadcn/ui All Components。"
+---
+
+参考目录检查于 **2026-11-11**：
+[shadcn/ui All Components](https://ui.shadcn.com/docs/components)。
+其主目录包含 **66 个条目**，下文每个条目只列出一次。独立的
+AI Elements 目录不在本次比较范围内；主目录中已有的对话类组件仍然包含在内。
+
+GPUI Design 记录了 **42 个公开的库组件族和 23 个可复制的
+呈现/组合配方**，提供 **65 个不同的实现**。
+其余的目录条目 Native Select 被明确地**映射到 Select**
+（针对 GPUI）。下文中的全部 **66 个参考条目都有已实现的范围或平台
+映射**；没有任何条目处于未分配或 Pending 状态。
+
+这是目录层面的覆盖，并非 shadcn/ui 功能的完整对等。每份约定
+都有明确的限制，面向 HTML 的映射并不实现浏览器
+控件或操作系统的选择器。这些数字不衡量性能、
+无障碍合规性，也不代表原生桌面验证已经完成。
+
+目标是达到可比的应用构建广度：共享的行为放在
+库中，而可复用的呈现与界面组合，其源码归应用所有。
+下面的分组描述的是我们自己的实现职责，
+而不是 shadcn 的内部架构。`two_styles` 和 `catalogue` 原生示例
+使用可复用的[呈现配方](./guides/recipes.mdx)。配方源码在
+本仓库中分发；本地源码 CLI 会把配方、依赖、令牌和
+许可证安装到使用方自有的模块中。不提供远程注册表。
+
+## 状态含义
+
+- **Available：**公开的组件族和使用方示例覆盖所述范围。
+- **Recipe：**可复用的应用源码和可运行的使用方示例覆盖
+  所述的呈现；该配方不在库的公开导出之内。
+- **Mapped：**明确的 GPUI 平台等价物满足原生应用的
+  需求；仅限浏览器的约定会被如实记录，而不是藏在别名背后。
+
+## 行为与语义基础
+
+这些组件负责交互、状态、焦点或可复用的语义约定。
+它们的外观仍由应用负责。具体已实现的 API 见
+[表单指南](./guides/forms.mdx)、
+[导航与浮层指南](./guides/navigation-overlays.mdx)和
+[布局与数据指南](./guides/layout-data.mdx)。
+
+| 目录条目 | 状态 | 当前范围或缺口 |
+| --- | --- | --- |
+| Accordion | Available | 固定的条目、单个/多个展开的区段、独立的标题导航，以及仅激活的面板。 |
+| Alert Dialog | Available | `AlertDialog` 复用 Dialog 的状态和焦点；背景点击关闭被阻止，确认归应用负责。 |
+| Breadcrumb | Available | 具名的原生 Navigation、List 和 ListItem 结构，并在当前项上设置 `aria_current(Page)`。折叠的上级项和每个面包屑的下拉菜单在项内组合普通的 DropdownMenu，就像目录中的 `Home › … › page` 路径。应用提供其路径、上级 Button、导航回调、分隔符、折叠策略和样式；没有路由、宽度测量或焦点控制器。 |
+| Button | Available | 原生的指针/键盘激活、禁用状态、焦点、无障碍命名，以及独立于选中样式的显式当前页元数据；内容和样式归应用所有。 |
+| Checkbox | Available | 受控的 checked/unchecked/mixed 状态；应用提供其指示器和标签的呈现。 |
+| Collapsible | Available | 一个保留状态的展开区、Button 触发器、仅激活的内容，以及内容关闭时的焦点处理。 |
+| Combobox | Available | 可编辑的单选/多选、分组结果、可移除的已选值，以及可替换且能保留原生查询/焦点/IME 和仍存在选项的条目。数据获取和请求顺序仍归应用负责；不支持自由输入的值，也没有网络管理器。 |
+| Command | Available | 可替换的命令项、具名的结果分组、按顺序排序的（模糊）匹配，词首优先且分组连续，键盘/指针动作以及 Dialog 组合。替换条目时会保留原生查询和仍存在的高亮项；数据获取归应用负责。 |
+| Context Menu | Available | 右键和键盘打开、可聚焦的目标、共享的普通/勾选/混合/单选命令，以及带叶子项派发、关闭和焦点恢复的嵌套子菜单。值归应用所有。触摸长按会在按压位置打开菜单。目标内容不可交互。 |
+| Dialog | Available | 模态的打开/关闭、原生模态标志、无论有无装饰性背景都隔离背景的指针/滚轮、初始焦点、焦点约束、关闭和返回焦点；应用提供其界面和内容。 |
+| Direction | Available | 限定作用域的 `DirectionProvider`、嵌套覆盖、逻辑行布局，以及 Tabs、RadioGroup、ToggleGroup、Slider、Carousel、Chart、Menubar 和 NavigationMenu 继承的水平导航。Slider 的指针几何也会镜像。应用布局使用 `Direction::row`；GPUI 负责文本整形和编辑。 |
+| Dropdown Menu | Available | 通过 Button 进入共享菜单、由应用控制的勾选/混合/单选语义、已启用项导航、单字符搜索以及嵌套子菜单导航。叶子项激活会先关闭整个菜单树，再发出一个根动作；没有第二个选择存储。 |
+| Field | Available | 为基于现有 Input/Textarea 的控件（包括 Combobox 查询）提供标签焦点、帮助/错误描述以及必填/无效元数据。ControlField 为 Checkbox、Switch、RadioGroup 和 Select 提供同样的标签、错误在前帮助在后的描述以及必填/无效元数据，点击标签会聚焦并可选地激活该控件。校验仍归应用负责。 |
+| Hover Card | Available | 延迟悬停或触发器获得焦点时显示的不可交互的富预览，在触发器/卡片之间移动指针时延迟关闭，支持关闭、禁用状态，以及保留状态的卸载清理。打开和关闭都会保留现有焦点。触摸长按会立即预览而不激活触发器，直到下一次按压。不提供可交互的预览控件。 |
+| Input | Available | 通过保留的编辑引擎提供单行编辑、选择、剪贴板、焦点和原生输入接口。 |
+| Input OTP | Available | 一个保留状态的数字编辑器，槽位由应用渲染，支持选择、剪贴板、删除、撤销、禁用/只读状态和完成事件。粘贴后得到的完整值必须容纳得下并且只含 ASCII 数字；不提供传输或验证码校验。 |
+| Label | Available | 具名的原生纯文本标签，通过所提供的现有 FocusHandle 实现点击聚焦，带显式的禁用标志，且不增加 Tab 停靠点。应用保持目标处于挂载状态，并提供其无障碍名称和匹配的禁用状态。不转发激活，也没有原生的 labelled-by 关系；Field 保留其更丰富的文本输入关联。 |
+| Menubar | Available | 协调的顶层菜单，只有一个 Tab 入口，逻辑上的 Left/Right 和 Home/End 移动，Down/Up 打开，打开状态下的指针切换，以及共享的 Menu 命令语义。 |
+| Native Select | Mapped | 请使用现有的 GPUI `Select`，从固定选项中选择一个值，支持键盘选择、禁用选项和原生无障碍元数据。HTML 表单提交、optgroup 标记和浏览器/操作系统的选择器界面不属于 GPUI 的约定。不提供重复的 NativeSelect 导出。 |
+| Navigation Menu | Available | 具名的导航，包含目标 Link、显式的展开条目、协调的弹出层、漫游焦点、逻辑方向键以及打开状态下的指针切换。弹出层内容仍是普通分组，使用正常的 Tab 遍历；导航目标归应用所有。 |
+| Popover | Available | 非模态内容，支持角落或感知碰撞的方位/对齐放置，保留的打开状态、关闭、正常的焦点遍历以及返回焦点。 |
+| Progress | Available | 受控的已知进度或不确定状态；应用负责填充的几何形状和动画。 |
+| Radio Group | Available | 固定的条目、互斥选择、漫游的 Tab 入口，以及方向键即时选择。 |
+| Resizable | Available | 两个或更多面板、水平/垂直排列、每个面板的分数和实测像素限制并在缩放时重新适配、级联的指针/键盘调整大小、带吸附的可折叠面板、Enter 切换以及尺寸恢复、为应用存储的尺寸提供程序化的布局恢复，以及原生的分隔条值。存储位置归应用所有。 |
+| Scroll Area | Available | 原生视口，配合现有的叠加式滚动条，支持垂直/水平/双向，保留偏移量，以及限定范围的后代元素定位显示。没有虚拟化、流式锚定，也没有单独的键盘滚动焦点。 |
+| Select | Available | 固定有序的选项、一个已提交的值、独立的弹出层光标、Home/End、带缓冲的 Unicode 标签预输入搜索，以及原子化的程序设置/清除。关闭状态下输入会提交；打开状态下输入只高亮。不包含可编辑的查询、条目替换和多选。 |
+| Separator | Available | 水平/垂直、语义性或装饰性的分隔；应用提供其视觉样式。 |
+| Slider | Available | 有序的单个/范围/多个值，每个滑块各有焦点和数值语义，指针调整最近的滑块，滑块不交叉的步进，垂直和 RTL 几何。 |
+| Switch | Available | 受控的布尔状态、原生激活、禁用状态和焦点；应用提供轨道和滑块。 |
+| Tabs | Available | 固定的条目、自动或手动激活、感知方向的导航，以及仅激活的面板。 |
+| Textarea | Available | 建立在现有 `TextareaState` 编辑引擎之上的公开多行渲染器；没有第二套编辑器实现。 |
+| Toast | Available | 保留的通知生命周期以及显式/超时关闭；悬停、受约束的焦点和未激活的窗口会暂停剩余时间。显示时绝不夺取焦点；显式的聚焦关闭会恢复先前的焦点。ToasterState 以可见数量上限堆叠应用自有的值，较旧的条目排队等待，支持原地替换、全部关闭以及显式进入焦点。应用负责消息、动作、位置和类型样式。 |
+| Toggle | Available | 由 Button 的激活和焦点行为组合而成的受控按下状态。 |
+| Toggle Group | Available | 固定的条目，支持多选或可选的单选以及漫游焦点；移动焦点不会改变按下的值。 |
+| Tooltip | Available | 为 Button 提供纯文本的原生描述，可选的不可交互富可见内容，延迟的指针悬停、立即的键盘焦点、Escape 关闭，以及 GPUI 原生的提示定位。不包含可交互的提示内容和触摸长按行为；可交互的预览属于 HoverCard 或 Popover。 |
+
+## 呈现与组合配方
+
+这些条目主要需要可复用的源码组合，具备一致的视觉
+默认值和恰当的语义。应当由现有的 GPUI 布局和控件
+完成工作；没有必要为每个视觉名称再增加一个状态控制器。
+已发布的配方位于 `crates/base/examples/recipes`，把视觉样式保留
+在使用方，并组合进原生的 two-style 示例中。
+
+| 目录条目 | 状态 | 当前范围或缺口 |
+| --- | --- | --- |
+| Alert | Recipe | 行内的标题/描述、默认的信息性 Note 语义、显式的紧急 Alert 语义，以及独立的破坏性样式。没有通知队列、关闭状态或 live-region 投递控制器。 |
+| Aspect Ratio | Recipe | 通过 GPUI 布局实现有限且为正的宽高比、由宽度控制的边框，以及被裁剪的应用自有内容。该包装不增加角色、名称或焦点停靠点；媒体语义和对象适配归其子元素。显式的高度或最小/最大约束遵循 GPUI 的常规布局规则。 |
+| Avatar | Recipe | 具名的圆形图像，在来源缺失、等待中或失败时显示应用显式提供的后备文本。加载、加载延迟和缓存由 GPUI 负责；该包装保留一个 Image 名称且没有焦点停靠点。AvatarGroup 让头像相互重叠，限制可见数量，并通过 “+N” Label 为被隐藏的人命名。没有首字母生成器、状态徽标或单独的加载控制器。 |
+| Badge | Recipe | 静态的具名标签，有 secondary/accent 两种外观。没有点击、切换或自动的 live 播报。 |
+| Button Group | Recipe | 相连的水平/垂直按钮、共享的边框、装饰性分隔符，以及可选的静态文本。保留现有 Button 的动作、禁用状态和各自的 Tab 停靠点；没有漫游选择模型。 |
+| Card | Recipe | 具名的 region、二级标题、描述、头部动作、内容和页脚插槽。布局和调色板归应用所有；没有卡片的焦点停靠点或状态控制器。 |
+| Empty | Recipe | 具名的静态分组，包含标题、描述、可选的媒体和提供的动作。命令搜索示例会清空查询，并通过其现有状态恢复输入焦点。没有加载控制器或自动的 live 播报。 |
+| Input Group | Recipe | 为现有的 InputBase、CommandInput 或其他提供的控件提供共享边框、前置/后置附加元素、水平/垂直排列，以及焦点/错误的呈现。原生编辑、Field 元数据、附加元素动作和禁用策略仍归所提供的控件和应用。没有单独的编辑器或焦点控制器。 |
+| Item | Recipe | 具名的行，包含标题、描述、前置媒体、整行宽度的页眉/页脚以及提供的尾部动作。各插槽只携带其内容的语义，且不增加焦点停靠点。没有整行激活、选择、ItemGroup 或列表控制器。 |
+| Kbd | Recipe | 静态的具名键帽，可为符号和以 `+` 连接的组合覆盖可读标签。没有焦点停靠点、快捷键注册、事件派发或自动的平台字形转换。 |
+| Pagination | Recipe | 受控的上一页/下一页和带编号的页码 Button、原生的当前页元数据、等宽的省略号段、具名的导航，以及空/首页/末页的边界。没有路由或数据加载。 |
+| Sheet | Recipe | 使用现有 Dialog 生命周期的上/右/下/左呈现、受视口限制的首选尺寸、固定的页眉/页脚和一个垂直的 ScrollArea 主体。应用保留 DialogState/ScrollHandle，并提供能放入视口的页眉/页脚内容。没有拖动交互、动画或单独的模态/滚动键控制器。 |
+| Skeleton | Recipe | 静态的装饰性占位符，其宽度、高度、圆角和颜色由应用控制。没有焦点停靠点、原生的角色/名称、闪烁效果或加载状态。 |
+| Spinner | Recipe | 具名的不确定 Progress，带旋转的圆弧、尺寸/颜色样式，并支持 GPUI App 的减弱动效。挂载由应用控制；没有独立的任务、计时器或自动的 live 播报。 |
+| Table | Available | 共享的固定/弹性列、页眉/主体/页脚行、标题以及原生的 table/row/cell 语义，并可选地由应用提供行选择和表头排序方向。没有跨行跨列、排序/过滤引擎、选择控制器或虚拟化。 |
+| Typography | Recipe | 带显式正数级别的具名 Heading，带用于行内代码的原生样式文本段的 Paragraph，以及独立命名、带原生 Code 语义的 InlineCode。Paragraph 暴露一个完整的无障碍名称；其代码范围只有视觉样式，没有单独的 Code 节点。调色板、字体选择、宽度和视觉大小归应用所有。没有 Markdown 解析器、语法高亮、复制动作或编辑器。 |
+
+## 更大的组合能力
+
+这些条目把较低层的行为与呈现组合成更完整的
+工作流。它们仍属于广度目标的一部分，并应当在可运行的
+共享组件之上成长，而不是对同样的输入、
+弹出、焦点和滚动机制各自独立实现。
+
+| 目录条目 | 状态 | 当前范围或缺口 |
+| --- | --- | --- |
+| Attachment | Recipe | 静态的原生 Group，以完整文件名命名，带有可见的媒体类型/大小描述和可选的现有动作。Help 从与 CodeBlock 相同的字符串派生内存中的 JSON 元数据；Inspect JSON 会聚焦该代码视口。格式化和动作行为归应用所有。没有文件访问、上传/下载、进度、预览渲染器或容器的焦点停靠点。 |
+| Bubble | Recipe | 接收/发送的对话界面、分组的作者/时间元数据以及提供的反应 Button，在本地对话记录中演示。样式、反应值和消息内容仍归应用所有；没有聊天传输。 |
+| Calendar | Available | 单选/多选/含端点的范围选择、独立的焦点、可配置一周起始日的六周视图、禁用日期的判定函数、有边界的导航、RTL 以及原生的多选元数据。范围内不可用的日期仍可通过键盘发现，但无法被选中。没有非公历运算，也没有时钟或时区转换。 |
+| Carousel | Available | 每个视图一张或多张连续的幻灯片，每次前进一张且最后一个视图是完整的，有边界或循环的上一张/下一张、水平/垂直按键、RTL、离散的指针滑动、仅视图内挂载、幻灯片离开视图时的安全焦点处理，以及可选启用的自动播放，它会在悬停、焦点、未激活的窗口和减弱动效时暂停，并在用户导航时停止。媒体、幻灯片宽度、动作和播放/暂停控件由应用负责；没有惯性或吸附点之间的自由滚动。 |
+| Chart | Available | 无头的分类数据、可见的数据系列，以及在分组、堆叠、饼图和雷达布局上的指针/键盘数据点检查；布局负责范围、堆叠跨度、扇区占比以及线性或角度的命中测试。可复制的原生折线/柱状/面积图、堆叠柱状/面积图、饼图/环形图和雷达图，带坐标轴或辐条标签、图例 Toggle、精确值读数和同数据的 Table。负值与零分开堆叠；总和非正的饼图没有扇区。没有时间/对数刻度、按扇区的图例选择，也没有外部图表引擎。 |
+| Code Block | Recipe | 只读的多行代码，带完整文本的原生 Code 名称、复制原始字符串的 Button，以及有边界的双轴 ScrollArea 溢出。应用保留其滚动/焦点句柄。聚焦代码后的方向键/翻页/Home/End 导航和受约束的滚轮滚动会保持父级的边界。没有解析器、语法高亮、编辑器、选择模型、行号或复制反馈状态。 |
+| Data Table | Recipe | 固定的列和不可变且 ID 稳定的行，其文本、数值和日期单元格按值排序，数值列末端对齐，对显示文本进行不区分大小写的过滤，单列排序，带编号的分页，页/行复选框选择，列可见性，空状态恢复以及应用的行动作。选择在过滤/翻页后依然保留，并独立于应用当前的选中项。提供原生的行选择和表头排序元数据。没有列重排/调整大小、服务端数据或虚拟化。 |
+| Date Picker | Available | Popover 内的单选/多选/范围 Calendar 值；单选/完整范围的激活会在事件之前关闭，部分范围/多选值则保持打开。预设 Button 使用同一个程序设置函数。`parse_date_text` 会相对于应用提供的今天日期，读取键入的 ISO 日期和英文相对形式（`today`、`in 3 days`、`2 weeks ago`），就像 Schedule 字段中那样。触发器的格式化和外观归应用所有；不提供其他语言、自由格式的短语和预设的获取。 |
+| Drawer | Available | 底部的模态界面，复用 Dialog 的焦点、Escape 和背景生命周期，外加一个专用的向下拖动手柄，带阈值关闭和回弹。主体的滚动/编辑保持独立；没有吸附点或嵌套拖动引擎。 |
+| Marker | Recipe | 静态的日期/状态分界，在两个装饰性 Separator 之间有一个具名的原生 Label。文本在有限宽度内换行；其内容和格式归应用所有。Schedule 读取保留的 Calendar 选择，而不再引入另一套日期或时间线状态。没有焦点停靠点、动作或自动的 live 播报。 |
+| Message | Recipe | 只读的原生 Comment，带应用提供的作者/时间 Label、自动换行的 Paragraph 正文和可选的现有动作。Schedule 展示保留的会话备注及其本地编辑时间，并用一个 Button 把焦点返回到共享的 Textarea。没有消息焦点停靠点、送达状态、传输、历史、流式输出或自动的 live 播报。 |
+| Message Scroller | Available | 现有的 ScrollArea，带稳定的消息键、初始/追加/流式输出时的底部跟随、在同一帧内保留可见的历史锚点、未读计数以及跳到最新。没有虚拟化、传输或强制的焦点变更。 |
+| Questionnaire | Available | 由应用自有的、带类型的答案，以及线性的 问题/复核/完成 状态、受校验约束的前进、Back 和保留的答案。示例连接了真实的 Input 编辑器和应用自有的焦点变化；没有 schema 解释器或条件分支。 |
+| Sidebar | Recipe | 具名的导航，使用普通 Button，在专用的 TabsState 之上提供显式激活和当前页元数据；静态分组以及可选的整体/分组 Collapsible 状态会保留选择，并在条目卸载时恢复焦点；可选的图标栏会让具名、当前、已聚焦的条目作为仅图标的 Button 保持挂载，并带悬停提示。Settings 和 catalogue 在 640 px 以下会把导航堆叠在内容之上。没有路由、任意嵌套的菜单树，也不复用先前被 TabList 绑定过的状态。 |
+| Trace | Recipe | 应用提供的摘要、具名的只读 Paragraph 详情，以及在保留的 Collapsible 状态之上的可选现有动作。保留共享的 Button 激活、展开/禁用元数据、仅激活的内容以及关闭时的焦点。Help 展示的是当前表单值，而非已记录的操作。没有执行历史、流式输出、解析器、单独的展开状态或滚动控制器。 |
+
+## 完成标准与当前工作
+
+目标是在原生 GPUI 上，在行为、无障碍、视觉
+默认值和源码分发方面达到 shadcn/ui 级别的可用性。这 66 个条目的目录仅统计
+范围覆盖。它不是完成百分比，也不是发布就绪的
+声明。上文的 `Available`、`Recipe` 和 `Mapped` 并不意味着对等已经完成。
+
+工作在此处和 Git 中跟踪，没有单独的进度报告。当一项能力的文档化使用方约定已实现、
+在原生示例中演练过、由现有测试层中合适的一层覆盖，
+并且文档准确时，它才算完成。平台观察与自动化检查分开记录。
+
+| 优先级 | 工作 | 完成条件 | 当前状态 |
+| --- | --- | --- | --- |
+| 1 | 现有的正确性和核心交互缺口 | 修复观察到的故障；支持单选的 ToggleGroup 和可同时展开多项的 Accordion；验证原生值、键盘/指针激活、禁用状态以及关闭时的焦点 | 已实现，带有针对性的测试和目录使用方 |
+| 2 | 其余常见的组件约定 | 把官方组件示例与上文各范围逐一对照审查；实现手动 Tabs 激活、弹出层方位/对齐、范围输入/日期选择，以及使用方所需的其余选择/表格/导航能力，并配以针对性的测试和示例 | 所列的常见缺口已实现；核心的保留值、组合、源码分发和原生元数据审查已完成。功能限制仍在范围表中明确列出 |
+| 3 | 视觉默认值与无障碍 | 一致且可见的键盘焦点、禁用/悬停/选中/错误状态、可复用的应用自有令牌、窄窗口布局，以及可用的浅色/深色呈现 | 目录焦点和可复制的浅色/深色令牌已实现；已进行原生 Calendar/Sheet 冒烟测试；已修正无名称的目录按钮/链接并带回归覆盖；更广泛的原生审查待进行 |
+| 4 | 源码分发与开发者体验 | 小而完整的 starter、可编译的公开示例、明确的受支持 API 边界，以及能解析配方依赖和令牌的源码复制工作流 | Starter、doctest 关卡、应用令牌和感知依赖的源码 CLI 已实现；受支持的输入/控件边界和使用方测试 feature 已记录；已移除未使用的 ThemeAppearance |
+| 5 | 发布验证 | 现有的格式化、lint、完整行为测试套件和原生示例构建均通过；有代表性的原生 IME、屏幕阅读器、DPI 和视觉流程有针对具体平台的观察 | 未完成 |
+
+当前的 Windows 检查点通过了 722 个行为/集成测试、5 个 CLI
+测试、15 个文档测试（其中两个原本就被忽略）、格式化、Clippy 以及所有原生
+示例/CLI 构建，这是在 Carousel 自动播放暂停、Sidebar 图标栏、
+面向 Checkbox/Switch/RadioGroup/Select 的 ControlField 和 AvatarGroup 被
+添加到模糊的 Command 排序、Resizable 像素限制、带类型的 DatePicker
+日期以及触摸长按之上之后。
+[011fd63f 的三平台运行](https://github.com/andongmin94/gpui-design/actions/runs/44647159361)
+涵盖到原生视觉修复为止的工作；更新的提交通过该 PR 的 CI 在 Linux、
+macOS 和 Windows 上运行。avatar 配方现在还通过 CLI 导出
+`AvatarGroup`；配方依赖不变，而此前对复制的配方模块、资源和 59 个本地文档链接的
+审查不再重复。
+[草稿 PR #1](https://github.com/andongmin94/gpui-design/pull/1) 包含
+实现的提交和当前的验证状态。
+
+shadcn 官方示例所涉及的“未提供”限制现在已在明确的边界内
+实现：键入的日期接受 ISO 和少数几种英文
+相对形式，而非任意的自然语言，布局存储则
+仍归应用所有。触摸长按仅用模拟的 GPUI 触摸
+事件演练过；尚未在触摸硬件上试过。Carousel 自动播放、
+Sidebar 图标栏、ControlField 和 AvatarGroup 仅有无头和组合覆盖；
+其原生外观尚未被观察过。
+
+现有的测试涵盖文档所述的选择/浮层约定、保留值的
+设置函数、不可用的 Calendar 日期/RTL、表格选择/可见性、Sidebar 关闭、
+原生只读元数据、多行/已滚动的 UTF-16 点查找和模态标志
+（包括非模态的 Popover），以及无装饰性背景时的背景指针/滚轮隔离。组合
+检查包括 320/980 px 下的 Sidebar，以及 320×520/980×840 下的所有 Sheet 边缘。
+
+原生 Windows 观察涵盖 starter 的编辑/Tab/Enter、Selection 视图
+和范围弹出层、不可用的周日焦点/被阻止的激活，以及顶部 Sheet 的
+布局/主体滚动/焦点返回。UI Automation 的名称已被检查，缺失处已修正，
+并在 Navigation/Selection 中重新观察。这些只是有限的视觉
+和元数据观察，并非屏幕阅读器朗读验证。
+
+之后的一次原生 Windows 检查（一台 QHD 显示器、假定 100% 缩放、浅色和
+深色呈现）观察了目录中的折线图、堆叠柱状/面积图、饼图、
+环形图和雷达图，雷达图的指针检查，每个视图一张和两张
+幻灯片的 Carousel 配合 Next，以及 Breadcrumb 省略号菜单导航到
+Component APIs。在 `two_styles` 中，它观察了 Item 的媒体/页眉/页脚布局、
+丰富的 Edit session 提示、键入日期（“in 3 days”被应用；“2026-02-30”
+显示 Field 错误），以及日程分隔条停在计划面板
+约 96 px 的下限处。该检查把雷达图的辐条标签移到了轮缘之外，并
+把 Item 媒体中依赖字体的记录字形替换成了绘制的圆点。
+
+仍待完成：实际的韩文/CJK IME 组合/候选/提交/取消、屏幕阅读器
+朗读和操作、混合 DPI、触摸硬件，以及其余的桌面视觉审查。自动化
+工具不支持 Hangul 键，因此该原生流程需要手动切换到韩文
+模式。无头的处理函数测试
+不能确立原生 IME 行为。总体目标仍未完成。
+官方的 [Accordion multiple 示例](https://ui.shadcn.com/docs/components/base/accordion#multiple)、
+[Toggle Group 用法](https://ui.shadcn.com/docs/components/base/toggle-group#usage)、
+[Slider range](https://ui.shadcn.com/docs/components/base/slider#range)、
+[Calendar](https://ui.shadcn.com/docs/components/base/calendar) 和
+[Combobox](https://ui.shadcn.com/docs/components/base/combobox) 提供了具体的
+行为参考。[Data Table 指南](https://ui.shadcn.com/docs/components/base/data-table)
+和 [Sidebar](https://ui.shadcn.com/docs/components/base/sidebar) 提供了
+选择、列可见性以及折叠/分组组合的参考。
+[Sheet 参考](https://ui.shadcn.com/docs/components/base/sheet)描述了
+四边放置。Calendar 对不可用日期的焦点处理遵循
+[APG 禁用网格指南](https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/#focusability-of-disabled-controls)；
+其应用判定函数和周顺序仍是明确的原生约定。
+[简介](https://ui.shadcn.com/docs)和
+[主题指南](https://ui.shadcn.com/docs/theming)也把视觉默认值和
+源码复用纳入了目标。特定于浏览器的 API 需要显式的原生
+等价物，而不是额外的别名。
+
+使用
+`cargo run -p gpui-design --example two_styles --locked -- settings` 查看
+会话控件，使用 `cargo run -p gpui-design --example catalogue --locked` 查看
+导航、OTP/Drawer/Toast、媒体/图表，以及对话/问卷流程。
+
+原生 IME、屏幕阅读器、视觉、DPI 和性能方面的观察仍与自动化检查
+分开。未执行的平台验证一律不视为
+完成，没有测量数据也不做任何性能声明。
+
+## 参考对照
+
+[shadcn 简介](https://ui.shadcn.com/docs)描述了源码所有权、
+组合、分发和视觉默认值。可比的广度既包括
+这些面向使用方的配方，也包括无头行为。
+
+当前的 [Combobox](https://ui.shadcn.com/docs/components/base/combobox)
+文档涵盖可编辑的自动补全和更多的选择变体；
+这里的实现提供分组的单选/多选以及条目
+替换。应用保留标签（chip）的呈现和异步请求的
+所有权；这些能力是在深化同一个组件族，而不是新增组件。
+[Command](https://ui.shadcn.com/docs/components/base/command) 包含对话框
+组合，而不需要第二个独立的命令引擎。
+
+[Date Picker](https://ui.shadcn.com/docs/components/base/date-picker) 由日历和弹出层部件
+组合而成。
+[Data Table](https://ui.shadcn.com/docs/components/base/data-table) 是在共享基础之上
+构建特定应用表格的指南。
+[Native Select](https://ui.shadcn.com/docs/components/base/native-select) 明确
+封装了浏览器的 HTML 控件，因此其平台约定需要适配。

@@ -1,0 +1,70 @@
+---
+title: フォーム
+description: "ネイティブの設定サンプルは、公開 API を完全に利用するコンシューマーです。"
+---
+
+[ネイティブの設定サンプル](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)は、公開 API を完全に利用する
+コンシューマーです。[README](https://github.com/andongmin94/gpui-design#run-the-example) のコマンドを使って、どちらの外観でも実行できます。このサンプルは Button、Input、Select、
+Textarea、Field、Label、Combobox、Calendar、DatePicker、Checkbox、Switch、RadioGroup、Slider、Progress、Toggle、ToggleGroup を
+ナビゲーションとオーバーレイのコントロールと組み合わせており、
+ライブラリに外観を持ち込んでいません。[ナビゲーションとオーバーレイのガイド](./navigation-overlays.mdx)
+では、そのタブとキーボードヘルプのポップオーバーを説明しています。[レイアウトとデータのガイド](./layout-data.mdx)
+では、Schedule テーブルとフォームの ScrollArea の構成を扱います。
+
+`gpui_design::init(cx)` を一度だけ呼び出し、ウィンドウのコンテンツを `gpui_design::Root` 内にホストしてください。
+Root は Tab による移動を提供し、開いている Dialog の内部にそれを封じ込めます。各コントロールには、
+安定した要素 ID とアクセシブルなラベルを付けてください。
+
+## 状態の所有
+
+| コントロール | 状態の所有者 | アプリケーションの更新 |
+| --- | --- | --- |
+| Textarea | 保持される `Entity<TextareaState>` | 周囲のプレゼンテーションのために監視します。編集は既存の Input イベントが通知します |
+| Field | アプリケーションのラベル、ヘルプ、必須要件、バリデーションエラー | 既存の Input、Textarea、または Combobox のクエリの周りに現在のメタデータを描画します。新しい入力状態はありません |
+| Label | アプリケーションのテキスト、対象の FocusHandle、無効フラグ | クリックで既存のコントロールにフォーカスします。そのアクセシブルな名前と無効状態を同期させておきます |
+| Combobox | 保持される `Entity<ComboboxState>` | 描画のために監視します。`ComboboxEvent::Change` は、ユーザーが確定した値を通知します |
+| Calendar | 保持される `Entity<CalendarState>` | 描画のために監視します。`CalendarEvent::Change` は、変更された単一/複数/範囲の選択を通知します |
+| DatePicker | 既存の Calendar/Popover の状態を合成する、保持される `Entity<DatePickerState>` | 選択とポップアップの描画のために監視します。単一および完全な範囲のイベントはポップアップを閉じた後に発生し、部分的/複数のイベントでは開いたままです |
+| Checkbox | `CheckboxState` または `bool` 型のアプリケーションのフィールド | `on_change` が次の状態を通知します。それを保存して `cx.notify()` を呼び出します |
+| Toggle | アプリケーションの `bool` | `on_change` が次の押下値を要求します。`pressed` で描画に反映し直します |
+| ToggleGroup | 保持される `Entity<ToggleGroupState>` | 描画のために監視します。`ToggleGroupEvent::Change` は、選択された値をアイテムの順に通知します |
+| Switch | アプリケーションの `bool` | `on_change` が次の値を通知します。それを保存して `cx.notify()` を呼び出します |
+| RadioGroup | 保持される `Entity<RadioGroupState>` | 描画のためにエンティティを監視します。ユーザーによる選択の変更は `RadioGroupEvent::Change` を購読します |
+| Select | 保持される `Entity<SelectState>` | 描画のためにエンティティを監視します。確定されたユーザーによる変更は `SelectEvent::Change` を購読します |
+| Slider | 保持される `Entity<SliderState>` | 描画のために監視します。`SliderEvent::Change` は、変更された順序付きの値を通知します |
+| Progress | アプリケーションのパーセンテージと不定フラグ | 描画のたびに現在の値と状態を渡します。インタラクションのコールバックはありません |
+
+Checkbox と Switch は制御されるコンポーネントです。これらを描画しても、アプリケーションの状態が変わることはありません。
+コールバックの後でアプリケーションが渡した値を変更しなければ、
+コントロールはその値を表示し続けます。プログラムによるフィールドの変更は、
+次の描画で適用され、`on_change` は呼び出されません。
+
+ネイティブのサンプルと同様に、保持されるエンティティとそのサブスクリプションはビュー内に保持してください。
+描画のたびに RadioGroupState を作り直すと、その選択と
+安定したオプションのフォーカスハンドルが失われます。
+
+## キーボードと無効時の動作
+
+| 入力 | Checkbox / Switch | RadioGroup |
+| --- | --- | --- |
+| Tab / Shift-Tab | 有効なコントロールに入る、または出る | 選択された有効なオプション (未選択の場合は最初の有効なオプション) に入る。グループ全体で Tab ストップは 1 つ |
+| Space / Enter | ネイティブの起動経路で次の値を要求する | フォーカスされたオプションを選択する |
+| Right / Down | 選択のナビゲーションはない | 次の有効なオプションを選択してフォーカスし、末尾では先頭に戻る |
+| Left / Up | 選択のナビゲーションはない | 前の有効なオプションを選択してフォーカスし、先頭では末尾に戻る |
+| Escape | それを含むサーフェスに伝播する | それを含むサーフェスに伝播する |
+
+RadioGroup の矢印キーによる選択は即時です。Select はポップアップが開いている間、保留中のキーボードカーソルを保持し、
+起動したときにのみ確定します。どちらも無効な
+オプションをスキップします。空の、またはすべてが無効な RadioGroup には Tab ストップがありません。
+
+無効なコントロールは起動を無視し、Tab による移動ではスキップされます。フォーカス中の
+コントロールが無効になった場合は、フォーカスが離れるまでそのフォーカスバインディングを保持するため、
+Tab と Shift-Tab で隣のコントロールに移動できます。
+
+## 検証の範囲
+
+既存の GPUI テストは、ポインターとネイティブのキーイベントのルーティング、チェック/混在の
+メタデータ、無効時の動作、グループのナビゲーション、数値コントロール、そして両方の外観にわたる代表的な
+設定フローをカバーしています。ヘッドレスのイベントシミュレーションでは、オペレーティングシステムの
+IME、スクリーンリーダー、混在 DPI のディスプレイ、ネイティブウィンドウの描画された外観は検証できません。
+これらの確認は、自動化された動作テストとは別に扱います。

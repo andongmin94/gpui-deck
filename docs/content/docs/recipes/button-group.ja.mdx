@@ -1,0 +1,24 @@
+---
+title: Button Group
+description: "任意のテキストスロットを持つ、連結された水平/垂直のボタン。"
+---
+
+[`button_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/button_group.rs) は、関連する
+Button に 1 つのフレームと装飾的な区切りを与えます。既存の `Button` の
+インスタンスを受け取って連結したスタイルを適用し、その識別、アクション、
+無効状態、個別の Tab ストップを維持します。
+
+```rust
+ButtonGroup::new("calendar-month", "Calendar month", palette)
+    .axis(Axis::Horizontal)
+    .button(previous_month_button)
+    .text("November 2026")
+    .button(next_month_button)
+    .w_full()
+```
+
+デフォルトは水平で、`Axis::Vertical` を指定すると同じ部品を縦に積みます。`text` は
+フォーカスストップのない静的なラベルです。`Styled` でフレームとサイズを上書きできます。
+グループが外側の罫線を所有するため、フォーカスには accent の塗りを使用します。グループは
+矢印キーによるナビゲーションや押下値の状態を追加しません。ローヴィングフォーカスで複数の押下値を扱うコントロールは、
+引き続き `ToggleGroup` です。

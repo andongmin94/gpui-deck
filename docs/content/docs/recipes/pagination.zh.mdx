@@ -1,0 +1,27 @@
+---
+title: Pagination
+description: "受控的上一页/下一页按钮、当前页文本，以及空/首页/末页的边界。"
+---
+
+[`pagination.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/pagination.rs) 把普通的
+Button 组合成具名的原生导航。应用提供从零开始的
+页索引、页数和回调。
+
+```rust
+Pagination::new("preset-pages", "Recording preset pages", page, page_count, palette)
+    .on_change(move |page, _, cx| {
+        table_state.update(cx, |state, cx| state.set_page(page, cx));
+    })
+```
+
+对于非空集合，页索引必须小于页数。空
+结果使用索引零和页数零，显示 `No pages`，并同时禁用
+Previous 和 Next。否则，带编号的按钮跟在 Previous 之后：最多七页
+会直接显示，更长的集合则保留首页和末页、
+当前页及其相邻页，每段被省略的部分显示为静态的
+`More pages` 标签。翻页时条目数量保持为七，因此控件
+不会位移。当前页带有原生的当前页元数据和选中
+样式，并且不会请求变更。Previous 在首页禁用，
+Next 在末页禁用。按钮保持普通的 Tab 和激活行为，
+包括动作之后变为禁用的按钮上的焦点。该配方
+不拥有保留的页码或数据；路由和数据获取归应用负责。

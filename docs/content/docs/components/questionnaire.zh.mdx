@@ -1,0 +1,20 @@
+---
+title: Questionnaire
+description: "线性的问题/回顾/完成流程、经过验证的答案和返回。"
+---
+
+<ComponentPreview name="questionnaire" height={360} />
+
+`QuestionnaireState<A>` 存储应用的答案类型和一个固定的线性
+流程。`submit_answer` 接收一个答案以及应用的验证结果，
+即使被拒绝也会保留该答案，并且仅在验证成功后才前进。
+验证错误会让当前问题保持可供修改。`back()` 返回到
+上一个问题/回顾，且不会丢弃答案；`complete()` 从 Review 转换到
+Complete。空的问卷从 Review 开始。
+
+`Questionnaire::new(id, label)` 为当前阶段提供一个带名称的语义
+分组。请组合现有的编辑器和普通导航 Button，在状态变化后通知
+所属视图，并在卸载编辑器之前移动焦点。目录
+演示了两个保留的 Input 实体、验证、Back、回顾，以及
+完成并写入本地会话。不提供模式语言、分支
+引擎、提交后端，也没有重复的字段注册表。

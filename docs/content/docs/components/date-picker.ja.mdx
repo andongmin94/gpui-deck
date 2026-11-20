@@ -1,0 +1,92 @@
+---
+title: Date Picker
+description: "Popover 内でのカレンダー選択、選択日または保持されたカーソルへの初期フォーカス、単一/完成した範囲での閉鎖、閉じる動作、無効状態、入力された ISO/相対日付の解析に対応します。"
+---
+
+<ComponentPreview name="date-picker" height={360} />
+
+DatePicker は既存の Calendar を Popover のトリガー、配置、
+閉じる動作、フォーカスのライフサイクルに接続します。選択された日付の所有者は引き続き Calendar だけです。
+範囲と任意の初期値を指定して Calendar を構築し、同じウィンドウ内でピッカーを一度だけ
+作成します。
+
+```rust
+let picker = cx.new(|cx| DatePickerState::new(&calendar, window, cx));
+```
+
+レンダリングのためにピッカーを observe します。ピッカーは Calendar と Popover の両方を observe するため、
+同じビューで Calendar を別に observe する必要はありません。選択には
+`selection(cx)` で、内部の日付 State には `calendar()` でアクセスします。
+Calendar は、このピッカーのポップアップの内側にのみ描画し、
+2 つ目の独立したグリッドと同時には描画しないでください。
+
+```rust
+DatePicker::new("recording-date", &picker)
+    .accessibility_label("Choose recording date")
+    .offset(px(6.))
+    .trigger(|button| {
+        button
+            .accessibility_label(format!("Recording date, {formatted_date}"))
+            .child(formatted_date)
+    })
+    .content(calendar_surface)
+```
+
+アプリケーションは、書式設定されたトリガーのテキスト、カレンダー/月のコントロール、
+ポップアップの寸法と外観を提供します。`accessibility_label` はポップアップに名前を付けます。
+Button のトリガーには別に名前を付けてください。通常の CalendarDay の操作だけで
+選択は完了します。アプリケーションが各日付にクリックして閉じるハンドラーを重複して付ける必要はありません。Root は引き続き通常の Tab 移動と、
+それを囲む Dialog のフォーカスの封じ込めを担当します。
+
+| 操作 | 結果 |
+| --- | --- |
+| 選択日がある状態で開く | ナビゲーションをその日付にリセットし、グリッド上のその現在のスロットにフォーカスします |
+| 選択なしで開く | Calendar が最後にナビゲートした日付を保持してフォーカスします |
+| 日/月のナビゲーション | 確定済みの日付を変えずにナビゲーションを変更します |
+| 単一日付の操作 | 選択し、閉じて、トリガーを復元します。同じ日付でも閉じます |
+| 部分的な範囲 / 複数日付の操作 | 選択を更新し、ポップアップを開いたままにします |
+| 完成した範囲の操作 | 変更された範囲を通知する前に、閉じてトリガーを復元します |
+| Escape | 選択を保持したまま、それを囲む Dialog より先にピッカーを閉じます |
+| ポップアップの内容を越える Tab / Shift+Tab | 閉じて、トリガーの位置から続けます |
+| 外側のクリック | 外側のコントロールの新しいフォーカスを保ったまま閉じます |
+
+月の変更で選択日が別のフォーカススロットに移動することがあるため、日付のフォーカスは開く直前に
+解決されます。`DatePickerEvent::Change` は、ユーザーの選択が変わった場合にのみ
+発行されます。単一値と完成した範囲の値は、イベントの前にポップアップを閉じるため、
+購読側は新しいフォーカスを失わずに別のサーフェスを開けます。部分的な範囲と複数の値は開いている間に通知されます。
+公開されている Calendar の Change の動作は
+重複排除されたままで、この構成は同じ日付の操作の成功も observe します。
+
+`open` と `close` は命令的なライフサイクル制御を提供します。`set_disabled` は
+開いているポップアップを閉じ、トリガーと Calendar の両方を無効にします。無効状態を調整するときは、内部のカレンダーを個別に変更せず、
+このメソッドを使用してください。
+`set_selection(selection, window, cx)` は選択全体を検証し、ポップアップを閉じ、
+Change を発行せずに Calendar を更新します。無効な値ではピッカーは
+変更されません。アプリケーションは、プリセットの Button にも同じセッターを使用できます。
+Selection カタログは完全な範囲のプリセットを提供します。
+
+## 入力された日付
+
+`parse_date_text(text, today)` は、ピッカーの隣にある通常の Input のために、入力された日付を 1 つ読み取ります。`-`、`/`、`.` を区切りとする
+`YYYY-MM-DD` と、大文字小文字を区別しない英語の形式 `today`、`tomorrow`、`yesterday`、`in N days|weeks`、
+`N days|weeks ago`（単数形の単位を含む）を受け付けます。ライブラリには時計がないため、
+アプリケーションが `today` を渡します。存在しない日付やその他のテキストは `None` を返します。
+結果は `set_selection` で適用します。これは引き続き Calendar の範囲と
+無効な日付を強制します。
+
+```rust
+let date = parse_date_text(&input.read(cx).value(), today);
+let applied = date.is_some_and(|date| {
+    picker.update(cx, |picker, cx| {
+        picker.set_selection(CalendarSelection::Single(Some(date)), window, cx)
+    })
+});
+```
+
+Schedule のサンプルは、ピッカーの後に "Type a date" の Field を追加します。Enter はサンプルの固定された日付を基準に
+テキストを適用し、ISO 形式のテキストに書き換えます。読み取れない日付や利用できない日付は、次の編集まで Field のエラーを表示します。
+ピッカーとフィールドは別々の Tab ストップのままです。
+
+ピッカーは、アプリケーションが書式設定した Button のトリガーで、単一、複数、範囲の日付をサポートします。
+プリセットの取得、他の言語や "next Friday" のような自由形式のフレーズの解析、
+Calendar の契約を超えるロケール/タイムゾーンのルールの追加は行いません。

@@ -1,0 +1,43 @@
+---
+title: Input Group
+description: "围绕现有输入的共享边框，带前置/后置附加元素和水平/垂直布局。"
+---
+
+[`input_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/input_group.rs) 为现有的控件
+和可选的前置/后置元素提供一个边框。构造函数接收控件本身，因此其原生输入渲染器、值、
+选择和输入接口都仍由现有的编辑器负责。
+
+```rust
+let control = InputBase::new("session-name")
+    .role(None::<Role>)
+    .semantic_owner::<Input>(input.entity_id())
+    .h(palette.control_height)
+    .w_full()
+    .child(Input::new(&input));
+
+InputGroup::new("session-name-group", control, palette)
+    .focused(input.focus_handle(cx).is_focused(window))
+    .invalid(name_invalid)
+    .trailing(default_name_button)
+```
+
+请把该组放在现有的 `Field` 内，以保留输入的标签、帮助、
+必填状态和错误元数据。请让原生编辑器直接位于其
+`InputBase` 语义所有者之下；该组环绕整个控件。当该组提供外边框和内边距时，请移除
+控件原有的外边框和内边距。`CommandInput`
+同样可以直接传入，保留其搜索和输入语义。
+
+默认是水平。`.leading(element)` 和 `.trailing(element)` 分别出现在
+控件之前和之后。`.axis(Axis::Vertical)` 把它们放在控件上方和下方；
+示例在现有的 Textarea 下方使用了一个后置的键盘提示。
+每个插槽接受一个元素，可以是应用自有的容器。
+遍历顺序遵循所提供的 前置/控件/后置 顺序；当输入应当在 Tab 顺序中先于动作按钮时，
+请把动作按钮放在后置插槽中。
+
+该边框不增加 Tab 停靠点或点击聚焦处理。所提供的按钮保留
+各自的焦点和回调。`focused` 和 `invalid` 只为边框设置样式，
+其中 invalid 优先；原生的无效元数据仍是 Field 的职责。
+应用选择启用哪些附加元素。在示例中，Use default
+只在会话名称缺失时出现，并在输入不可编辑时禁用。动作运行时，其现有输入状态会接收 `MiniCast`
+并重新获得焦点。该配方不会创建第二个文本值，也不会
+从其子元素推断修改权限。`Styled` 可以覆盖边框。

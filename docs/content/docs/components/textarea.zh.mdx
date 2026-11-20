@@ -1,0 +1,30 @@
+---
+title: Textarea
+description: "基于同一引擎的多行编辑、保留的文本、换行，以及正常的表单 Tab 遍历。"
+---
+
+<ComponentPreview name="textarea" height={360} />
+
+`Textarea::new(&state)` 渲染现有的多行编辑引擎。只构造一次
+`TextareaState::new(window, cx)`，使用 `.rows(3)` 设置固定行数，或使用
+`.auto_grow(min, max)` 实现有界的自动增长。该状态还支持
+占位符/默认文本和软换行；选择、撤销、滚动、剪贴板
+以及原生的文本输入接口都保留在同一个保留的实体中。
+
+为其提供带有 `Role::MultilineTextInput` 和无障碍
+标签的 `InputAccessibility`。将渲染器包在 `InputBase` 中，作为由应用负责的框架，并设置
+框架的 `.role(None::<Role>)` 和 `.semantic_owner::<Textarea>(state.entity_id())`，使
+文本实体成为唯一的原生语义/焦点持有者。示例对其单行字段和多行备注
+使用同一套应用调色板。
+
+Enter 默认插入换行。对于基于行数和自动增长的 textarea，Tab 和 Shift-Tab 都遵循普通的表单
+导航；代码编辑器式的缩进则是另外的功能。`set_disabled(bool, cx)` 会阻止编辑和普通的 Tab 进入。
+在获得焦点时被禁用的字段会保留其绑定，以便 Tab 可以离开。重新启用
+会恢复进入。`set_readonly(bool, cx)` 会阻止编辑，同时保留焦点和
+选择。程序化的 `set_value` 仍可用于应用的更新。
+原生输入节点会显式暴露其只读状态，以及
+其可用的编辑操作。
+
+请将状态保存在可折叠区域、标签面板或 Dialog 的渲染路径之外，
+使关闭该界面时文本得以保留。示例在设置对话框关闭并重新打开时
+保留了 Session notes。

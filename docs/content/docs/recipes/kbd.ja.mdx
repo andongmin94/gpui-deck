@@ -1,0 +1,34 @@
+---
+title: Kbd
+description: "静的で名前付きのキーキャップと、+ で結合されたキーの組み合わせ。"
+---
+
+[`kbd.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/kbd.rs) は、静的な個別の
+キーキャップと、キーの組み合わせを提供します。各 Kbd は、可視のテキストをデフォルトの
+ネイティブな Label の名前として使用します。記号のキーには、読み上げ可能な名前を明示的に付けてください。
+
+```rust
+Kbd::new("guide-up-key", "↑", palette)
+    .accessibility_label("Arrow up");
+
+KbdGroup::new("context-menu-shortcut", palette)
+    .key(Kbd::new("context-menu-shift", "Shift", palette))
+    .key(Kbd::new("context-menu-f10", "F10", palette));
+```
+
+`KbdGroup` は、渡された順序を維持し、キーキャップの間に `+` を挿入します。そのネイティブな
+Group には、重複する名前はなく、各キーは自身の読み上げ可能な Label を保持します。
+Shift+Tab のように、同時に押すキーにはグループを使用してください。Enter または Space、
+あるいは矢印キーのように、選択肢を示す場合は、独立した
+Kbd 要素を、アプリケーションの通常のレイアウトで並べてください。
+
+どちらの型も `Styled` を実装しています。パレットが、キーキャップのフィールドの色、
+罫線、角丸、前景色、フォントサイズに加え、グループの区切りに使う控えめな色のテキストを提供します。
+キーのラベルと、プラットフォーム固有のグリフの選択は、アプリケーションが所有します。
+このレシピには、フォーカスストップ、アクション、キーバインドの登録、ショートカットの
+ディスパッチはなく、関連するコントロールがすでに提供しているバインディングを表示します。
+
+サンプルの Help → Keyboard ガイドは、Tab、Shift+Tab、矢印キー、Enter/Space、
+Escape を、それぞれの既存の動作の説明とともに表示します。サマリーは、
+既存の ContextMenu のために Shift+F10 を表示します。単なるヒントのテキストをこれらのキーキャップに置き換えても、
+キーボードコマンドや別のフォーカス対象は追加されません。

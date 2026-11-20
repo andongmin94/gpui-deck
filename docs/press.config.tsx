@@ -35,6 +35,7 @@ const app = createPress(docs.toFumadocsSource(), { i18n, mode: "force-static" })
           region: "body-wrapper",
           component: TranslationNotice,
           props: {
+            lang,
             original: page.url.replace(`/${lang}/`, `/${i18n.defaultLanguage}/`),
             translated: page.locale === lang,
           },
@@ -49,6 +50,7 @@ export default app.config({
   site: {
     name: SITE_NAME,
     baseUrl: SITE_URL,
+    hreflang: { zh: "zh-Hans" },
   },
   head({ page }): HeadTag[] {
     if (!page) {

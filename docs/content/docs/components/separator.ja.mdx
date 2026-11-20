@@ -1,0 +1,16 @@
+---
+title: Separator
+description: "セマンティックまたは装飾的な区切り。水平/垂直の向きに対応します。"
+---
+
+<ComponentPreview name="separator" height={360} />
+
+`Separator::new(id)` は、セマンティックな水平の区切りを提供します。
+`.axis(Axis::Vertical)` はネイティブの向きを変更し、`.decorative(true)` は、純粋に視覚的な区切りのために
+アクセシビリティノードを省略します。ネイティブのセマンティックなロールは、
+フォーカスやアクティブ化のアクションを持たない AccessKit の Splitter です。このコンポーネントは
+静的な区切りであり、Resizable のペイン区切りの操作を意味するものではありません。
+
+寸法と色には通常の GPUI スタイルを使用します。たとえば水平線には
+`.h(px(1.)).w_full().bg(border)` を使います。軸は視覚的なレイアウトを強制しません。Separator には
+子要素も Tab ストップもありません。

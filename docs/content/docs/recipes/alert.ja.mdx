@@ -1,0 +1,31 @@
+---
+title: Alert
+description: "インラインのタイトルと説明。破壊的スタイルは別に指定でき、緊急性は明示的に指定します。"
+---
+
+[`alert.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/alert.rs) は、インラインのタイトルと
+説明を表示します。通常のコンテンツにはネイティブの `Note` ロールを使用し、`.urgent(true)` を指定すると
+ネイティブの `Alert` ロールが選ばれます。`.destructive(true)` は、その緊急性の判断とは
+独立して色を変更します。
+
+```rust
+Alert::new(
+    "session-name-alert",
+    "Session name is missing",
+    "Open Edit session and enter a name or use the default name.",
+    palette,
+)
+.destructive(true)
+.urgent(true)
+```
+
+Schedule パネルは、デフォルトの情報提供用の形式を使用します。名前が空のまま
+設定を閉じると、サマリーに緊急の形式が表示されます。設定を開き直すとそれは取り除かれ、
+代わりに Field が入力のバリデーションの詳細を提供するため、同じエラーが 2 か所に
+表示されることはありません。名前が戻されると、サマリーの警告はなくなります。
+
+Alert は、フォーカスを移動したり、モーダルを開いたり、閉じる状態を所有したり、繰り返しの
+アナウンスをスケジュールしたりしません。ロールがどのように提示されるかは、ネイティブのアクセシビリティアダプターが決めます。
+そのロールを公開していることは、ネイティブのスクリーンリーダーで読み上げられる証拠にはなりません。
+明示的な確認が必要なモーダルの判断には、AlertDialog を使用してください。現在の
+インラインのレシピには、アクションやメディアのスロットはなく、`Styled` でそのフレームを制御します。

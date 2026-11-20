@@ -53,3 +53,11 @@ split-debuginfo = "unpacked"
 
 [profile.release]
 strip = "symbols"
+
+# The documentation previews download and compile in the browser, so they
+# trade some speed for size: about 30% smaller than the release profile.
+[profile.web-preview]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1

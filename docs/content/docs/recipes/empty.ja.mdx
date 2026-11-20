@@ -1,0 +1,21 @@
+---
+title: Empty
+description: "見出し、説明、任意のメディア、渡されたアクションを持つ、名前付きの静的なグループ。"
+---
+
+[`empty.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/empty.rs) は、GPUI の `Empty` 要素との混同を
+避けるために `EmptyState` をエクスポートします。名前付きのグループ、レベル 2 の
+見出し、説明、任意のメディア/アクションのスロットを提供します。
+
+```rust
+EmptyState::new("empty-results", "No results", "Try another search.", palette)
+    .media(Badge::new("result-count", "0 results", palette))
+    .action(clear_search_button)
+```
+
+このレシピは、検索、読み込み、通知、フォーカスの状態を所有しません。渡された
+メディアが情報を伝える場合は、そのアクセシブルな説明をメディア自身が持ちます。サンプルでは、
+このレシピを `Command` の内側で `CommandList` の隣に置いているため、そのアクションは
+リストボックスの外にある通常の Button です。Clear search は `CommandState::set_query` を呼び出し、
+既存のクエリ入力にフォーカスを戻します。ダイアログは開いたままで、コマンドは
+ディスパッチされません。`Styled` で外側のフレームを上書きできます。

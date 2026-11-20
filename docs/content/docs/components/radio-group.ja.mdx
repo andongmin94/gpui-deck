@@ -1,0 +1,28 @@
+---
+title: Radio Group
+description: "単一選択、プログラムによる設定/クリア、1 つの Tab ストップ、矢印キーによるナビゲーション、無効なオプション、フォーカスに対応します。"
+---
+
+<ComponentPreview name="radio-group" height={360} />
+
+固定された順序付きの `RadioItem::new(value, label)` のコレクションで、
+`RadioGroupState::new(items, cx)` を一度だけ構築します。値は一意でなければなりません。利用できないオプションには
+`.disabled(true)` を指定し、必要に応じて有効な `.default_value(value)` を選びます。
+一致する有効なデフォルトがない場合、グループは未選択で始まります。
+
+アクセシブルなラベルを付けて `RadioGroup::new(id, &state)` を描画し、各項目に対して同じ順序で
+`RadioOption::new(&state, index)` を 1 つずつ描画します。各
+オプションの内容とスタイルはアプリケーションで指定します。グループはアクセシビリティの
+ロールと向きを設定し、`.axis(Axis::Horizontal)` は向きのメタデータを変更します。
+オプションの配置には、`.flex()` などの GPUI のレイアウトメソッドを別途使用してください。
+
+State は `items()`、`selected_index()`、`selected_item()`、
+`option_focus_handle(index)` を公開します。グループ全体を無効にするには `set_disabled(disabled, window, cx)` を使用します。
+無効にしても選択された値は保持され、選択イベントは発行されません。`RadioGroupEvent::Change(value)` は、
+ユーザーが別の値を選択したときに 1 回発行されます。現在の値を選択しても、追加の変更は発行されません。
+
+`set_selected_value(Some(value), window, cx)` は、有効なアプリケーションの値を適用します。
+`None` はクリアします。不明な値や無効な値は、選択を変更せずに false を返します。
+受け入れられた更新はユーザーイベントを発行せず、グループ全体が無効の間も含めてフォーカスを保ちます。
+いずれかのオプションが現在フォーカスを持っている場合は、フォーカスが離れるまで
+それが唯一の Tab ストップのままで、再進入には新たに選択された、または最初のオプションが使用されます。

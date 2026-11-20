@@ -1,0 +1,26 @@
+---
+title: Skeleton
+description: "静态的装饰性占位符，其尺寸和形状由应用控制。"
+---
+
+[`skeleton.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/skeleton.rs) 是一个静态的装饰性
+占位符。应用提供其尺寸，并决定何时用就绪的内容
+替换它：
+
+```rust
+Skeleton::new("preview-placeholder", palette)
+    .w(px(180.))
+    .h(px(16.))
+    .rounded(px(4.))
+```
+
+默认是一条全宽的线，高度与使用方的字号相同，使用其
+边框颜色、圆角和 0.35 的不透明度。普通的 `Styled` 调整可以
+做出文本行、块或圆形占位符。该表面不拥有计时器或
+动画，因此在任何动效偏好下都保持静止。
+
+Skeleton 不增加原生角色、无障碍名称、子元素或焦点停靠点。请单独
+为加载操作命名，如示例中使用 Spinner 那样。它不拥有
+加载状态或内容测量；一组占位符属于普通的
+应用布局。示例在百分比填充尚不可用时显示一个，
+并在恢复已知进度时将其移除。

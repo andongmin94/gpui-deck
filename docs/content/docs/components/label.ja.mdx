@@ -1,0 +1,46 @@
+---
+title: Label
+description: "クリックすると既存のコントロールにフォーカスする名前付きのネイティブテキストラベル。明示的な無効フラグを持ち、追加の Tab ストップはありません。"
+---
+
+<ComponentPreview name="label" height={360} />
+
+`Label::new(id, &focus_handle, text)` は、ネイティブの Label セマンティクスと、
+そのテキストに一致するアクセシブルな名前を持つプレーンテキストを描画します。クリックすると、
+指定された既存のコントロールにフォーカスします。Label は自身のフォーカスハンドルも Tab ストップも持たないため、
+通常のキーボード移動はコントロールに残ります。その `Styled` インターフェースは、
+アプリケーションが管理するテキストスタイルとレイアウトを提供します。インタラクティブな子コンテンツではなく、テキストを受け付けます。
+
+```rust
+let preview = self.preview.read(cx);
+let label = Label::new(
+    "preview-percentage-label",
+    preview.thumb_focus_handle(0),
+    "Preview percentage",
+)
+.disabled(preview.is_disabled())
+.text_color(muted);
+let slider = Slider::new("preview-percentage", &self.preview)
+    .accessibility_label("Preview percentage")
+    .child(SliderThumb::new(&self.preview, 0).accessibility_label("Preview percentage"));
+
+div().flex().flex_col().gap_1().child(label).child(slider)
+```
+
+参照先のターゲットは同じウィンドウ内にマウントしたままにし、描画のたびに
+`.disabled(bool)` でその無効状態を反映させてください。無効な Label はフォーカスを
+移しません。渡された FocusHandle はターゲットを識別しますが、コントロールが有効かどうかは
+Label に伝わりません。そのポリシーはアプリケーションが管理し、変化したときに再描画します。Label は
+コントロールの状態を別に保持しません。
+
+フォーカスの動作はターゲットをアクティブ化しません。Select を開いたり、
+Slider を調整したり、Checkbox/Switch をトグルしたりはしません。ネイティブのサンプルは Drawing tool と
+Preview percentage の上でこれを使用しており、どちらのラベルをクリックしても、コントロールが通常のキーボード入力を受け取る前に
+選択や値は変わりません。
+
+ターゲットの `accessibility_label(...)` は個別に設定してください。固定された GPUI API は、
+これらの兄弟要素に対する公開された labelled-by 関係を提供していないため、
+Label はターゲットに自動的に名前を付けません。ネイティブの Label ロールとテキストの
+名前は、ラベル自体を説明します。Input/Textarea のラベル、ヘルプ、検証の
+関連付けには Field を使用してください。Field は保持された input にメタデータを反映し、
+ラベルがクリックされたときに input の現在の無効状態を確認します。

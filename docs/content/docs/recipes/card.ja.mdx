@@ -1,0 +1,22 @@
+---
+title: Card
+description: "見出し、説明、ヘッダーのアクション、本体、フッターを持つ名前付きのリージョン。"
+---
+
+[`card.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/card.rs) は、レベル 2 の見出しを持つ
+名前付きのリージョンを提供します。説明はテキストを受け付け、ヘッダーのアクション、コンテンツ、
+フッターはそれぞれ 1 つの要素を受け付けるため、アプリケーションは `div()` の中に複数の
+子要素を構成できます。
+
+```rust
+Card::new("session-card", "Session", palette)
+    .description("Recording preferences")
+    .header_action(Badge::new("toolbar-status", "Toolbar pinned", palette).accent(true))
+    .content(session_summary)
+    .footer(session_controls)
+    .w_full()
+```
+
+カードはフォーカスストップを追加しません。スロットに置かれたコントロールは、自身の
+キーボードとポインターの動作を保持します。その `Styled` の実装でフレームを上書きできます。
+異なる見出しレベルやヘッダー/フッターのレイアウトに合わせるには、コピーしたソースを変更してください。

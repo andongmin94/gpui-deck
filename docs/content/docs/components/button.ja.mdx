@@ -1,0 +1,44 @@
+---
+title: Button
+description: "ポインターとキーボードによる操作、無効状態、フォーカス、アクセシブルな名前とロール、任意の現在ページメタデータを提供します。"
+---
+
+<ComponentPreview name="button" height={360} />
+
+`Button` は、他のコントロールが土台とする操作のプリミティブです。
+ポインターと Enter/Space による操作、フォーカス、無効状態、ネイティブの
+Button ロールを担当し、内容、間隔、形状、状態のスタイルはアプリケーションが管理します。
+
+```rust
+Button::new("save")
+    .accessibility_label("Save session")
+    .px_3()
+    .py_2()
+    .rounded(px(6.))
+    .bg(palette.accent)
+    .text_color(palette.accent_foreground)
+    .focus_visible(|style| style.border_color(palette.ring))
+    .styles(|styles| styles.disabled(|style| style.opacity(0.5)))
+    .on_click(|_, window, cx| {
+        // The application decides what activation does.
+    })
+    .child("Save")
+```
+
+## 操作とフォーカス
+
+クリック、Enter、Space のいずれかでボタンが 1 回操作されます。`.disabled(true)` は
+操作を無視して Tab ストップを取り除きます。フォーカス中に無効化されたボタンは、フォーカスが離れるまで
+フォーカスのバインディングを保つため、Tab はどちらの方向にも続けられます。
+`.track_focus(&handle)` はアプリケーションが所有するフォーカスハンドルを使用します。たとえばダイアログが閉じた後に
+フォーカスを復元する場合などです。`.tab_index(...)` と `.tab_stop(...)` で
+移動順序を調整できます。
+
+## アクセシビリティ
+
+子がプレーンテキストでない場合、たとえばアイコンのみのボタンでは、`.accessibility_label(...)` でボタンに名前を付けてください。`.selected(true)` は選択時の
+スタイルのみを制御します。`.current(true)` は別途、ナビゲーション項目に `aria-current="page"` を公開するため、
+選択された見た目が現在のページを意味することはありません。
+
+Toggle、Collapsible と Tooltip のトリガー、CarouselControl、メニューの
+トリガーは Button を組み合わせて作られているため、この操作とフォーカスの契約を共有します。

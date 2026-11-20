@@ -1,0 +1,52 @@
+---
+title: Toggle と Toggle Group
+description: "Button の操作、フォーカス、無効時の動作に基づく、制御された押下状態を提供します。"
+---
+
+<ComponentPreview name="toggle" height={360} />
+
+`Toggle::new(id).pressed(bool)` は、制御されるトグルボタンです。既存の
+Button を組み合わせ、ネイティブのクリック/Enter/Space による操作、無効時の動作、
+フォーカスを再利用します。追加される契約は、押下のアクセシビリティ状態と
+`on_change(next_pressed, event, window, cx)` です。アプリケーションがその値を保存し、
+ビューに通知し、内容と押下状態のスタイルを指定します。安定したラベルが
+アクションに名前を付け、押下のメタデータが現在の状態を説明します。
+
+Toggle は、通常の GPUI のスタイルと子要素に加えて、`accessibility_label`、`disabled`、`track_focus`、`tab_index`、
+`tab_stop` を受け付けます。
+
+同時に押下できる独立したオプションには、一意な値を持つ固定された順序付きの
+`ToggleItem::new(value, label)` エントリから
+`ToggleGroupState::new(items, cx)` を作成します。利用できない項目には
+`.disabled(true)` を指定し、必要に応じて `.default_values([values])` を設定します。デフォルトは
+有効な項目を指す必要があります。デフォルトが指定されない場合、選択は空で始まります。
+任意の排他的な選択には `.single_selection()` を使用します。別のオプションを操作すると
+前の値が置き換わり、押下済みのオプションを操作すると選択がクリアされます。
+単一選択のデフォルトには、`.single_selection()` と `.default_values(...)` の順序に関わらず、
+異なる値を最大 1 つまでしか含められません。
+
+`ToggleGroup::new(id, &state).accessibility_label(...)` を描画し、各項目に対して
+`ToggleOption::new(&state, index)` を 1 つずつ描画します。各オプションは Toggle を組み合わせています。
+グループは Group ロールと向きを提供し、レイアウトはアプリケーションのコードが
+別途指定します。現在の表示には `items()`、`is_pressed(index)`、`selected_values()` を読み取ります。
+選択された集合の変更には、エンティティを observe し、
+`ToggleGroupEvent::Change(values)` を購読します。値は元の項目の順序に従います。
+
+`set_selected_values(values, window, cx)` は、ユーザーイベント、フォーカスの変更、カーソルの変更なしで
+押下された集合を置き換えます。重複する値は取り除かれ、空の
+イテレーターはクリアします。不明な値や無効な値、または単一モードでの複数の異なる値は、
+何も変更せずに false を返します。グループが無効の間も、アプリケーションからの更新は許可されます。
+セッションのサンプルは、初期のラジオと書式設定の値を、これらの保持された State のセッターで適用しています。
+
+グループには 1 つの Tab ストップがあり、最後にフォーカスされた有効なオプション、または最初は
+最初の有効なオプションにあります。水平方向の Left/Right、または垂直方向の Up/Down は、
+有効なオプションの間を移動し、循環します。Home/End は最初/最後の有効なオプションに到達します。もう一方の
+軸は伝播します。フォーカスを移動しても選択された集合は変わりません。クリック、Enter、
+Space は、選択モードに応じてフォーカスされたオプションをトグルします。Tab はグループから離れます。
+
+`set_disabled(disabled, window, cx)` は、選択を保ったままグループ全体を無効にします。
+`option_focus_handle(index)` は、安定したオプションのフォーカスを公開します。RadioGroup は
+矢印キーによる移動中に即座に選択される排他的な選択を提供します。
+ToggleGroup は、どちらのモードでも、フォーカスの移動を選択から独立させます。
+セッションのサンプルは、太字/斜体の要約テキストのスタイルを独立して使用し、
+カタログは、任意の Center/End のドキュメントの整列に単一選択を使用します。

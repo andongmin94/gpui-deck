@@ -1,0 +1,36 @@
+---
+title: Checkbox と Switch
+description: "制御された未チェック/チェック済み/混在の状態、操作、無効状態、フォーカスに対応します。"
+---
+
+<ComponentPreview name="checkbox" height={360} />
+
+2 値のチェックボックスには `.checked(bool)` を使用します。集約的な選択では、
+`.state(CheckboxState::Indeterminate)` で混在状態を公開します。混在状態のチェックボックスを操作すると
+`CheckboxState::Checked` が要求されます。ライブラリは子の選択を推測したり変更したりしません。
+Switch は常に真偽値の状態を使用します。
+
+どちらのコントロールも `.disabled(bool)`、`.accessibility_label(...)`、
+`.track_focus(&handle)`、`.tab_index(...)`、`.tab_stop(...)` を受け付けます。変更用の
+コールバックは、次の値、ネイティブのクリックイベント、ウィンドウ、アプリケーションの
+コンテキストを受け取ります。たとえば、真偽値 `show_cursor` を保持するビューの内部では次のようになります。
+
+```rust
+let owner = cx.entity();
+Checkbox::new("show-cursor")
+    .checked(self.show_cursor)
+    .accessibility_label("Show cursor")
+    .on_change(move |next, _, _, cx| {
+        owner.update(cx, |this, cx| {
+            this.show_cursor = next == CheckboxState::Checked;
+            cx.notify();
+        });
+    })
+    .child("Show cursor")
+```
+
+これは動作の接続部分です。アプリケーションは GPUI のスタイルとインジケーターを
+子として追加します。Checkbox はチェックマークを、Switch はトラックや
+つまみを提供しません。それぞれのルートの `.styles(...)` ビルダーは checked/disabled の調整を公開し、
+Checkbox はさらに indeterminate のスタイルも公開します。Switch のアクセシブルな
+ラベルは、状態が変わっても安定させてください。checked のメタデータがすでにオン/オフを表しているためです。

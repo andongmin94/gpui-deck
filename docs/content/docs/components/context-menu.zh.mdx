@@ -1,0 +1,60 @@
+---
+title: Context Menu
+description: "通过次要点击、触摸长按或键盘打开，按指针位置定位，并共享菜单树的命令、导航、关闭和焦点。"
+---
+
+<ComponentPreview name="context-menu" height={360} />
+
+对于与可见区域相关联的命令，请使用相同的 `MenuState::new(items, cx)`、`MenuItem`、`MenuOption` 和
+`MenuEvent::Action(value)` 约定。
+为每个已挂载的菜单宿主创建独立的状态实体。示例中的
+DropdownMenu 和 ContextMenu 共享条目定义和应用回调，
+但各自保留独立的打开状态、光标和返回焦点目标。
+
+```rust
+ContextMenu::new("session-summary", &menu)
+    .target_label("Session summary")
+    .accessibility_label("Session actions")
+    .target(summary_content)
+    .content(menu_surface)
+    .p_2()
+    .border_1()
+    .focus_visible(|style| style.border_color(accent))
+```
+
+目标是一个可聚焦且带名称的区域，而不是操作按钮。通过 `.target(...)` 提供
+非交互式的目标内容，并在 `.content` 内放置与 DropdownMenu 相同的有序
+`MenuOption::new(&menu, index)` 元素。
+`target_label` 为该区域命名；`accessibility_label` 为菜单命名。样式和
+交互样式构建器作用于目标，而应用则单独为其
+菜单界面设置样式。
+
+| 目标上的输入 | 行为 |
+| --- | --- |
+| 左键点击 | 聚焦该区域，但不打开菜单 |
+| 右键点击 | 在指针的窗口坐标处打开；再次请求会重新定位已打开的菜单 |
+| Shift-F10 / Menu 键 | 在目标下方打开已关闭的菜单 |
+| 原生 ShowContextMenu 无障碍操作 | 在目标下方打开 |
+| 菜单导航与激活 | 与 DropdownMenu 使用相同的已启用项光标、输入定位以及关闭后再触发操作的行为 |
+| Escape | 关闭并将焦点返回到目标 |
+| Tab / Shift-Tab | 通过 Popover 普通的相对目标遍历关闭 |
+
+在平台传递 Menu 键时可用。命令式的
+`MenuState::open(window, cx)` 同样使用相对目标的定位。指针
+定位使用现有的 Popup/Positioner 测量和视口限制；
+它不会取代其几何引擎。外部点击和父级 Dialog 的
+焦点限制使用相同的 Popover 生命周期。新的上下文菜单请求会关闭任何
+已有的子菜单分支，并将焦点放在根菜单的第一个已启用项上。
+
+`set_disabled(true, window, cx)` 会关闭菜单，并阻止目标的进入和
+激活。已经获得焦点的被禁用目标会保留其绑定，以便 Tab
+可以离开。如果要移除整个目标，请在同一次
+应用更新中将焦点移到仍然存在的控件。保留的弹出层状态会在分离时被关闭。
+
+原生元数据包括带名称的目标、展开/禁用状态、Shift-F10
+快捷键和 ShowContextMenu 操作，以及共享的 Menu、MenuItem、
+MenuItemCheckBox/MenuItemRadio 和子菜单语义。同一个命令树可以
+提供给 DropdownMenu 或 ContextMenu。在目标上触摸长按
+会像次要点击一样在按下位置打开菜单，并接管该
+手势，使松开时既不会平移，也不会触达目标。不包含
+可交互的后代目标。

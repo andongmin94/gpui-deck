@@ -1,0 +1,20 @@
+---
+title: Drawer
+description: "在 Dialog 生命周期之上，通过专用手柄实现底部拖动关闭。"
+---
+
+<ComponentPreview name="drawer" height={360} />
+
+`DrawerState` 组合了一个 `DialogState`。使用 `new(window, cx)` 构造它，或
+通过 `with_dialog` 采用已配置好的 Dialog；并在一个 Drawer 中挂载该状态。
+`open`/`close`、初始焦点、焦点限制、Escape、背景遮罩关闭和返回
+焦点仍由 Dialog 负责。该状态会转发 `DialogEvent`，并为普通的 DialogClose 控件
+暴露 `dialog()`。
+
+`Drawer::new(id, &state)` 在底部放置一个受视口限制的模态界面。
+请提供其 `.handle(...)`、可选的 `.backdrop(...)` 以及带样式的主体/操作区。
+只有按在专用手柄上才会开始向下拖动；在主体中滚动或编辑
+不会。超过位移阈值后松开，会通过
+Dialog 关闭；较短的或被取消的拖动会使界面回到其静止位置。
+窗口失去活动状态会取消正在进行的拖动。该约定只有一个静止位置，
+没有惯性物理效果，也没有吸附点配置。

@@ -1,0 +1,43 @@
+---
+title: Input Group
+description: "既存の入力を囲む共有フレーム。先頭/末尾のアドオンと水平/垂直のレイアウトを備えます。"
+---
+
+[`input_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/input_group.rs) は、既存のコントロールと、任意の先頭/末尾の要素を囲む
+1 つのフレームを提供します。
+コンストラクターはコントロール自体を受け取るため、そのネイティブの入力レンダラー、値、
+選択、入力インターフェースは、既存のエディターに残ります。
+
+```rust
+let control = InputBase::new("session-name")
+    .role(None::<Role>)
+    .semantic_owner::<Input>(input.entity_id())
+    .h(palette.control_height)
+    .w_full()
+    .child(Input::new(&input));
+
+InputGroup::new("session-name-group", control, palette)
+    .focused(input.focus_handle(cx).is_focused(window))
+    .invalid(name_invalid)
+    .trailing(default_name_button)
+```
+
+入力のラベル、ヘルプ、必須状態、エラーのメタデータを維持するには、グループを既存の `Field` の中に置いてください。
+ネイティブのエディターは、`InputBase` のセマンティックオーナーの直下に置いたままにします。グループは、その完全なコントロールを囲みます。
+グループが外側の罫線と余白を提供する場合は、コントロールの古い外側の罫線と余白を取り除いてください。`CommandInput` も
+同様に直接渡すことができ、その検索と入力のセマンティクスは維持されます。
+
+デフォルトは水平です。`.leading(element)` と `.trailing(element)` は、
+コントロールの前と後ろに表示されます。`.axis(Axis::Vertical)` は、それらをコントロールの上と下に置きます。
+サンプルでは、既存の Textarea の下に末尾のキーボードヒントを使用しています。
+各スロットは 1 つの要素を受け付け、それはアプリケーション所有のコンテナーでもかまいません。
+移動順序は、渡された先頭/コントロール/末尾の順に従います。Tab の順序で入力をアクションの前に置きたい場合は、
+アクションのボタンを末尾のスロットに置いてください。
+
+フレームは、Tab ストップやクリックでのフォーカスのハンドラーを追加しません。渡されたボタンは
+自身のフォーカスとコールバックを保持します。`focused` と `invalid` は罫線のスタイルだけを変え、
+invalid が優先されます。ネイティブな invalid のメタデータは、引き続き Field の役割です。
+どのアドオンを有効にするかは、アプリケーションが選びます。サンプルでは、Use default は
+セッション名が空の場合にのみ表示され、入力が編集可能でない場合は無効になります。その既存の入力状態は、
+アクションの実行時に `MiniCast` を受け取り、フォーカスを取り戻します。レシピは、2 つ目のテキスト値を作成せず、
+子要素から変更の権限を推測することもしません。`Styled` でフレームを上書きできます。

@@ -1,0 +1,89 @@
+---
+title: Data Table
+description: "文本过滤/排序、分页、页/行复选框选择、列可见性，以及基于稳定 ID 的行动作。"
+---
+
+[`data_table.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/data_table.rs) 提供了一个可运行的
+客户端表格组合。它使用现有的原生 Input/Field、
+Table、ScrollArea、Checkbox、DropdownMenu 和 Button，以及 InputGroup、EmptyState 和 Pagination
+配方。列和不可变的行归使用该配方的应用所有。
+
+```rust
+let state = cx.new(|cx| {
+    DataTableState::new(
+        [
+            DataTableColumn::new("Preset", px(180.)),
+            DataTableColumn::new("Description", px(280.)),
+            DataTableColumn::new("Bitrate", px(110.)).align_end(),
+            DataTableColumn::new("Updated", px(130.)),
+        ],
+        rows, // DataTableRow::new(stable_id, [cells…]).disabled(false)
+        2,    // Rows per page; must be positive.
+        window,
+        cx,
+    )
+});
+
+DataTable::new("preset-catalogue", &state, palette)
+    .accessibility_label("Recording presets")
+    .action_label("Use preset")
+    .selected_value(current_preset)
+    .on_action(move |id, window, cx| {
+        preset.update(cx, |state, cx| {
+            state.set_selected_values([id.as_ref()], window, cx);
+        });
+    })
+```
+
+请把状态实体保留在应用中，并观察它以重绘父级。像 two-style
+示例那样，把应用的 `InputEditorStyle` 应用到 `query_input()`。行有唯一的
+稳定 ID，每列对应一个 `DataTableCell`。
+`DataTableCell::text`（或普通字符串）按不区分大小写排序；
+`DataTableCell::number(display, value)` 和 `DataTableCell::date(display, date)`
+显示 `$1,250.00` 或 `Nov 2, 2026` 之类的格式化文本，但按值排序。
+`align_end` 会让列的标题和值右对齐，如金额列。
+初始的显示顺序就是所提供的行顺序。表头 Button 在升序
+和降序之间切换某一列；相同的键保持其原有顺序。
+
+原生输入负责查询。每个以空白分隔的词都必须出现在
+合并后的单元格文本中，忽略大小写。匹配/排序后的索引在
+查询或排序变化时派生。两种变化都会回到第一页；移动焦点
+不会重置它。`visible_rows()`、`filtered_count()`、`page_index()` 和
+`page_count()` 暴露当前视图。`set_page` 会限制在可用范围内，
+页码/过滤/排序的变化会让行视口回到垂直起点。
+
+示例从与 Combobox 相同的预设定义中派生出它的四行，
+带末端对齐的数值码率和格式化的更新日期。`.selected_value` 在每次渲染时提供该 Combobox 的当前值；
+表格不保留第二个选中值。行动作会把稳定 ID 传给
+应用，即使经过了过滤、排序或翻页。当前行和不可用的
+行带有禁用的动作 Button。当其所在行被过滤掉或位于另一页时，
+选中的值仍保留在应用中。
+
+复选框选择独立于该当前预设。表头复选框
+只选择所显示页上已启用的行，并在部分选中时显示混合状态。
+选中的稳定 ID 在过滤、排序、翻页和卸载后依然保留；不可用的行
+无法被选中。`is_row_selected` 和
+`filtered_selected_count` 暴露选择情况。页脚统计当前过滤条件下
+选中的行，包括其他页。应用的行动作不会
+改变这些复选框。
+
+Columns 会打开一个原生的带勾选菜单。可切换任何数据列，包括全部
+数据列；选择列和动作列保持挂载。隐藏某一列会保留
+过滤、排序、选择和分页；过滤仍然搜索其显示的文本。
+`is_column_visible` 暴露每个源列的可见性。
+
+空结果会用 EmptyState 和 Clear filter 替换行视口。
+清除会恢复各行和查询焦点，而不会应用行动作。有
+结果时，焦点依次经过 查询 → Columns → 页复选框 → 可见的排序 Button →
+已启用的行复选框/动作 → 已启用的页码 Button。水平和垂直的 ScrollArea 滚动会显示获得焦点的控件；
+不提供网格式的方向键导航。只要保留其状态实体，查询、排序和页码在
+视图卸载后依然保留。
+
+原生 Table 的索引描述所显示的页。`TableRow::selected` 暴露
+复选框的选择。`TableCell::sort_direction` 暴露当前生效的原生
+列标题方向；主体/页脚单元格会忽略它。表头 Button 的名称还会
+播报排序描述和下一步动作。列是固定宽度的文本，
+另有选择列和应用动作列。数值/日期排序、自定义单元格渲染器、
+多列排序、列重排、可变的
+行来源、远程数据和虚拟化都不在当前范围之内。
+当应用需要不同的数据操作时，请修改复制的源码。

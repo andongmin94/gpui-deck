@@ -1,0 +1,28 @@
+---
+title: Radio Group
+description: "单选、程序化设置/清除、一个 Tab 停靠点、方向键导航、禁用选项和焦点。"
+---
+
+<ComponentPreview name="radio-group" height={360} />
+
+使用固定有序的 `RadioItem::new(value, label)` 集合只构造一次
+`RadioGroupState::new(items, cx)`。值必须唯一。使用 `.disabled(true)`
+标记不可用的选项，并可选择一个已启用的 `.default_value(value)`。
+如果没有匹配且已启用的默认值，该组初始为未选中状态。
+
+使用无障碍标签渲染 `RadioGroup::new(id, &state)`，并按相同顺序为每个条目
+渲染一个 `RadioOption::new(&state, index)`。每个选项的内容和样式由应用提供。
+该组会设置其无障碍角色和方向；`.axis(Axis::Horizontal)` 会更改方向元数据。
+请另外使用 GPUI 布局方法（如 `.flex()`）来排布各选项。
+
+状态暴露 `items()`、`selected_index()`、`selected_item()` 和
+`option_focus_handle(index)`。使用 `set_disabled(disabled, window, cx)` 禁用
+整个组。禁用会保留所选的值，且不触发选择
+事件。当用户选择不同的值时，会触发一次 `RadioGroupEvent::Change(value)`。
+选择当前值不会再触发变更。
+
+`set_selected_value(Some(value), window, cx)` 应用一个已启用的应用值；
+`None` 清除选择。未知/已禁用的值返回 false，且不会改变
+选择。被接受的更新不触发用户事件并保留焦点，包括
+整个组被禁用的情况。如果某个选项当前拥有焦点，它会一直
+是唯一的 Tab 停靠点，直到焦点离开；重新进入时使用新选中的/第一个选项。

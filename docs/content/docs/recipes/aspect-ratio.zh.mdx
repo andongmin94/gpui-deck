@@ -1,0 +1,36 @@
+---
+title: Aspect Ratio
+description: "带有限且为正的宽高比、内容归应用所有的裁剪媒体框。"
+---
+
+[`aspect_ratio.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/aspect_ratio.rs) 使用 GPUI 现有的宽高比布局，提供一个
+裁剪的媒体框：
+
+```rust
+AspectRatio::new("recording-frame", 16. / 9.)
+    .w(px(320.))
+    .rounded(palette.radius)
+    .bg(palette.field)
+    .child(media)
+```
+
+比例为宽度除以高度，必须是有限的正数。默认
+宽度会填满其父级；请为该父级设置确定的宽度，或在
+该框上设置 `.w(...)`。请让高度保持自动，以便 GPUI 根据宽度推导。显式的
+高度或最小/最大约束遵循 GPUI 的常规布局规则，并可
+覆盖其首选比例。
+
+子元素位于一个填满该框的绝对定位容器中，因此它们的固有
+尺寸不会决定其高度。超出的内容会被裁剪，包括
+框外的指针交互。对应填满容器的图像或其他
+子元素，请提供 `.size_full()`，并在该子元素上选择图像的对象适配方式。
+该框不增加无障碍角色、名称、焦点停靠点或保留状态。媒体
+子元素自行提供其无障碍描述和交互。背景、
+圆角和其他呈现通过 `Styled` 归应用负责。
+
+预设的 HoverCard 展示一个示意性的录制框，其中包含当前的
+会话名称。Presentation 使用 4:3，其他预设或空
+选择则使用 16:9。更改保留的预设会在下一次渲染时改变比例；
+编辑会话名称则改变显示的文本。所提供的子元素带有
+描述其格式的原生 Image 名称。该预览不会创建录制，
+也不会向 HoverCard 的不可交互内容添加控件。

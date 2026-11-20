@@ -1,0 +1,88 @@
+---
+title: Data Table
+description: "テキストのフィルタリング/ソート、ページネーション、ページ/行のチェックボックス選択、列の表示切り替え、安定した ID による行アクション。"
+---
+
+[`data_table.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/data_table.rs) は、動作する
+クライアントサイドのテーブルの構成を提供します。既存のネイティブな Input/Field、
+Table、ScrollArea、Checkbox、DropdownMenu、Button に加え、InputGroup、EmptyState、Pagination の
+レシピを使用します。列と不変の行は、利用するアプリケーションに属します。
+
+```rust
+let state = cx.new(|cx| {
+    DataTableState::new(
+        [
+            DataTableColumn::new("Preset", px(180.)),
+            DataTableColumn::new("Description", px(280.)),
+            DataTableColumn::new("Bitrate", px(110.)).align_end(),
+            DataTableColumn::new("Updated", px(130.)),
+        ],
+        rows, // DataTableRow::new(stable_id, [cells…]).disabled(false)
+        2,    // Rows per page; must be positive.
+        window,
+        cx,
+    )
+});
+
+DataTable::new("preset-catalogue", &state, palette)
+    .accessibility_label("Recording presets")
+    .action_label("Use preset")
+    .selected_value(current_preset)
+    .on_action(move |id, window, cx| {
+        preset.update(cx, |state, cx| {
+            state.set_selected_values([id.as_ref()], window, cx);
+        });
+    })
+```
+
+状態のエンティティはアプリケーションで保持し、それを監視して親を再描画してください。
+two-style サンプルと同様に、アプリケーションの `InputEditorStyle` を `query_input()` に適用します。行は一意で安定した
+ID と、列ごとに 1 つの `DataTableCell` を持ちます。
+`DataTableCell::text` (または単なる文字列) は大文字小文字を区別せずにソートされます。
+`DataTableCell::number(display, value)` と `DataTableCell::date(display, date)` は、
+`$1,250.00` や `Nov 2, 2026` のような整形済みのテキストを表示しつつ、値でソートされます。
+`align_end` は、金額のように、列の見出しと値を右揃えにします。
+初期の表示順は、渡された行の順序です。ヘッダーの Button は、1 つの列を
+昇順と降順の間で切り替えます。キーが等しい場合は元の順序が保たれます。
+
+クエリはネイティブの入力が所有します。空白で区切られたすべての語が、
+結合されたセルのテキストに、大文字小文字を区別せずに含まれている必要があります。一致したインデックスとソート済みのインデックスは、
+クエリまたはソートが変わったときに導出されます。どちらの変更でも最初のページに戻り、フォーカスの移動では
+リセットされません。`visible_rows()`、`filtered_count()`、`page_index()`、
+`page_count()` で現在のビューを取得できます。`set_page` は利用可能な範囲に制限され、
+ページ/フィルター/ソートが変わると、行のビューポートは縦方向の先頭に戻ります。
+
+サンプルは、Combobox で使われるのと同じプリセット定義から 4 つの行を導出し、
+末尾揃えの数値のビットレートと、整形された更新日を持ちます。`.selected_value` は、その Combobox の現在の値を描画のたびに渡します。
+テーブルは、2 つ目の選択値を持ちません。行のアクションは、フィルタリング、ソート、ページ送りの後でも、
+安定した ID をアプリケーションに渡します。現在の行と利用できない
+行では、アクションの Button が無効になります。選択された値は、その行がフィルターで除外されたり
+別のページにあったりしても、アプリケーションに残ります。
+
+チェックボックスによる選択は、その現在のプリセットとは独立しています。ヘッダーのチェックボックスは、
+表示中のページの有効な行だけを選択し、部分的な選択では混在状態を表示します。選択された安定した ID は、
+フィルタリング、ソート、ページ送り、アンマウントをまたいで維持されます。利用できない行は選択できません。`is_row_selected` と
+`filtered_selected_count` で選択を取得できます。フッターは、他のページも含め、
+現在のフィルター内で選択された行を数えます。アプリケーションの行アクションは、
+これらのチェックボックスを変更しません。
+
+Columns はネイティブのチェック付きメニューを開きます。すべてを含め、任意のデータ列を切り替えられます。
+選択とアクションの列はマウントされたままです。列を非表示にしても、
+フィルタリング、ソート、選択、ページネーションは維持されます。フィルタリングは引き続き、表示されているテキストを検索します。
+`is_column_visible` で、各ソース列の表示状態を取得できます。
+
+結果が空の場合、行のビューポートは EmptyState と Clear filter に置き換わります。
+クリアすると、行アクションを適用せずに、行とクエリのフォーカスが復元されます。結果がある場合、
+フォーカスは、クエリ → Columns → ページのチェックボックス → 表示されているソートの Button →
+有効な行のチェックボックス/アクション → 有効なページの Button の順に移動します。水平方向と垂直方向の ScrollArea のスクロールは、フォーカスされたコントロールを表示します。
+グリッド形式の矢印キーによるナビゲーションはありません。クエリ、ソート、ページは、
+状態のエンティティが保持されている限り、ビューをアンマウントしても維持されます。
+
+ネイティブな Table のインデックスは、表示中のページを表します。`TableRow::selected` は
+チェックボックスによる選択を公開します。`TableCell::sort_direction` は、アクティブなネイティブの
+列ヘッダーの方向を公開します。本体/フッターのセルはこれを無視します。ヘッダーの Button の名前も、
+ソートの説明と次のアクションを読み上げます。列は固定幅のテキストで、
+選択とアプリケーションのアクションの列があります。数値/日付の順序付け、カスタムのセルレンダラー、
+複数列のソート、列の並べ替え、変更可能な
+行ソース、リモートデータ、仮想化は、現在のスコープの外です。
+アプリケーションが別のデータ操作を必要とする場合は、コピーしたソースを調整してください。

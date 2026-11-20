@@ -1,0 +1,36 @@
+---
+title: Checkbox 与 Switch
+description: "受控的未选中/已选中/混合状态、激活、禁用状态和焦点。"
+---
+
+<ComponentPreview name="checkbox" height={360} />
+
+二元复选框使用 `.checked(bool)`。对于聚合选择，使用
+`.state(CheckboxState::Indeterminate)` 来呈现混合状态。激活混合状态的
+复选框会请求 `CheckboxState::Checked`；库不会推断或更改
+任何子项的选择。Switch 始终使用布尔状态。
+
+两个控件都接受 `.disabled(bool)`、`.accessibility_label(...)`、
+`.track_focus(&handle)`、`.tab_index(...)` 和 `.tab_stop(...)`。变更
+回调会收到下一个值、原生点击事件、窗口以及应用
+上下文。例如，在存储了布尔值 `show_cursor` 的视图中：
+
+```rust
+let owner = cx.entity();
+Checkbox::new("show-cursor")
+    .checked(self.show_cursor)
+    .accessibility_label("Show cursor")
+    .on_change(move |next, _, _, cx| {
+        owner.update(cx, |this, cx| {
+            this.show_cursor = next == CheckboxState::Checked;
+            cx.notify();
+        });
+    })
+    .child("Show cursor")
+```
+
+这就是行为的接线。应用以子元素的形式添加 GPUI 样式和指示器。
+Checkbox 不提供对勾，Switch 也不提供轨道或
+滑块。它们根元素上的 `.styles(...)` 构建器提供选中/禁用的样式调整；
+Checkbox 另外提供不确定状态的样式。在 Switch 状态变化时，请保持其无障碍
+标签稳定：其选中元数据已经描述了开/关。

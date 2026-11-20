@@ -1,0 +1,61 @@
+---
+title: インストール
+description: "ツールチェーンのセットアップ、サンプルの実行、クレートへの依存の追加、レシピのアプリケーションへのコピーを行います。"
+---
+
+[rustup で Rust](https://rustup.rs/) をインストールしてください。リポジトリは `rust-toolchain.toml` を通じて、rustfmt と Clippy を含む **Rust
+1.99.1** を選択します。
+
+**Windows** では、Visual Studio C++ ビルドツールと Windows SDK を備えた MSVC ツールチェーンを使用してください。**macOS** では、`xcode-select --install` で Xcode Command Line Tools をインストールします。**Ubuntu 24.04** では、ネイティブのビルド依存パッケージをインストールします。
+
+```sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends -y \
+  build-essential pkg-config \
+  libfontconfig1-dev libfreetype6-dev libwayland-dev \
+  libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
+```
+
+その後、ネイティブのデスクトップセッションからクローンして実行します。
+
+```sh
+git clone https://github.com/andongmin94/gpui-design.git
+cd gpui-design
+cargo run -p gpui-design --example two_styles --locked -- compact
+cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-design --example catalogue --locked
+cargo run -p gpui-design --example starter --locked
+```
+
+外観の引数を指定しない場合、デフォルトは `compact` です。どちらのコマンドも、アプリケーションが所有するスタイリングで、同じセッション設定のインタラクションを実行します。
+
+小さく完結したアプリケーションとしては、まず [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) をご覧ください。このサンプルは公開 API のみを使用します。`init`、`Root`、保持される `InputState`、`Field`、`Button` です。アプリケーションは監視とイベントのサブスクリプションを保持し、色とレイアウトを所有し、Enter とボタンの起動の両方を処理します。より大きな構成を追加する前に、その起動処理とビューをコンシューマーにコピーしてください。
+
+既存の Rust アプリケーションでは、チェックアウトしたソースと対応する GPUI スナップショットに依存します。パスはご自身のチェックアウト先に置き換えてください。
+
+```toml
+[dependencies]
+gpui-design = { path = "../gpui-design/crates/base" }
+gpui = { package = "gpui-pre", version = "=0.3.11" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+
+[features]
+test-support = ["gpui-design/test-support"]
+```
+
+この feature 宣言は、コピーしたレシピソース内のテストガードをサポートします。それらの GPUI テストを実行するときに有効にしてください。リポジトリで固定されている Rust ツールチェーンと、上記のネイティブの前提条件を使用してください。必要なプレゼンテーションレシピは、その
+[依存関係とトークンの手順](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application)に従ってアプリケーションにコピーします。
+
+GPUI スナップショットファミリーは **`=0.3.11`** に固定されています。レンダリングの依存関係を変更するときは、これらの固定と
+`Cargo.lock` を一緒に更新してください。
+
+アプリケーションが所有するプレゼンテーションソースを、必要なレシピモジュール、ライト/ダークのトークン、ライセンスとともにコピーします。
+
+```sh
+cargo run -p gpui-design-cli --locked -- list
+cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+```
+
+コンシューマーで `mod ui;` を宣言してください。このツールは、以前にインストールしたレシピとパレットのファイルへの編集を保持します。生成されたモジュール宣言が変更されている場合や、新しいファイルが衝突する場合は、書き込む前に停止します。Cargo の依存関係はコンシューマーに任せます。
+詳しくは[ソースコピーガイド](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application)をご覧ください。
+カタログの Selection セクションでは、範囲/複数の日付、グループ化された録画ターゲット、削除可能な選択済みチップ、置き換え可能なローカルのオプションデータをデモしています。

@@ -1,0 +1,77 @@
+---
+title: Breadcrumb
+description: "带名称的导航、有序的路径项，以及原生的当前页面元数据。"
+---
+
+<ComponentPreview name="breadcrumb" height={360} />
+
+该家族提供三个结构元素，每个都支持普通的 `Styled` 和
+`ParentElement`：
+
+| 部件 | 原生约定 | 应用的职责 |
+| --- | --- | --- |
+| `Breadcrumb::new(id)` | 导航地标，默认名称为 `Breadcrumb` | 使用 `.accessibility_label(...)` 描述路径或将其本地化 |
+| `BreadcrumbList::new(id)` | 按所提供子元素顺序排列的列表 | 按路径顺序渲染各项，并选择方向、换行和间距 |
+| `BreadcrumbItem::new(id)` | ListItem；`.current(true)` 会添加原生的 `aria_current(Page)` | 标记当前项，并提供每个位置的文本或操作 |
+
+使用普通的 Button 控件表示上级位置，使用原生文本表示当前
+位置。该结构不会创建焦点停靠点、选中值、导航事件
+或路由器。所提供的 Button 保留其通常的指针、Enter/Space 和 Tab
+行为。每个应用回调自行选择目的地以及任何焦点变更。
+
+```rust
+Breadcrumb::new("keyboard-guide-breadcrumb")
+    .accessibility_label("Keyboard guide location")
+    .child(
+        BreadcrumbList::new("keyboard-guide-path")
+            .flex()
+            .items_center()
+            .gap_1()
+            .child(BreadcrumbItem::new("settings-location").child(settings_button))
+            .child(BreadcrumbItem::new("help-location").child(help_button))
+            .child(
+                BreadcrumbItem::new("guide-location")
+                    .current(true)
+                    .child(gpui::text!(id = "keyboard-guide-current-text", "Keyboard guide")),
+            ),
+    )
+```
+
+`gpui::text!` 为非交互式的当前位置提供原生文本语义。
+纯 `&str` 或 `SharedString` 子元素只绘制文本，没有自己的
+原生角色；路径使用原始文本绘制装饰性的 `›` 分隔符。
+上级的 Button 已经提供了各自的无障碍名称。分隔符、路径
+内容、颜色、字体排印和布局仍由应用负责。
+
+示例在现有的 Help Popover 内渲染
+`Session settings > Help > Keyboard guide`。Session settings 会先关闭 Popover，
+调用 `TabsState::select_value("preferences", window, cx)`，然后聚焦现有的
+索引为 0 的导航句柄。显式选择对 Compact 的
+TabList 和 Settings 的 Sidebar 都适用，因为仅有焦点并不会选中某个分区。
+Help 会关闭 Popover 并将焦点返回到其触发器，同时
+保持 Help 处于选中状态。Keyboard guide 是当前的、非交互式的最后一项。
+这些回调使用现有的 Popover 和 Tabs 状态，而不是第二套
+导航模型。
+
+只在当前路径项上设置 `.current(true)`。默认的 false 值
+不输出当前页面元数据；它不会禁用所提供的子元素，也不会改变其行为。
+该原生属性是 ListItem 本身上 AccessKit 的 `AriaCurrent::Page`。
+该约定并不能确定特定的桌面
+屏幕阅读器会如何朗读该路径。
+
+## 折叠的路径与下拉项
+
+折叠的路径通过位于某个 `BreadcrumbItem` 内的普通
+[`DropdownMenu`](./dropdown-menu.mdx) 让被隐藏的上级位置仍可访问；该家族不添加
+省略号元素，也不引入第二套菜单模型。请按用途为触发器 Button 命名，
+例如 "Show hidden locations"，并仅将 `…` 字符用作其可见
+内容。每个被隐藏的上级位置是一个 `MenuItem`，当菜单报告 `MenuEvent::Action` 时，
+应用将其值映射为目的地。菜单提供一个 Tab
+停靠点、Down/Enter 打开、方向键和单字符导航，并在激活后
+将焦点返回到触发器。同样的组合方式也可以为任何一级路径提供
+同级位置的下拉菜单。
+
+目录中的 Navigation 视图渲染 `Home › … › <current page>`。其省略号
+列出 Documentation 和 Components；选择其中之一会改变本地页面
+和当前的最后一项，Home 则返回 Overview。折叠多少个上级位置由
+应用布局决定；该家族不会测量路径宽度。

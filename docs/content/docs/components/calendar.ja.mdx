@@ -1,0 +1,94 @@
+---
+title: Calendar
+description: "単一/複数/範囲の日付選択、独立したフォーカス、日付の無効化ルール、設定可能な週の開始日、範囲を限定したナビゲーション、RTL に対応します。"
+---
+
+<ComponentPreview name="calendar" height={360} />
+
+`CalendarState` は `CalendarSelection`、フォーカス中の日付、表示中の月を
+保持します。`NaiveDate` は Chrono から再エクスポートされており、2 つ目の日付モデルやタイムゾーン変換は導入されません。State は一度だけ作成します。
+
+```rust
+let calendar = cx.new(|cx| {
+    let initial = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+    CalendarState::new(initial, cx)
+        .bounds(
+            NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
+            NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
+        )
+        .default_selection(CalendarSelection::Single(Some(initial)))
+});
+```
+
+`default_selection` がない場合、選択は `CalendarSelection::Single(None)` から始まります。デフォルトの範囲は
+1 年から 9999 年までで、`bounds` はマウント前に選択可能な範囲（両端を含む）を狭めます。
+グリッドは `days()` を通じて 6 週間分を完全な形で公開し、デフォルトでは月曜始まりです。隣接する月の
+日付も表示されたままで、設定された範囲外の日付は無効になります。
+
+マウント前に `.week_starts_on(Weekday::Sun)` を指定すると、グリッドと Home/End の
+境界が変わります。ヘッダーの順序を合わせるには `weekdays()` を使用します。`Weekday` は
+`NaiveDate` とともに再エクスポートされています。`.disabled_dates(|date| ...)` は週末や予約済みの日付などの
+アプリケーションのルールを与えます。既存の単一/複数の値を絞り込み、
+利用できない端点を持つ範囲をクリアします。デフォルト値とプログラムによるセッターは
+利用できない日付や端点を拒否しますが、範囲の内部に利用できない日が含まれることは許容されます。
+述語の結果は State の存続期間を通じて安定させてください。
+
+アクセシブルな月/年のラベルを付けて `Calendar::new(id, &calendar)` を描画します。7 セルの曜日ヘッダー 1 行と
+日付の 6 行には、識別子付きの通常の `div().id(...).role(Role::Row)` コンテナを使用します。曜日の見出しには、0 始まりの
+列インデックスを持つ `Role::ColumnHeader` を使用します。各 `CalendarDay::new(&calendar, date)` は Button の
+操作とフォーカスの動作を組み合わせ、ネイティブの GridCell ロール、選択状態、
+無効状態、行/列のインデックスを提供します。グリッドは曜日ヘッダーを含む 7 行を宣言します。
+`days()` が返す各日付は、順序どおりにちょうど 1 回ずつ描画してください。
+各日付の子要素はインタラクティブにしないでください。
+
+グリッドのジオメトリ、曜日名、ローカライズされた完全な日付ラベル、
+選択日のスタイル、月ナビゲーションボタンはアプリケーションが管理します。`CalendarDay` はデフォルトで ISO 形式の日付をアクセシビリティラベルとし、
+`.accessibility_label(...)` をサポートし、通常の GPUI スタイルに加え、選択/無効状態用の Button の `.styles(...)` を受け付けます。
+完全な構成についてはネイティブサンプルの `Demo::calendar_content` を参照してください。
+
+| 入力 | 結果 |
+| --- | --- |
+| Tab / Shift+Tab | 保持された 1 つの日付ストップに入る、またはグリッドから出ます |
+| Left / Right | 物理的なセル 1 つ分フォーカスを移動します。RTL では時系列の方向が逆になります |
+| Up / Down | 1 週間分フォーカスを移動します |
+| Home / End | 現在の週の、設定された最初 / 最後の日に移動します |
+| Page Up / Page Down | 1 か月移動します。月末の日付は丸められます |
+| Shift+Page Up / Shift+Page Down | 1 年移動します |
+| Enter / Space / クリック | 有効な日付を確定します。変更があった場合のみ Change を発行します |
+
+キーボードによる移動は月をまたぎ、選択可能な範囲の境界で止まりますが、
+確定済みの値は変わりません。新たにフォーカスされた日付はネイティブの表示領域への移動を要求し、
+それを含む ScrollArea が満たすことができます。月ボタンは `previous_month` または
+`next_month` を呼び出し、無効状態には `can_previous_month`/`can_next_month` を使用します。
+これらのメソッドは外部のナビゲーションボタンのフォーカスを保持します。明示的にカレンダー内へフォーカスを移動するときは
+`focus_handle()` を読み取ってください。グリッドのスロットは表示月の変化に応じて変わりうるため、
+そのハンドルを日付の恒久的な識別子としてキャッシュしないでください。
+
+範囲内の利用できない日付は、発見のためキーボードでフォーカス可能なままですが、
+ポインター、Enter、Space では操作できません。すべての日付が利用できないカレンダーでも
+グリッドの Tab ストップは 1 つ残ります。Calendar 全体を無効にすると、通常の
+進入とナビゲーションが取り除かれます。範囲外のセルはフォーカス移動の対象外です。
+
+Calendar は `DirectionProvider` を継承するか、`.direction(Direction::Rtl)` を受け付けます。
+アプリケーションは、曜日/日付の行に同じ `Direction::row` を適用し、曜日ヘッダーの列インデックスを
+反転させる必要があります。CalendarDay は、それを囲む Calendar から物理的な列と
+水平方向のキーボード方向を導出します。ラベルとテキストの書式設定はアプリケーションが管理します。Selection カタログがこのレイアウトを示しています。
+
+`CalendarSelection` は `Multiple(Vec<NaiveDate>)` と
+`Range { start: Option<NaiveDate>, end: Option<NaiveDate> }` もサポートします。空の範囲は
+`.default_selection(CalendarSelection::Range { start: None, end: None })` で設定します。
+1 回目の操作で開始日を選び、2 回目の操作で両端を含む順序付きの端点が完成します。逆順や同日の選択も含みます。
+完成した範囲を操作すると新しい部分範囲が始まります。複数選択では日付がトグルされ、
+重複なく昇順で保存されます。`is_selected(date)` は範囲内のすべての選択日を対象とします。
+
+`selection()` は完全な値を返し、`selection().first_date()` は
+要約に役立ちます。`set_selection(selection, window, cx)` はユーザーイベントなしでモード/値を変更し、
+範囲外の日付、逆順の範囲、開始日のない終了日を拒否します。空でない値は
+表示月とカーソルも更新します。選択をクリアしてもナビゲーションは保持されます。
+`CalendarEvent::Change(selection)` はユーザーによる変更を通知します。`set_disabled` はユーザーのナビゲーション/選択と
+通常の Tab の進入をブロックします。
+
+カレンダーはグレゴリオ暦のままです。グレゴリオ暦以外の演算、時計、タイムゾーン
+変換は提供されません。Selection カタログは、日曜始まり、
+週末を無効にした範囲/複数日付、RTL を示します。セッションのサンプルは月曜始まりの
+単一の記録日を保持します。

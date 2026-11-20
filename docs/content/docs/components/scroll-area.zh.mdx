@@ -1,0 +1,53 @@
+---
+title: Scroll Area
+description: "原生视口、现有的叠加式滚动条、保留的偏移量，以及在启用的轴上显示后代元素。"
+---
+
+<ComponentPreview name="scroll-area" height={360} />
+
+在视图中保留一个 GPUI ScrollHandle，并在其滚动轴上为视口设置有界的
+尺寸。同一个句柄同时驱动原生的滚轮/触控板滚动和
+现有的叠加式滚动条：
+
+```rust
+// Store once in the view, not on each render.
+let scroll = gpui::ScrollHandle::new();
+
+ScrollArea::new("session-list", &scroll)
+    .accessibility_label("Sessions")
+    .h(px(240.))
+    .w_full()
+    .content_styles(|style| style.flex().flex_col())
+    .children(rows)
+```
+
+默认轴是垂直方向。对于其他内容，使用 `.axis(ScrollbarAxis::Horizontal)` 或 `Both`。
+在适当的情况下，为溢出的内容设置最小/固定的范围，或阻止其
+收缩。普通的 GPUI 样式用于设置外层框架的尺寸和装饰。
+使用 `content_styles` 设置视口子元素的布局、间距和
+内边距。视口和叠加式滚动条使用 GPUI 的常规渲染，
+因此祖先元素的可见性和不透明度会同时作用于二者。
+
+`scrollbar_mode` 接受现有的 Scrolling、Hover 或 Always 模式。
+`scrollbar_styles` 使用现有的带类型的轨道/滑块样式。滚动条叠加在
+内容之上，不预留槽位，因此如果内容不应与滚动条重叠，请保留应用的内边距。例如，
+计划表为其可调整大小的视口使用底部/右侧
+内边距和始终可见的滚动条。
+
+公开的框架呈现原生的 ScrollView 角色，并接受无障碍标签。
+它不添加独立的焦点停靠点或按键绑定：输入框中的方向键仍用于编辑
+文本，Calendar 的方向键仍用于在日期间导航。普通的静态内容可以
+通过指针或保留的句柄滚动；单独的键盘滚动
+控件不属于此约定。
+
+后代元素可以在 prepaint 期间使用 GPUI 原生的 `request_autoscroll` 请求
+显示到可见区域。Input、Textarea、Calendar 以及新获得焦点的 Button 控件会在
+需要时发出请求。
+ScrollArea 会在其启用的轴上限制偏移量，并在
+视口需要移动时请求新的一帧。嵌套区域调整后的请求会继续传递给
+其祖先，而同级的待处理请求会被保留，而不是被用来
+滚动错误的视口。已禁用的轴上的偏移量会被清除。
+
+ScrollArea 复用 GPUI 的常规滚动以及保留的 Scrollbar 指针
+实现。它不会虚拟化子元素、不添加弹性滚动，也不会
+锚定流式/对话记录内容。

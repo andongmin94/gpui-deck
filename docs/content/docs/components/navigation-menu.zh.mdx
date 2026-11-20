@@ -1,0 +1,20 @@
+---
+title: Navigation Menu
+description: "协调的展开区域、roving 焦点和目标 Link 激活。"
+---
+
+<ComponentPreview name="navigation-menu" height={360} />
+
+`NavigationMenuState` 保留一组有序的 `NavigationMenuItem` 值。
+普通条目是一个目的地；`.with_popup()` 声明一个展开区域。渲染一个
+带名称的 `NavigationMenu`，并为每个条目提供一个 `NavigationMenuEntry`。弹出内容
+是普通的分组，而不是命令菜单或对话框。请提供现有的 Link 或
+Button 以及可选的初始焦点。`NavigationMenuLink` 通过
+`NavigationMenuEvent::Navigate` 发出目的地；路由由应用负责。
+
+顶部一行使用 roving 焦点以及逻辑上的左/右/Home/End 按键。激活
+或按下键会打开一个展开区域。当已有一个打开时，指针移动会在
+各弹出条目之间切换；仅仅悬停在原本关闭的栏上并不会打开
+未经请求的内容。弹出内的控件保留正常的 Tab 遍历，以及 Popover 的
+Escape/外部关闭/返回焦点行为。目的地链接可以独立于打开的展开区域
+标记当前页面。

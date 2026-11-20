@@ -1,0 +1,23 @@
+---
+title: Progress
+description: "制御されたパーセンテージまたは不確定の進捗、アクセシブルな名前と数値範囲を提供します。"
+---
+
+<ComponentPreview name="progress" height={360} />
+
+`Progress::new(id).value(percentage).accessibility_label(...)` は、0 から 100 までの数値範囲を持つ、
+名前付きで操作できない ProgressIndicator を提供します。その範囲外の有限の値は
+範囲内に丸められ、有限でない値は設定エラーです。
+デフォルトは 0 パーセントの既知の進捗です。進捗の量が不明な場合は `.indeterminate(true)` を使用します。
+これにより現在の数値は省略されます。
+
+視覚的なトラックとフィルは、通常の GPUI の子要素で指定します。ラベルや、
+不明な進捗のアニメーションもアプリケーションが管理します。Progress はフォーカス
+ハンドルも Tab ストップも追加しません。サンプルは Slider を Progress に接続し、
+アプリケーションが保持する数値の State から、制御されたフィルが更新される様子を示しています。
+
+コピーして使える [Spinner レシピ](../recipes/spinner.mdx)は、この同じ不確定の
+Progress と GPUI のアニメーションを組み合わせています。サンプルの Unknown progress トグルは、
+数値のバーを Spinner と装飾用の Skeleton に置き換え、元に戻すと
+保持された Slider の値を使用します。Reset preview は、既知の進捗を 40% に
+明示的に復元します。

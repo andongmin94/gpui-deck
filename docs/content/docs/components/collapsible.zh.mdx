@@ -1,0 +1,37 @@
+---
+title: Collapsible
+description: "单个展开区域、仅在激活时存在的内容、禁用的触发器，以及内容关闭时的焦点处理。"
+---
+
+<ComponentPreview name="collapsible" height={360} />
+
+为单个展开区域只创建一次 `CollapsibleState::new(cx)`。它初始为关闭状态；
+`.default_open(true)` 会在初始时将其打开且不触发事件。观察
+该状态以进行渲染，并将子实体保留在应用的视图中，使其
+值在内容被移除后再次挂载时仍然保留。
+
+围绕一个 `CollapsibleTrigger::new(&state)` 和一个
+`CollapsibleContent::new(&state)` 渲染 `Collapsible::new(id, &state)`。
+关闭时请保持根元素和触发器处于挂载状态。为触发器和内容
+都提供 `accessibility_label`，以及由应用负责的样式和子元素。
+触发器组合了 Button，并呈现展开/禁用状态。打开的
+内容是一个带名称的 Region；关闭的内容没有布局、焦点停靠点或
+无障碍节点。固定版本的 GPUI API 不会输出显式的
+触发器到内容的原生关系。
+
+点击、Enter 和 Space 会切换展开状态。打开时焦点保留在
+触发器上，正常的 Tab 遍历会进入其子元素。该组件不引入
+标题，也不处理方向键/Home/End 按键。当
+静态内容需要自身获得焦点时，请使用内容的 `.tab_stop(true)`。
+
+状态方法包括 `is_open`、`is_disabled`、`trigger_focus_handle`、
+`content_focus_handle`、`set_open(open, window, cx)`、`toggle(window, cx)` 和
+`set_disabled(disabled, window, cx)`。`CollapsibleEvent::Change(bool)` 报告实际发生的
+变化；重复的请求不会触发事件。禁用会阻止用户切换，
+但保留当前的可见性，也不会禁用内容。
+禁用期间，程序化的 `set_open` 仍然可用。
+
+关闭拥有焦点的内容时，焦点会移到仍处于挂载状态的触发器。如果
+该触发器已被禁用，则现有的非 Tab 根范围会获得焦点，以便 Tab
+可以离开。展开区域之外的焦点会被保留。与 Accordion 一样，移除
+整个宿主时，需要应用先聚焦一个仍然存在的控件。

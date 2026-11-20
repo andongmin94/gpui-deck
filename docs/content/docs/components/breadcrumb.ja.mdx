@@ -1,0 +1,69 @@
+---
+title: Breadcrumb
+description: "名前付きナビゲーション、順序付きのパス項目、ネイティブの現在ページメタデータを提供します。"
+---
+
+<ComponentPreview name="breadcrumb" height={360} />
+
+このファミリーは 3 つの構造要素を提供し、それぞれ通常の `Styled` と
+`ParentElement` をサポートします。
+
+| パーツ | ネイティブの契約 | アプリケーションの責務 |
+| --- | --- | --- |
+| `Breadcrumb::new(id)` | ナビゲーションランドマーク。デフォルトの名前は `Breadcrumb` | パスの説明やローカライズには `.accessibility_label(...)` を使用します |
+| `BreadcrumbList::new(id)` | 渡された子の順序のリスト | 項目をパスの順に描画し、方向、折り返し、間隔を選択します |
+| `BreadcrumbItem::new(id)` | ListItem。`.current(true)` でネイティブの `aria_current(Page)` を追加します | 現在の項目を指定し、各場所のテキストまたはアクションを提供します |
+
+祖先には通常の Button コントロールを、現在の場所にはネイティブのテキストを組み合わせます。この構造はフォーカスストップ、選択値、ナビゲーションイベント、
+ルーターを作りません。渡された Button は通常のポインター、Enter/Space、Tab の
+動作を保ちます。各アプリケーションのコールバックが移動先とフォーカスの変更を決めます。
+
+```rust
+Breadcrumb::new("keyboard-guide-breadcrumb")
+    .accessibility_label("Keyboard guide location")
+    .child(
+        BreadcrumbList::new("keyboard-guide-path")
+            .flex()
+            .items_center()
+            .gap_1()
+            .child(BreadcrumbItem::new("settings-location").child(settings_button))
+            .child(BreadcrumbItem::new("help-location").child(help_button))
+            .child(
+                BreadcrumbItem::new("guide-location")
+                    .current(true)
+                    .child(gpui::text!(id = "keyboard-guide-current-text", "Keyboard guide")),
+            ),
+    )
+```
+
+`gpui::text!` は、操作できない現在の場所にネイティブのテキストセマンティクスを与えます。
+単なる `&str` や `SharedString` の子は独自のネイティブロールなしでテキストを描画します。このパスでは装飾用の `›` 区切りに生のテキストを使用しています。
+祖先の Button はすでにアクセシブルな名前を持っています。区切り、パスの内容、色、タイポグラフィ、
+レイアウトはアプリケーションが管理します。
+
+サンプルは、既存の Help Popover の中に `Session settings > Help > Keyboard guide` を描画します。
+Session settings はまず Popover を閉じ、`TabsState::select_value("preferences", window, cx)` を呼び出し、
+その後インデックス 0 の既存のナビゲーションハンドルにフォーカスを当てます。明示的な選択は、Compact の
+TabList と、フォーカスだけではセクションが選択されない Settings の Sidebar の両方で機能します。
+Help は Popover を閉じ、Help を選択したままトリガーにフォーカスを戻します。
+Keyboard guide は現在の、操作できない最後の項目です。
+これらのコールバックは、2 つ目のナビゲーションモデルではなく、既存の Popover と Tabs の State を使用します。
+
+`.current(true)` は現在のパス項目にのみ設定してください。デフォルトの false は
+現在ページのメタデータを省略します。渡された子を無効化したり、その動作を変えたりはしません。ネイティブのプロパティは
+ListItem 自体の AccessKit の `AriaCurrent::Page` です。この契約は、特定のデスクトップ
+スクリーンリーダーがパスをどう読み上げるかを保証するものではありません。
+
+## 折りたたまれたパスとドロップダウン項目
+
+折りたたまれたパスでは、非表示の祖先に、1 つの `BreadcrumbItem` 内の通常の
+[`DropdownMenu`](./dropdown-menu.mdx) からアクセスできます。このファミリーは省略記号の要素や 2 つ目のメニューモデルを追加しません。トリガーの Button には
+"Show hidden locations" のように目的を表す名前を付け、`…` の記号は見える内容としてのみ使用します。
+非表示の各祖先は `MenuItem` であり、メニューが `MenuEvent::Action` を通知したとき、
+アプリケーションがその値を移動先に対応付けます。メニューは Tab ストップを 1 つ提供し、Down/Enter で開き、
+矢印キーと 1 文字によるナビゲーションを備え、アクティブ化後にトリガーへフォーカスを戻します。同じ構成により、
+任意のパンくずに兄弟の場所のドロップダウンを持たせることができます。
+
+カタログの Navigation ビューは `Home › … › <current page>` を描画します。省略記号は
+Documentation と Components を一覧し、どちらかを選ぶとローカルのページと現在の最終項目が変わり、Home で Overview に戻ります。
+いくつの祖先を折りたたむかはアプリケーションのレイアウトで決めてください。このファミリーはパスの幅を測定しません。

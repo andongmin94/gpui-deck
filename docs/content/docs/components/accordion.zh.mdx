@@ -1,0 +1,58 @@
+---
+title: Accordion
+description: "单开或多开的分区、标题导航、禁用项，以及获得焦点的面板关闭处理。"
+---
+
+<ComponentPreview name="accordion" height={360} />
+
+`AccordionState` 持有一个固定且有序的 `AccordionItem::new(value,
+label)` 条目集合，其中的值必须唯一。初始状态为全部折叠；
+`.default_open([value])` 会展开一个已启用的条目。使用
+`.multiple(true).default_open(["general", "details"])` 可允许同时打开多个
+面板。默认值必须指向已启用的条目；在单开模式下，如果存在多个不同的默认值，则属于配置错误并会 panic。
+使用 `.disabled(true)` 标记不可用的条目。
+
+在标题和面板外层渲染 `Accordion::new(id, &state)`，然后按集合顺序将每个
+`AccordionHeader::new(&state, index)` 与对应的 `AccordionPanel::new(&state, index)`
+配对。普通的 GPUI 容器即可排布每一对。根元素提供焦点范围和键盘处理，
+但不决定布局或外观。
+
+标题包含一个原生标题元素和一个按钮。它的子元素和样式作用于该
+按钮；使用 `.heading_level(level)` 可将标题级别从 3 改为其他值。
+标题内只放置非交互式内容。应用自行绘制
+指示器，并通过 `is_open(index)` 区分展开和折叠的标题。
+
+| 标题上的输入 | 行为 |
+| --- | --- |
+| 点击 / Enter / Space | 切换此面板；单开模式下同时关闭之前打开的面板 |
+| 上 / 下 | 聚焦上一个 / 下一个已启用的标题，在两端循环 |
+| Home / End | 聚焦第一个 / 最后一个已启用的标题 |
+| Tab / Shift-Tab | 按正常的文档顺序遍历已启用的标题和已展开的内容 |
+
+方向键导航不会展开面板。每个已启用的标题都是普通的 Tab
+停靠点。导航操作仅在标题本身拥有焦点时生效，因此面板内的
+Input 仍保留自己的 Home/End 和方向键行为。已禁用的标题不会
+被激活，也不参与键盘焦点遍历。
+
+状态方法包括 `items`、`is_open`、`open_values`、`trigger_focus_handle`、
+`panel_focus_handle`、`toggle(index, window, cx)` 和 `close(window, cx)`。订阅
+`AccordionEvent::Change(values)` 可获得按原始条目顺序排列的已展开值；
+空向量表示所有面板均已关闭。`close` 会关闭所有已展开的面板。
+无变化的操作不会再次触发事件。观察该状态即可重绘使用方。
+目录中的 Navigation 帮助使用 `.multiple(true)` 挂载了两个相互独立的回答，
+因此展开命令说明时会保留对齐方式的回答。会话中的 Help 则保持默认的单开约定。
+
+关闭面板会移除其布局、焦点停靠点和无障碍节点。如果表单值和子实体需要在
+重新挂载后保留，请将它们放在应用的视图中。面板默认是带名称的区域，
+没有自己的 Tab 停靠点；对于需要自身获得焦点的静态内容，请使用
+`.tab_stop(true)`。
+
+如果程序化的变更关闭了拥有键盘焦点的面板，焦点会移到
+仍然存在的标题；在切换分区时，则移到新打开的标题。变更
+不会从无关的控件处抢走焦点。在面板被移除之前先移动焦点，
+也能让嵌套的 Popover 完成其关闭生命周期。如果整个
+Accordion 宿主被移除，应用必须聚焦某个仍然存在的控件。
+
+库会输出标题级别、按钮角色、展开/禁用状态，以及带名称的
+Region。不会输出显式的原生按钮到面板的 controls/labelled-by 关系：
+固定版本的 GPUI API 没有暴露所需的同级节点 ID。

@@ -1,0 +1,64 @@
+---
+title: Combobox
+description: "可编辑的单选/多选、分组的搜索结果、可替换的选项、键盘/指针提交，以及草稿取消。"
+---
+
+<ComponentPreview name="combobox" height={360} />
+
+使用有序且唯一的 `SearchItem::new(value, label)` 条目构造
+`ComboboxState::new(items, window, cx)`。`.keywords(...)` 添加别名，
+`.disabled(true)` 标记不可用的选项，`.group(label)` 指定一个
+带名称的结果分组。请在源顺序中保持每个分组的条目连续。
+共享的 Command 引擎负责原生的查询编辑、过滤、高亮和
+滚动；Combobox 负责已提交的选择及其弹出层生命周期。
+
+默认是单选。`.multiple(true)` 允许提交多个
+值。`set_selected_values([values...], window, cx)` 会在不触发用户事件的情况下初始化或替换
+选择；传入空迭代器则清空选择。未知/已禁用的
+值，以及单选模式下多于一个不同的值，都会被拒绝。可读取
+`selected_indices()`、`is_selected(index)`、`selected_items(cx)` 或
+`selected_values(cx)` 用于应用的呈现。用户激活仅在选择发生变化时，才会按条目顺序触发
+`ComboboxEvent::Change(values)`。
+
+渲染 `Combobox::new(id, &state).input(|input| ...).content(surface)`。其中的 input
+构建器负责自己的边框、名称、占位符和 `InputStyles`。一个带名称的
+`ComboboxList` 按 `visible_indices(cx)` 的顺序包含 `ComboboxOption` 子元素，
+也可以放在 `ComboboxGroup::new(id, &state, label)` 包装器内。通过 `visible_groups(cx)` 获得分组
+名称，通过 `visible_group_indices(Some(label), cx)` 获得匹配的条目索引；
+`None` 对应未分组的条目。每个分组提供一个带名称的原生 Group 和 Heading；
+`.heading(...)` 用于设置其标题的样式。
+空分组会消失，标题不参与键盘导航。请为
+列表设置有界的高度，并将空状态文本放在其外部。
+
+| 交互 | 结果 |
+| --- | --- |
+| 指针或方向键打开已关闭的输入框 | 显示所有选项，并高亮第一个已选中或已启用的选项 |
+| 输入 | 过滤建议项，不改变已提交的值 |
+| 上 / 下 | 在已启用的结果之间移动，可跨分组 |
+| Enter / 点击结果（单选模式） | 提交一个选项，关闭建议项并恢复其标签 |
+| Enter / 点击结果（多选模式） | 切换该选项，同时保持查询和建议项打开 |
+| Escape、Tab、失焦或外部点击 | 结束草稿；单选模式恢复其标签，多选模式清空查询 |
+
+只有查询输入框是该控件的 Tab 停靠点。使用普通的应用 Button 渲染已选中的标签，
+并调用 `remove_value(value, window, cx)` 或
+`clear(window, cx)` 来响应用户的移除操作。这些操作会触发已更改的选择，
+将焦点返回到查询输入框，并拒绝已禁用的控件或正在进行的 IME 组合输入。
+`set_disabled` 会关闭弹出层并阻止常规输入。`set_query` 会开始一个
+获得焦点的草稿。标记文本优先于建议项的导航/提交；
+Escape 会先取消标记组合输入。无头检查并不能确认桌面端 IME
+的行为。
+
+`set_items(items, window, cx)` 会替换源条目，且不触发 Change 事件。
+当前选择会按稳定的值跟随；缺失或新近被禁用的值
+会被移除。进行中的查询文本、焦点和原生组合输入都会保留。关闭状态下的
+单选会刷新其显示标签。应用负责获取数据、加载、
+请求顺序和错误；不会安装网络控制器。
+
+原生语义包括 ComboBox 查询输入、展开状态、带名称的分组、
+已提交的选中值，以及多选模式下可多选的 listbox。固定版本的
+GPUI API 无法表达输入框到同级列表的 active-descendant
+关系。不提供自由格式的已提交值。结果使用 Command 的
+按排名顺序匹配。
+设置示例在 Dialog 内保留单个预设。目录中的
+Selection 视图演示了分组的多选目标、标签移除，以及无需第二个输入框或选择引擎的本地
+源更新。

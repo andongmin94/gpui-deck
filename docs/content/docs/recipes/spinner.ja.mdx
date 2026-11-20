@@ -1,0 +1,34 @@
+---
+title: Spinner
+description: "GPUI の reduced-motion 設定を尊重する、回転する円弧を持つ名前付きの不定 Progress。"
+---
+
+[`spinner.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/spinner.rs) は、既存の不定 Progress に
+回転する円弧を追加します。操作のアクセシブルな名前を渡してください。
+
+```rust
+Spinner::new("preview-progress", "Preview progress", palette)
+    .size(rems(1.25))
+    .text_color(palette.accent)
+```
+
+デフォルトのサイズは 1 rem で、デフォルトの色はコンシューマーの accent です。
+`Styled` がルートを制御し、円弧は実際の境界とテキストの色に従います。
+Progress が、現在の数値を持たない、唯一のネイティブな ProgressIndicator のロール、ラベル、数値の
+範囲を提供します。視覚的な円弧は、個別のロール、
+アクセシブルな名前、Tab ストップを追加しません。これは不定の進捗インジケーターであり、
+自動的なライブアナウンスは提供しません。
+
+GPUI の `AnimationExt` が、1 秒周期で繰り返すアニメーションを担います。`App::reduce_motion()` が
+有効な場合は、アニメーションフレームを要求せずに、静止した円弧を描画します。アプリケーションは、
+この既存の設定を `App::set_reduce_motion(bool)` で指定できます。オペレーティングシステムの
+設定との自動的な同期は、このレシピの外です。レシピ固有の
+アニメーションコントローラー、保持される読み込み状態、タイマーはありません。
+
+アプリケーションが操作を保留中とみなしている間は Spinner をマウントし、
+その操作が終わったら取り除きます。サンプルでは、既存の Unknown progress の
+トグルが、確定した進捗のバーを、同じ範囲が制限された行の Spinner と Skeleton に置き換えます。
+どちらの進捗のプレゼンテーションも、`preview-progress` の ID と
+アクセシブルな名前を保ちます。不明な状態が表示されている間も、Slider は既知の値を保持し、
+Reset preview は 40% の既知の進捗に戻します。これは引き続き制御されたプレビューであり、
+レシピは録画やバックグラウンドのタスクを開始しません。

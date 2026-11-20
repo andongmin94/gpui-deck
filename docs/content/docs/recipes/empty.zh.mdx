@@ -1,0 +1,21 @@
+---
+title: Empty
+description: "具名的静态分组，包含标题、描述、可选的媒体和所提供的动作。"
+---
+
+[`empty.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/empty.rs) 导出 `EmptyState`，
+以避免与 GPUI 的 `Empty` 元素混淆。它提供一个具名的分组、二级
+标题、描述，以及可选的媒体/动作插槽。
+
+```rust
+EmptyState::new("empty-results", "No results", "Try another search.", palette)
+    .media(Badge::new("result-count", "0 results", palette))
+    .action(clear_search_button)
+```
+
+该配方不拥有搜索、加载、通知或焦点状态。所提供的
+媒体在传达信息时，自行负责其无障碍描述。示例
+把该配方放在 `Command` 内的 `CommandList` 旁边，因此其动作是
+位于 listbox 之外的普通 Button。Clear search 会调用 `CommandState::set_query`
+并把焦点返回到现有的查询输入。对话框保持打开，也不会派发
+任何命令。`Styled` 可以覆盖外层边框。

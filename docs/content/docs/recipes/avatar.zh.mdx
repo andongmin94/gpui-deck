@@ -1,0 +1,44 @@
+---
+title: Avatar
+description: "具名的圆形图像，带显式的后备文本，使用 GPUI 的图像加载器和缓存，另有相互重叠的 AvatarGroup，其溢出项带具名的 \"+N\"。"
+---
+
+[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs) 呈现一个圆形图像，
+带显式的替代文本和应用提供的后备文本：
+
+```rust
+Avatar::new("preset-avatar", "Balanced preset artwork", "BL", palette)
+    .image(preset_artwork)
+    .size(rems(2.5))
+```
+
+`image` 接受 GPUI 现有的 `ImageSource` 转换。省略它会立即显示
+后备内容；图像出错时同样显示后备内容。图像处于
+等待中时，会先应用 GPUI 原生的 200 ms 加载延迟，之后才显示后备内容。
+GPUI 负责解码、加载、缓存和重绘。该配方不增加单独的
+加载任务、计时器、缓存或重试策略。
+
+在任何状态下，根元素都提供一个原生 Image 角色和所给的无障碍名称。
+图像和后备内容不增加单独的名称或焦点停靠点。请提供
+描述图像含义的名称，而不要依赖可见的首字母。
+后备文本及其本地化由应用选择；该配方不会
+从名称推导首字母。默认的边框是 2.5 rem 的正方形，带调色板
+颜色和圆形裁剪。`Styled` 可以改变其尺寸和颜色；请保持宽度
+和高度相等以得到圆形。图像使用 GPUI 的 cover 适配。状态徽标、
+头像组和可交互的动作仍属于应用的组合。
+
+示例为 Balanced 预设嵌入了 [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)。
+其他预设使用 `PR` 和 `HQ` 之类的显式文本，
+空选择则使用 `?`，其无障碍名称由当前的
+预设标签派生。图像源是在渲染现有 HoverCard 时，根据保留的
+Combobox 状态选定的；不存在第二个选中预设的值。这份
+内置图稿无需网络请求。应用在复制该配方时
+应提供自己的资源。
+
+
+`AvatarGroup::new(id, "Team members", palette)` 像 shadcn 的头像组一样堆叠 `.avatar(...)` 项。
+每个可见的头像都位于一个与表面同色的环中，并
+与前一个重叠。`.max_visible(n)` 显示前 `n` 个，并添加一个
+“+N” 标签（chip），其 Label 名称会列出被隐藏的人（“2 more: Cy Lee, Di Cho”），
+这样辅助技术不会遗漏任何人。该框是一个没有
+焦点停靠点的具名 Group。预设预览展示五个人，其中三个可见。

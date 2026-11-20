@@ -1,0 +1,66 @@
+---
+title: Field
+description: "Input/Textarea ベースのコントロール向けのラベルフォーカス、ヘルプ/エラーの説明、required/invalid メタデータに加え、Checkbox、Switch、RadioGroup、Select 向けの ControlField を提供します。"
+---
+
+<ComponentPreview name="field" height={360} />
+
+`Field::new(id, &input_state, label)` は、表示されるラベル、任意のヘルプ、
+検証フィードバックを、保持された 1 つの input に関連付けます。同じコンストラクターが
+InputState と TextareaState を受け付けます。Combobox はクエリを `input()` で公開します。
+その input のレンダラーを Field の子に含めてください。ラベルはクリックでき、
+有効で稼働中の input にフォーカスを移し、Tab ストップは追加しません。
+
+```rust
+Field::new("session-name-field", &self.input, "Session name")
+    .description("Choose a name to recognize this session.")
+    .required(true)
+    .error(name_invalid.then(|| "A session name is required.".into()))
+    .styles(|styles| {
+        styles
+            .description(|style| style.text_color(muted))
+            .error(|style| style.text_color(error_color))
+    })
+    .flex()
+    .flex_col()
+    .gap_1()
+    .child(input_frame)
+```
+
+検証と送信はアプリケーションが管理します。ネイティブのサンプルでは、空の
+名前がエラーを与えて Done を無効にし、名前を入力すると両方が解除されます。Field は
+ラベル、コントロールの子、ヘルプ、エラーを順に描画し、スタイルは
+`FieldStyles` を通じて指定します。カラーパレット、検証スキーマ、フォーム
+コントローラーは提供しません。そのコントロールの関連付けは、保持されたテキスト input のファミリーを対象とし、
+選択系のコントロールには後述の `ControlField` を使用します。
+
+実際のネイティブ input は、ラベル、エラーをヘルプより前に置いた説明、
+required/invalid フラグを受け取ります。既存のロール、プレースホルダー、アクセシビリティ識別子、
+値の公開ポリシー、ポップアップの expanded 状態は保持されます。`error(None)` を渡すと
+invalid 状態が解除されます。補助的な `InputAccessibility` のビルダーは
+`with_description`、`with_required`、`with_invalid` です。input は引き続き
+編集とフォーカスの唯一の所有者です。
+
+
+## 選択系コントロール向けの ControlField
+
+`ControlField::new(id, &focus, label)` は、Checkbox、Switch、RadioGroup、
+Select に、同じラベル、ヘルプ、エラー、required/invalid の契約を与えます。その
+`.control(|metadata| ...)` ビルダーは `FieldMetadata` を受け取ります。それをコントロールの
+`.field(metadata)` に渡すと、コントロールに名前が付き、エラーをヘルプより前に置いた説明が付き、
+既存のネイティブノードが required または invalid としてマークされます。
+Field のラベルは、コントロール自身の `accessibility_label` より優先されます。
+
+```rust
+ControlField::new("stroke-width-field", &checked_option_focus, "Stroke width")
+    .description("Applies to new strokes.")
+    .control(move |metadata| stroke_group.field(metadata))
+```
+
+ラベルをクリックすると、Tab ストップを追加せずに `focus` にフォーカスします。Checkbox または
+Switch では、HTML の `label` と同様に、`.on_label_activate(...)` がアプリケーションの値をトグルします。
+`.control_first(true)` はコントロールをラベルの前に描画します。
+`.disabled(true)` は無効なコントロールを反映し、ラベルがそれにフォーカスもアクティブ化もしないようにします。
+RadioGroup では、チェックされているオプションのフォーカスハンドルを渡します。
+Settings の Preferences ビューは Stroke width をこの方法でラップしています。レイアウトと検証は
+アプリケーションが管理します。

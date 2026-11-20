@@ -1,0 +1,66 @@
+---
+title: Trace
+description: "基于现有 Collapsible 生命周期的可展开摘要和具名的只读详情，带可选的动作。"
+---
+
+[`trace.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/trace.rs) 呈现一个摘要，它可展开为具名的只读
+详情和一个可选的应用动作。它组合
+现有的 Collapsible 各部分、Button 行为和 Typography 的 Paragraph。
+
+```rust
+let disclosure = cx.new(CollapsibleState::new);
+// Retain this entity and observe it so the application view redraws.
+
+Trace::new(
+    "settings-trace",
+    &disclosure,
+    "Current settings · MiniCast",
+    "Current settings details",
+    detail_text,
+    palette,
+)
+.action(close_details_button)
+```
+
+应用拥有并观察所提供的 `Entity<CollapsibleState>`。
+用 `default_open` 配置其初始状态，之后的更改使用现有的 `set_open`
+和 `set_disabled` 方法。关闭时请保持根元素和触发器挂载。Trace 不提供额外的展开状态、
+事件类型、数据收集或执行控制器。
+
+现有的 Collapsible 根元素是一个没有名称的原生 Group，带有不属于 Tab 的焦点
+范围。其触发器是以完整摘要命名的 Button，原生的
+展开和禁用元数据由 CollapsibleTrigger 提供。可见的
+展开提示不增加角色或名称。通过触发器打开会让焦点停留在
+触发器上；普通的 Tab 遍历会进入任何所提供的动作。详情 Region
+使用显式的 `details_label`，不贡献 Tab 停靠点，并包含一个
+以其完整文本命名的 Paragraph。固定版本的 GPUI API 没有暴露原生的
+触发器/内容关系 ID。关闭的详情不贡献布局、动作
+焦点停靠点或无障碍节点。
+
+指针、Enter 和 Space 通过现有的触发器进行切换。当详情中的某个
+动作拥有焦点时关闭，会把焦点返回到仍然存在的触发器。如果
+触发器被禁用，现有的 Collapsible 生命周期则改用其不属于 Tab 的
+根元素，以便遍历能够离开该展开区。禁用触发器不会关闭
+或禁用已打开的详情或所提供的动作；它们的启用状态归应用
+及其现有的 Button 所有。更改摘要或详情字符串
+不会重置保留的打开状态或焦点。在移除整个宿主或获得焦点的动作之前，
+应用必须把焦点移到一个保留的目标上。
+
+请为边框设置有边界的宽度。摘要和正文使用 GPUI 的文本布局换行，
+并在垂直方向增长而不会被截断。可选的 `.action(...)` 元素位于
+详情内部、正文之后；容器可以提供多个控件，并带有
+各自合适的布局。`Styled` 自定义外层边框；所提供的调色板
+为触发器和 Paragraph 设置样式。较长的详情使用父级现有的
+ScrollArea，没有内部视口，也没有新的滚动键处理。
+
+两种外观都把 Trace 放在 Help 的 State
+ownership 面板中的配置预览之后。摘要使用当前的会话名称，详情读取
+当前的会话、Calendar 选择、预设、绘图工具、光标和工具栏
+设置，以及备注的值。Close details 会调用现有的
+`CollapsibleState::set_open(false, ...)`，由它恢复摘要的焦点。编辑
+底层表单会更新可见的文本；关闭再重新打开设置
+会保留保留的展开状态和表单值。
+该使用方描述的是当前设置，并不记录操作、任务
+或模型的推理。Trace 没有日志源、解析器、流式输出、传输
+或时间线模型。Item 仍是静态的通用行，Message 呈现有作者的
+内容，而 Collapsible 继续负责共享的展开行为。

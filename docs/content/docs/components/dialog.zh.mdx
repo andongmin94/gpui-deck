@@ -1,0 +1,16 @@
+---
+title: Dialog
+description: "打开/关闭状态、原生模态元数据、背景输入隔离、初始焦点、关闭处理和焦点恢复。"
+---
+
+<ComponentPreview name="dialog" height={360} />
+
+`Dialog::new(&state)` 是模态的：它呈现原生模态元数据，并阻止
+背景的指针/滚轮输入，即使没有装饰性的背景遮罩也是如此。
+应用提供无障碍名称、弹出层和视觉背景遮罩。请将其保持
+挂载在 Root 之下，使 Tab 和 Shift-Tab 保持在当前活动的对话框内。
+
+现有的状态负责打开、初始焦点、Escape 和返回焦点。提供并启用背景遮罩时，
+会提供点击背景关闭的功能；省略
+该视觉元素仍会使背景控件保持不可交互。Popover 是非模态的，
+不会设置模态标志。AlertDialog、Drawer 和 Sheet 复用 Dialog。

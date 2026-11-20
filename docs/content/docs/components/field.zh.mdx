@@ -1,0 +1,66 @@
+---
+title: Field
+description: "为基于 Input/Textarea 的控件提供标签焦点、帮助/错误描述以及必填/无效元数据，并提供用于 Checkbox、Switch、RadioGroup 和 Select 的 ControlField。"
+---
+
+<ComponentPreview name="field" height={360} />
+
+`Field::new(id, &input_state, label)` 将可见的标签、可选的帮助文本
+和验证反馈与一个保留的输入关联起来。同一个构造函数接受
+InputState 和 TextareaState；Combobox 通过 `input()` 暴露其查询输入。
+请将该输入的渲染器放在 Field 的子元素中。标签可点击，
+会聚焦处于活动状态且已启用的输入，并且不会增加额外的 Tab 停靠点。
+
+```rust
+Field::new("session-name-field", &self.input, "Session name")
+    .description("Choose a name to recognize this session.")
+    .required(true)
+    .error(name_invalid.then(|| "A session name is required.".into()))
+    .styles(|styles| {
+        styles
+            .description(|style| style.text_color(muted))
+            .error(|style| style.text_color(error_color))
+    })
+    .flex()
+    .flex_col()
+    .gap_1()
+    .child(input_frame)
+```
+
+验证和提交由应用负责。在原生示例中，空的
+名称会提供错误并禁用 Done；输入名称后二者都会清除。Field
+按顺序渲染标签、控件子元素、帮助文本和错误，样式通过
+`FieldStyles` 提供。它不提供调色板、验证模式或
+表单控制器。其控件关联涵盖保留的文本输入家族；
+下面的 `ControlField` 涵盖选择型控件。
+
+实际的原生输入会获得标签、错误在前帮助在后的描述，
+以及必填/无效标志。现有的角色、占位符、无障碍标识符、
+值暴露策略以及弹出层展开状态都会保留。传入
+`error(None)` 会清除无效状态。配套的 `InputAccessibility` 构建器
+是 `with_description`、`with_required` 和 `with_invalid`；输入仍然是
+唯一的编辑和焦点持有者。
+
+
+## 用于选择型控件的 ControlField
+
+`ControlField::new(id, &focus, label)` 让 Checkbox、Switch、RadioGroup 或
+Select 拥有相同的标签、帮助、错误以及必填/无效约定。其
+`.control(|metadata| ...)` 构建器会收到一个 `FieldMetadata`；将其传给
+控件的 `.field(metadata)`，它会为控件命名，用
+错误在前帮助在后的方式描述它，并将其现有的原生节点标记为必填或无效。
+字段标签优先于控件自己的 `accessibility_label`。
+
+```rust
+ControlField::new("stroke-width-field", &checked_option_focus, "Stroke width")
+    .description("Applies to new strokes.")
+    .control(move |metadata| stroke_group.field(metadata))
+```
+
+点击标签会聚焦 `focus`，且不增加 Tab 停靠点。对于 Checkbox 或
+Switch，`.on_label_activate(...)` 随后会切换应用的值，就像 HTML 的
+`label` 一样；`.control_first(true)` 会将控件绘制在标签之前。
+`.disabled(true)` 会镜像被禁用的控件，使标签既不聚焦也不
+激活它。对于 RadioGroup，请传入已选中选项的焦点句柄。
+Settings 的 Preferences 视图就是以这种方式包装 Stroke width 的。布局和验证
+仍由应用负责。

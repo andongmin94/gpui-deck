@@ -1,0 +1,33 @@
+---
+title: Item
+description: "具名的内容行，包含标题、描述、可选的媒体、页眉、页脚和尾部动作。"
+---
+
+[`item.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/item.rs) 把标题、可选的
+描述、前置媒体、整行宽度的页眉和页脚，以及可选的
+尾部动作组合在一起。
+
+```rust
+Item::new("recording-preset-item", "Recording preset", palette)
+    .description(selected_preset_label)
+    .media(record_dot)
+    .header("Applies to new recordings")
+    .footer(recording_date)
+    .action(preset_preview_and_edit)
+```
+
+其原生 Group 以标题命名，并以描述作为说明。文本列
+可以收缩，而媒体和动作保持其所需的宽度；页眉
+和页脚横跨该行上方和下方的整个边框。示例提供了
+一个装饰性的绘制录制圆点、一个弱化的范围页眉、选中的录制日期
+作为页脚，以及现有的 HoverCard 触发器，它在悬停/聚焦时预览该预设，
+并在普通激活时打开设置。其焦点句柄、按钮
+名称和返回焦点的行为都得以保留。
+
+插槽不增加角色、名称或焦点停靠点；它们只携带其
+内容的语义。请为有信息量的媒体（如 Avatar）提供自己的名称，
+并让装饰性形状保持无名称。应优先使用绘制的形状，而不是依赖
+已安装字体的符号字形。该行没有整行点击、Tab 停靠点、选中
+值或列表导航。所提供的控件自行负责其语义和动作。
+关联的输入标签和校验请使用 Field。单独的 ItemGroup 不在
+当前配方的范围之内。`Styled` 可以改变边框和间距。

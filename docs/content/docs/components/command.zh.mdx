@@ -1,0 +1,65 @@
+---
+title: Command
+description: "按排名的模糊文本搜索、可用结果间的导航、指针/Enter 触发动作，以及高亮结果的滚动。"
+---
+
+<ComponentPreview name="command" height={360} />
+
+使用值唯一的有序
+`SearchItem::new(value, label)` 条目创建 `CommandState::new(items, window, cx)`。可选的 `.keywords`
+添加搜索别名；`.disabled(true)` 使某个操作不可用。观察
+该状态以渲染结果，并订阅 `CommandEvent::Action(value)`，
+在应用中处理执行。
+
+`Command::new(id, &state)` 承载 `CommandInput::new(id, &state)` 和
+`CommandList::new(id, &state)`。为查询输入框和列表提供无障碍标签，并
+按 `visible_indices()` 的顺序渲染 `CommandOption::new(&state, index)`。
+对于使用 `.group(label)` 的条目，请将匹配的选项包在带名称的 `CommandGroup` 部件中；
+`visible_groups()` 和 `visible_group_indices(Some(label))` 提供过滤后的
+集合。请在源顺序中保持每个分组连续；空分组会消失。
+分组标题没有焦点停靠点，也不影响键盘导航。读取 `items()` 获得标签，读取
+`highlighted_index()` 用于应用自行设置的活动行样式。该列表使用
+现有的 GPUI ScrollHandle；请为其设置高度或最大高度，使活动
+结果可以滚动到可见区域。没有条目匹配时，请渲染由应用负责的空状态消息。
+
+现有的 InputState 是查询的唯一数据源，通过 `input()` 暴露。
+`set_query(text, window, cx)` 以程序方式更新它。以空白分隔的每个查询词的
+字符，必须按顺序（忽略大小写）出现在条目的
+值、标签或关键词中，因此 `pnt` 可以找到 "Show pointer"。在各查询词上累加后，
+排名上，匹配在单词开头的结果高于其他任何子串匹配，而后者又高于较松散的按顺序字母匹配。
+分组保持连续，并按其最佳结果排序；
+得分相同以及查询为空时保持源顺序。
+匹配时会把已禁用的结果也纳入显示。查询
+变化后会高亮其第一个已启用的结果；结果为空或全部被禁用时，没有
+活动命令。`set_items(items, window, cx)` 会替换集合，
+同时保留原生的查询和焦点；它按值保留已启用且匹配的高亮，
+否则选择第一个已启用的结果。应用负责获取数据和请求
+顺序。不提供网络控制器。
+
+| 输入 | 行为 |
+| --- | --- |
+| 上 / 下 | 在已启用的匹配结果之间移动，在两端循环 |
+| Enter | 对高亮的已启用结果执行一次 |
+| 指针悬停 / 点击 | 高亮已启用的结果 / 执行该结果 |
+| Space、Home、End、左、右 | 仍作为普通的查询编辑 |
+| Tab / Shift-Tab | 遵循正常的容器焦点遍历；结果行不是 Tab 停靠点 |
+| Escape | 仍留给外围界面使用 |
+
+原生焦点保留在查询输入框中。当 IME 存在已标记的组合文本时，
+命令的导航和执行会将该交互交给输入框处理。自动化的
+标记文本检查不能取代桌面端的韩文/中日韩 IME 验证。
+
+原生树暴露一个带名称的文本输入、listbox，以及已选中/已禁用的选项。
+固定版本的 GPUI active-descendant API 要求有一个获得焦点的祖先元素；同级的
+查询输入框/列表无法如实地输出该关系，因此本实现不
+声称具备该关系，也不声称已完成屏幕阅读器验证。
+
+Command 本身不负责弹出层生命周期。要制作命令面板，请将其放在
+现有的 Dialog 内，并将 DialogState 的初始焦点设置为
+`focus_handle()`。示例会在执行可能
+打开另一个 Dialog 的操作之前先关闭该对话框，从而将菜单触发器保留为返回目标。
+打开面板时清空其查询，是在应用代码中完成的。
+
+SearchItem 和搜索实现也被可编辑的
+[Combobox](./combobox.mdx) 使用。Combobox 提供自己的已提交值
+和弹出层生命周期，而 Command 仍是一个操作列表。

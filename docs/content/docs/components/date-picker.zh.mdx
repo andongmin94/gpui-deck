@@ -1,0 +1,94 @@
+---
+title: Date Picker
+description: "Popover 内的日历选择、以所选日期或保留的光标位置作为初始焦点、单选/完整范围时关闭、关闭处理、禁用状态，以及带类型的 ISO/相对日期解析。"
+---
+
+<ComponentPreview name="date-picker" height={360} />
+
+DatePicker 将现有的 Calendar 与 Popover 的触发器、定位、
+关闭和焦点生命周期连接起来。Calendar 仍然是所选
+日期的唯一持有者。先使用其边界和可选的初始值构造日历，然后
+在同一个窗口中创建一次选择器：
+
+```rust
+let picker = cx.new(|cx| DatePickerState::new(&calendar, window, cx));
+```
+
+观察选择器以进行渲染：它同时观察其 Calendar 和 Popover，因此
+同一个视图无需再单独观察 Calendar。通过 `selection(cx)` 访问
+选择，通过 `calendar()` 访问嵌套的日期状态。
+只在此选择器的弹出层内渲染 Calendar，不要同时在
+另一个独立的网格中渲染。
+
+```rust
+DatePicker::new("recording-date", &picker)
+    .accessibility_label("Choose recording date")
+    .offset(px(6.))
+    .trigger(|button| {
+        button
+            .accessibility_label(format!("Recording date, {formatted_date}"))
+            .child(formatted_date)
+    })
+    .content(calendar_surface)
+```
+
+应用提供格式化后的触发器文本、日历/月份控件，
+以及弹出层的尺寸和外观。`accessibility_label` 为
+弹出层命名；请单独为 Button 触发器命名。普通的 CalendarDay 激活
+就足以完成选择；应用不应在每一天上重复添加
+点击即关闭的处理。Root 仍负责正常的 Tab 遍历以及外层
+Dialog 的焦点限制。
+
+| 操作 | 结果 |
+| --- | --- |
+| 在已有所选日期时打开 | 将导航重置到该日期，并聚焦其当前的网格槽位 |
+| 在没有选择时打开 | 保留并聚焦 Calendar 上一次的导航日期 |
+| 在日/月之间导航 | 更改导航，但不改变已提交的日期 |
+| 激活单个日期 | 选中、关闭并恢复触发器；激活同一日期同样会关闭 |
+| 激活部分范围 / 多选日期 | 更新选择并保持弹出层打开 |
+| 激活完整范围 | 先关闭并恢复触发器，再触发变更后的范围 |
+| Escape | 先于外层 Dialog 关闭选择器，并保留选择 |
+| Tab / Shift+Tab 越过弹出层内容 | 关闭并从触发器的位置继续 |
+| 点击外部 | 关闭，同时保留外部控件新获得的焦点 |
+
+日期的焦点在打开之前即时解析，因为月份变化可能
+使所选日期移到不同的焦点槽位。`DatePickerEvent::Change` 仅在
+用户的选择发生变化时触发。单选和完整范围的值会在事件之前关闭
+弹出层，因此订阅者可以打开另一个界面而不会
+丢失其新获得的焦点。部分范围和多选的值会在打开状态下发布。
+Calendar 公开的 Change 行为仍然是
+去重的；该组合还会观察成功的同一日期激活。
+
+`open` 和 `close` 提供命令式的生命周期控制。`set_disabled` 会关闭
+已打开的弹出层，并同时禁用其触发器和 Calendar。请使用该方法
+协调禁用状态，而不要单独修改嵌套的日历。
+`set_selection(selection, window, cx)` 会验证完整的选择，关闭
+弹出层并更新 Calendar，且不触发 Change。无效的值会使
+选择器保持不变。应用可以对预设 Button 使用同一个设置方法；
+Selection 目录提供了一个完整的范围预设。
+
+## 键入的日期
+
+`parse_date_text(text, today)` 为选择器旁边的普通 Input 读取一个键入的日期。它接受使用 `-`、`/` 或 `.` 分隔的 `YYYY-MM-DD`，
+以及不区分大小写的英文形式 `today`、`tomorrow`、`yesterday`、`in N days|weeks`
+和 `N days|weeks ago`，也包括单数形式的单位。库没有时钟，因此
+由应用传入 `today`。不可能存在的日期和其他文本返回 `None`。
+使用 `set_selection` 应用结果，它仍会强制执行 Calendar 的边界
+和禁用日期：
+
+```rust
+let date = parse_date_text(&input.read(cx).value(), today);
+let applied = date.is_some_and(|date| {
+    picker.update(cx, |picker, cx| {
+        picker.set_selection(CalendarSelection::Single(Some(date)), window, cx)
+    })
+});
+```
+
+Schedule 示例在选择器之后添加了一个 "Type a date" Field。Enter 会相对于示例的固定日期应用
+该文本，并将其改写为 ISO 文本；无法识别或不可用的日期会显示 Field 错误，直到下一次编辑。
+选择器和字段仍是各自独立的 Tab 停靠点。
+
+该选择器支持单选、多选和范围日期，并使用由应用格式化的
+Button 触发器。它不会获取预设、不会解析其他语言或自由格式的
+短语（例如 "next Friday"），也不会在 Calendar 约定之外添加区域设置/时区规则。

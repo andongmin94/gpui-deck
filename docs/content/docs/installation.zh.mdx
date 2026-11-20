@@ -1,0 +1,62 @@
+---
+title: 安装
+description: "配置工具链、运行示例、依赖该 crate，并将配方复制到你的应用中。"
+---
+
+安装 [Rust with rustup](https://rustup.rs/)。仓库通过 `rust-toolchain.toml` 选定 **Rust
+1.99.1**，其中包含 rustfmt 和 Clippy。
+
+在 **Windows** 上，请使用 MSVC 工具链，并安装 Visual Studio C++ 构建工具和 Windows SDK。在 **macOS** 上，使用 `xcode-select --install` 安装 Xcode Command Line Tools。在 **Ubuntu 24.04** 上，安装原生构建依赖：
+
+```sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends -y \
+  build-essential pkg-config \
+  libfontconfig1-dev libfreetype6-dev libwayland-dev \
+  libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
+```
+
+然后克隆仓库，并在原生桌面会话中运行：
+
+```sh
+git clone https://github.com/andongmin94/gpui-design.git
+cd gpui-design
+cargo run -p gpui-design --example two_styles --locked -- compact
+cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-design --example catalogue --locked
+cargo run -p gpui-design --example starter --locked
+```
+
+未提供外观参数时，默认使用 `compact`。两条命令运行的是同一个会话设置交互，只是使用应用自有的样式。
+
+建议从 [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) 入手，它是一个小而完整的应用。它只使用公开 API：`init`、`Root`、一个保留的 `InputState`、`Field` 和 `Button`。应用自行保存其观察（observation）和事件订阅，自行决定颜色和布局，并同时处理 Enter 键和按钮激活。在引入更大的组合之前，请先把它的启动代码和视图复制到你的应用中。
+
+在现有的 Rust 应用中，依赖已检出的源码和匹配的 GPUI 快照，并将路径替换为你自己的检出位置：
+
+```toml
+[dependencies]
+gpui-design = { path = "../gpui-design/crates/base" }
+gpui = { package = "gpui-pre", version = "=0.3.11" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+
+[features]
+test-support = ["gpui-design/test-support"]
+```
+
+该 feature 声明用于支持复制的配方源码中的测试守卫；运行这些 GPUI 测试时请启用它。请使用仓库固定的 Rust 工具链和上述原生前置依赖。按照
+[依赖与令牌说明](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application)，
+将所需的呈现配方复制到应用中。
+
+GPUI 快照系列固定为 **`=0.3.11`**。更改渲染依赖时，请同时更新这些固定版本和
+`Cargo.lock`。
+
+将应用自有的呈现源码连同其所需的配方模块、浅色/深色令牌和许可证一并复制：
+
+```sh
+cargo run -p gpui-design-cli --locked -- list
+cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+```
+
+在使用方中声明 `mod ui;`。该工具会保留你对先前安装的配方和调色板文件所做的修改；如果生成的模块声明被修改过，或存在新文件冲突，则会在写入前停止。Cargo 依赖由使用方自行处理。
+参见[源码复制指南](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application)。
+目录中的 Selection 部分演示了范围/多选日期、分组的录制目标、可移除的已选标签（chip），以及可替换的本地选项数据。

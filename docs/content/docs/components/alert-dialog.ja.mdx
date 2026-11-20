@@ -1,0 +1,25 @@
+---
+title: Alert Dialog
+description: "アラートのセマンティクスとバックドロップによる閉鎖のブロックを備えた、Dialog のモーダルライフサイクルです。"
+---
+
+<ComponentPreview name="alert-dialog" height={360} />
+
+`AlertDialog::new(&dialog_state)` は、短い判断を求めるために既存の Dialog ホストを構成します。
+保持された同じ `DialogState`、`DialogBackdrop`、`DialogPopup`、
+`DialogTitle`、`DialogDescription`、`DialogClose` の各パーツを使用します。アラート専用の State や
+重複したモーダルライフサイクルはありません。閉じている間もホストはマウントしたままにしてください。
+
+ホストには `accessibility_label` と `accessibility_description` を指定し、
+バックドロップとポップアップを提供します。ラッパーはネイティブのロールを AlertDialog に固定し、
+バックドロップの押下による閉鎖を防ぎます。Escape は引き続き Dialog の既存の閉じる経路でキャンセルします。Tab の封じ込めと
+フォーカスの復帰も Dialog と Root が担います。
+
+キャンセルボタン用に安定したフォーカスハンドルを作成し、
+`DialogState::new(cx).with_initial_focus(&cancel_focus)` に渡します。同じハンドルを
+`DialogClose::trigger` が提供する Button にも適用します。確認操作は、アプリケーションのコールバックがアクションを実行して State を閉じる
+通常の Button です。ダイアログを閉じること自体は確認を意味しません。確認アクションを汎用の `DialogEvent::Closed` 通知に結び付けないでください。
+
+サンプルの Reset preview メニューコマンドがこのホストを開きます。Cancel が最初にフォーカスを持ち、
+現在のプレビューを保持します。明示的な Reset preview ボタンだけが 40% の既知の進捗を
+復元し、その後メニューのトリガーへフォーカスを戻します。
