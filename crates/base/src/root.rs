@@ -2,8 +2,8 @@
 //! Modified for GPUI Design: removed styled-layer plugins and rich-text hosting.
 use crate::StyledExt;
 use gpui::{
-    AnyView, App, Context, InteractiveElement, IntoElement, KeyBinding, ParentElement, Render,
-    StyleRefinement, Styled, Window, actions, div,
+    Action, AnyView, App, Context, InteractiveElement, IntoElement, KeyBinding, ParentElement,
+    Render, StyleRefinement, Styled, Subscription, Window, actions, div,
 };
 
 actions!(root, [Tab, TabPrev]);
@@ -48,17 +48,46 @@ pub(crate) fn init(cx: &mut App) {
 pub struct Root {
     view: AnyView,
     style: StyleRefinement,
+    /// Runs Tab and Shift-Tab while nothing in the window is focused. GPUI
+    /// then dispatches from the window's root element, above this root's key
+    /// context, so the context bindings match nothing there.
+    _unfocused_tab: Subscription,
 }
 
 impl Root {
-    pub fn new(view: impl Into<AnyView>, window: &mut Window, _: &mut Context<Self>) -> Self {
+    pub fn new(view: impl Into<AnyView>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         #[cfg(all(target_os = "macos", not(test)))]
         crate::install_window_hit_test_forwarder(window);
-        #[cfg(not(all(target_os = "macos", not(test))))]
-        let _ = window;
+        let window_handle = window.window_handle();
+        let unfocused_tab = cx.observe_keystrokes(move |_, event, window, cx| {
+            // Only a key that no binding took, in this window, with nothing
+            // focused, so an application binding for Tab still wins.
+            if event.action.is_some()
+                || window.window_handle() != window_handle
+                || window.focused(cx).is_some()
+            {
+                return;
+            }
+            // Read the keymap so that rebinding the actions carries over.
+            let bound_to = |action: &dyn Action, cx: &App| {
+                cx.key_bindings()
+                    .borrow()
+                    .bindings_for_action(action)
+                    .any(|binding| {
+                        binding.match_keystrokes(std::slice::from_ref(&event.keystroke))
+                            == Some(false)
+                    })
+            };
+            if bound_to(&Tab, cx) {
+                advance_focus(window, cx, Window::focus_next);
+            } else if bound_to(&TabPrev, cx) {
+                advance_focus(window, cx, Window::focus_prev);
+            }
+        });
         Self {
             view: view.into(),
             style: StyleRefinement::default(),
+            _unfocused_tab: unfocused_tab,
         }
     }
 
@@ -326,6 +355,68 @@ mod tests {
             assert_eq!(window.focused(cx), Some(background[0].clone()));
         });
         assert_eq!(background_focuses.get(), 3);
+    }
+
+    struct Stops(Vec<FocusHandle>);
+
+    impl Render for Stops {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            div()
+                .tab_group()
+                .size_full()
+                .children(self.0.iter().enumerate().map(|(index, handle)| {
+                    div()
+                        .id(("stop", index))
+                        .track_focus(handle)
+                        .tab_index(0)
+                        .size(px(10.))
+                }))
+        }
+    }
+
+    actions!(root_test, [AppTab]);
+
+    #[gpui::test]
+    fn tab_and_shift_tab_reach_controls_while_nothing_is_focused(cx: &mut TestAppContext) {
+        cx.update(crate::init);
+        let stops = cx.update(|cx| {
+            (0..3)
+                .map(|_| cx.focus_handle().tab_stop(true))
+                .collect::<Vec<_>>()
+        });
+        let (_, cx) = cx.add_window_view({
+            let stops = stops.clone();
+            move |window, cx| Root::new(cx.new(|_| Stops(stops)), window, cx)
+        });
+        let draw = |cx: &mut VisualTestContext| cx.update(|window, cx| window.draw(cx).clear(cx));
+        draw(cx);
+        cx.update(|window, cx| assert!(window.focused(cx).is_none()));
+
+        cx.simulate_keystrokes("tab");
+        draw(cx);
+        cx.update(|window, cx| assert_eq!(window.focused(cx), Some(stops[0].clone())));
+
+        cx.update(|window, cx| window.blur(cx));
+        draw(cx);
+        cx.simulate_keystrokes("shift-tab");
+        draw(cx);
+        cx.update(|window, cx| assert_eq!(window.focused(cx), Some(stops[2].clone())));
+
+        // An application binding for Tab outside any context takes the key.
+        let ran = Rc::new(Cell::new(false));
+        cx.update({
+            let ran = ran.clone();
+            move |window, cx| {
+                cx.bind_keys([KeyBinding::new("tab", AppTab, None)]);
+                cx.on_action(move |_: &AppTab, _| ran.set(true));
+                window.blur(cx);
+            }
+        });
+        draw(cx);
+        cx.simulate_keystrokes("tab");
+        draw(cx);
+        cx.update(|window, cx| assert!(window.focused(cx).is_none()));
+        assert!(ran.get());
     }
 
     mod nested_traps {
