@@ -1,6 +1,6 @@
 # GPUI Design
 
-**Documentation:** <https://andongmin94.github.io/gpui-design/>
+**Documentation:** <https://gpui-design.andongmin.com/>
 
 A source-owned, headless UI foundation for Rust and GPUI.
 
@@ -16,7 +16,7 @@ sidebar presentations. The source is maintained in this repository, with GPUI
 kept as an exactly pinned rendering
 dependency.
 
-The [completion criteria and current work](https://andongmin94.github.io/gpui-design/en/docs/coverage/#completion-criteria-and-current-work)
+The [completion criteria and current work](https://gpui-design.andongmin.com/en/docs/coverage/#completion-criteria-and-current-work)
 track behavior, accessibility, visual defaults, source distribution, and native
 validation. Catalogue coverage alone is not a claim of shadcn/ui-level completeness.
 
@@ -83,7 +83,7 @@ and scrollbars; application palettes own light/dark appearance.
 ### Copyable presentation recipes
 
 The [recipe modules](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes) are application-owned source
-compositions, documented in the [presentation guide](https://andongmin94.github.io/gpui-design/en/docs/guides/recipes/).
+compositions, documented in the [presentation guide](https://gpui-design.andongmin.com/en/docs/guides/recipes/).
 Copy the desired module and adapt its styling and any palette import to your
 application tokens.
 These types live in the example, outside the `gpui_design` crate exports.
@@ -115,7 +115,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Bubble** | Incoming/outgoing surfaces, grouped author/time labels and supplied reactions | Catalogue transcript with retained reaction Buttons |
 
 The breadth target is the range of screens and interactions supported by
-shadcn/ui. The [component coverage map](https://andongmin94.github.io/gpui-design/en/docs/coverage/) compares all
+shadcn/ui. The [component coverage map](https://gpui-design.andongmin.com/en/docs/coverage/) compares all
 66 entries in its current main catalogue with the actual public scope here.
 It distinguishes behavior, source-owned presentation recipes, and larger
 compositions. The 42 library families and 23 recipes supply 65 distinct
@@ -253,12 +253,12 @@ and make no network requests.
 
 ## Documentation
 
-The [documentation site](https://andongmin94.github.io/gpui-design/) (English and
-Korean) covers [installation](https://andongmin94.github.io/gpui-design/en/docs/installation/) — toolchain, native
+The [documentation site](https://gpui-design.andongmin.com/) (English and
+Korean) covers [installation](https://gpui-design.andongmin.com/en/docs/installation/) — toolchain, native
 prerequisites, running the examples, depending on the crate and copying recipes
-with the CLI — the [architecture](https://andongmin94.github.io/gpui-design/en/docs/architecture/) of the rendering,
+with the CLI — the [architecture](https://gpui-design.andongmin.com/en/docs/architecture/) of the rendering,
 behavior and presentation layers, one page per component and recipe with live
-previews, and [where each part of the source lives](https://andongmin94.github.io/gpui-design/en/docs/contributing/).
+previews, and [where each part of the source lives](https://gpui-design.andongmin.com/en/docs/contributing/).
 
 Run the examples from a checkout:
 
