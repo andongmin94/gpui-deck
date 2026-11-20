@@ -21,7 +21,6 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  WASM_BINDGEN_VERSION: "0.2.127"
 
 jobs:
   build:
@@ -44,13 +43,6 @@ jobs:
           cache-save-if: ${{ github.ref == 'refs/heads/main' }}
           build-warnings: ""
 
-      - name: Install pinned wasm-bindgen CLI
-        run: |
-          archive="wasm-bindgen-${WASM_BINDGEN_VERSION}-x86_64-unknown-linux-musl"
-          curl -sSfL "https://github.com/wasm-bindgen/wasm-bindgen/releases/download/${WASM_BINDGEN_VERSION}/${archive}.tar.gz" \
-            | tar -xz -C "$RUNNER_TEMP"
-          echo "$RUNNER_TEMP/${archive}" >> "$GITHUB_PATH"
-
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -61,30 +53,16 @@ jobs:
       - name: Install site dependencies
         run: npm ci
 
-      - name: Build live previews
-        run: npm run preview:build
+      - name: Lint and type-check
+        run: |
+          npm run lint
+          npm run typecheck
 
-      - name: Build the site
+      - name: Build previews and the site
         run: npm run build
 
-      - name: Upload Pages artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: docs/out
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
 
-  deploy:
-    name: Deploy to GitHub Pages
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-24.04
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1
+      - name: Browser tests
+        run: npm run test:browser

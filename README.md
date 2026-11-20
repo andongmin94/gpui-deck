@@ -284,13 +284,15 @@ uses one matrix for Linux, Windows, and macOS. Platform-independent checks run
 once; each platform still compiles its native dependencies and all examples.
 
 The [Docs workflow](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml)
-builds the live previews in `crates/web-preview` for WebAssembly, builds the
-Next.js site in `docs/` and publishes `main` to GitHub Pages. Pages are MDX
-files in `docs/content/docs`, with Korean translations beside them as
-`name.ko.mdx`; keep both languages updated together. Preview the site locally
-with `npm ci`, `npm run preview:build` and `npm run dev` in `docs/`; the
-preview build needs the `wasm32-unknown-unknown` target and `wasm-bindgen-cli`
-0.2.127.
+lints, type-checks and builds the Fumapress site in `docs/` together with the
+live previews in `crates/web-preview` for WebAssembly, then runs its Playwright
+tests. Cloudflare Workers Builds deploys `main` to the site from `docs/` with
+`npm run build` and `npm run deploy:cloudflare`. Pages are MDX files in
+`docs/content/docs`, with Korean translations beside them as `name.ko.mdx`;
+keep both languages updated together. Preview the site locally with `npm ci`,
+`npm run preview:build` and `npm run dev` in `docs/`; the preview build needs
+the `wasm32-unknown-unknown` target and `wasm-bindgen-cli` 0.2.127, which it
+installs itself on Linux when they are missing.
 
 | Check | Linux | Windows | macOS |
 | --- | --- | --- | --- |

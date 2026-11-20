@@ -13,7 +13,7 @@ description: "Where each part of the source lives and how to verify a change."
 | `crates/base/examples/presentation.rs` | Copyable light/dark application tokens used by the presentation recipes |
 | `crates/base/examples/recipes/` | Twenty-three catalogue recipes and Chart's supporting presentation; copyable application-owned source |
 | `crates/base/examples/assets/` | Embedded example artwork used by the preset preview and its image-decoding regression |
-| `docs/` | This documentation site: Next.js with Fumadocs; pages live in `docs/content/docs` |
+| `docs/` | This documentation site: Fumapress (Fumadocs on Vite); pages live in `docs/content/docs` |
 | `crates/web-preview/` | Live documentation previews compiled to WebAssembly with GPUI's web backend |
 | `Cargo.toml` / `Cargo.lock` | Workspace and matching dependency set |
 
@@ -31,7 +31,7 @@ README; the Verify workflow runs the same matrix on Linux, Windows and macOS.
 
 ## Documentation site
 
-This site is a Next.js and Fumadocs app in `docs/`. Pages are MDX files in
+This site is a Fumapress app (Fumadocs on Vite) in `docs/`, deployed to Cloudflare Workers. Pages are MDX files in
 `docs/content/docs`; a Korean translation sits beside each page as `name.ko.mdx`.
 Live previews come from `crates/web-preview`, built to WebAssembly:
 
@@ -40,4 +40,6 @@ cd docs
 npm ci
 npm run preview:build   # cargo build for wasm32 + wasm-bindgen into public/preview
 npm run dev
+npm run lint && npm run typecheck
+npm run build && npm run test:browser
 ```

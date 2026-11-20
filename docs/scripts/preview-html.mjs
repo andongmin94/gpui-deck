@@ -1,8 +1,8 @@
 // Writes the host page that loads the wasm preview module into public/preview.
-import { writeFileSync } from 'node:fs';
+import { writeFileSync } from "node:fs";
 
 writeFileSync(
-  new URL('../public/preview/index.html', import.meta.url),
+  new URL("../public/preview/index.html", import.meta.url),
   `<!doctype html>
 <html lang="en">
   <head>
@@ -24,7 +24,7 @@ writeFileSync(
         document.body.innerHTML =
           '<p class="fallback">This preview needs a browser with WebGPU.</p>';
       } else {
-        const { default: init } = await import('./gpui_design_web_preview.js');
+        const { default: init } = await import('/preview/gpui_design_web_preview.js');
         await init();
       }
     </script>
