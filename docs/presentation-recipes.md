@@ -234,23 +234,32 @@ permissions from its child elements. `Styled` can override the frame.
 ## Item
 
 [`item.rs`](../crates/base/examples/recipes/item.rs) groups a title, optional
-description, and optional trailing action in a content row.
+description, leading media, full-width header and footer, and an optional
+trailing action.
 
 ```rust,ignore
 Item::new("recording-preset-item", "Recording preset", palette)
     .description(selected_preset_label)
+    .media(record_glyph)
+    .header("Applies to new recordings")
+    .footer(recording_date)
     .action(preset_preview_and_edit)
 ```
 
-Its native Group is named by the title. The text column can shrink while the
-action keeps its required width. The example supplies the existing HoverCard
-trigger, which previews the preset on hover/focus and opens settings on ordinary
-activation. Its focus handle, button name, and return-focus behavior are retained.
+Its native Group is named by the title and described by the description. The
+text column can shrink while media and the action keep their required width; the
+header and footer span the frame above and below that row. The example supplies
+a decorative raw-text glyph, a muted scope header, the selected recording date
+as footer, and the existing HoverCard trigger, which previews the preset on
+hover/focus and opens settings on ordinary activation. Its focus handle, button
+name, and return-focus behavior are retained.
 
-The row has no whole-row click, Tab stop, selected value, or list navigation.
-Supplied controls own their semantics and actions. Use Field for associated input
-labels and validation. Media, header/footer slots, and a separate ItemGroup are
-outside the current recipe's scope. `Styled` can change the frame and spacing.
+Slots add no role, name, or focus stop; they carry only the semantics of their
+content. Give informative media, such as an Avatar, its own name and keep
+decorative glyphs as raw text. The row has no whole-row click, Tab stop, selected
+value, or list navigation. Supplied controls own their semantics and actions. Use
+Field for associated input labels and validation. A separate ItemGroup is outside
+the current recipe's scope. `Styled` can change the frame and spacing.
 
 ## Alert
 

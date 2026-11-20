@@ -2241,16 +2241,35 @@ impl Render for Demo {
                         .child(
                             Item::new("recording-preset-item", "Recording preset", palette)
                                 .description(preset_label)
+                                // Raw glyph text is decorative; the title names the row.
+                                .media(
+                                    div()
+                                        .size(px(32.))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded(palette.radius)
+                                        .bg(palette.surface)
+                                        .text_color(palette.accent)
+                                        .child("⏺"),
+                                )
+                                .header(
+                                    div()
+                                        .text_sm()
+                                        .text_color(palette.muted)
+                                        .child("Applies to new recordings"),
+                                )
+                                .footer(div().text_sm().text_color(palette.muted).child(format!(
+                                    "Recording date: {}",
+                                    self.calendar
+                                        .read(cx)
+                                        .selection()
+                                        .first_date()
+                                        .map(|date| date.format("%Y-%m-%d").to_string())
+                                        .unwrap_or_else(|| "Not scheduled".to_string())
+                                )))
                                 .action(preset_preview),
                         )
-                        .child(div().text_color(palette.muted).child(format!(
-                                "Recording date: {}",
-                                self.calendar
-                                    .read(cx)
-                                    .selection().first_date()
-                                    .map(|date| date.format("%Y-%m-%d").to_string())
-                                    .unwrap_or_else(|| "Not scheduled".to_string())
-                            )))
                         .when(name_invalid && !self.dialog.read(cx).is_open(), |content| {
                             content.child(
                                 Alert::new(
