@@ -1,0 +1,63 @@
+---
+title: Toast
+description: "保留的生命周期、悬停/焦点/窗口暂停、安全关闭，以及带可见数量上限的堆叠 Toaster。"
+---
+
+<ComponentPreview name="toast" height={360} />
+
+`ToastState::new(window, cx)` 持有一个五秒的通知生命周期；如有需要，请在挂载之前设置
+非零的 `.with_duration(...)`。即使在关闭状态下，也请在视图中保留匹配的
+`Toast::new(id, &state)`。设置其无障碍消息、
+主体和普通的操作 Button；`ToastClose` 提供关闭操作。
+单个通知位使用一个 ToastState，堆叠则使用 ToasterState。
+
+`show` 开始或替换消息，且不会获取焦点。已挂载的倒计时
+会在悬停、包含焦点以及窗口处于非活动状态时暂停，然后从
+剩余时长继续。`dismiss`、Escape 和关闭按钮属于显式关闭；
+超时则由 `ToastEvent` 单独报告。如果显式关闭移除了
+获得焦点的通知，会恢复其所捕获的先前焦点。未获得焦点时的
+关闭会保留用户正在使用的任何控件。移除整个宿主
+会将其关闭，且不会恢复所捕获的焦点；在移除获得焦点的内容时，应用必须将焦点移到
+仍然存在的控件。原生的实时区域元数据
+默认为 polite，对 `.urgent(true)` 则为 assertive；屏幕阅读器的实际朗读
+仍须在每个平台上检查。
+
+## Toaster
+
+`ToasterState<T>` 保留一个通知堆叠，其值 `T` 属于
+应用，每个通知都由其自己的 ToastState 支撑：
+
+```rust
+let toasts = cx.new(|_| ToasterState::<SharedString>::new());
+
+// Anywhere with a window:
+let key = toasts.update(cx, |toasts, cx| toasts.push("Uploading…".into(), window, cx));
+// Later, update the same notification in place and restart its lifetime.
+toasts.update(cx, |toasts, cx| toasts.replace(key, "Upload complete".into(), window, cx));
+
+Toaster::new("notifications", &toasts, |key, message, state| {
+    Toast::new(key, state)
+        .accessibility_label(message.clone())
+        .child(message.clone())
+        .child(ToastClose::new((ElementId::from(key), "close"), state))
+})
+.absolute()
+.bottom_4()
+.right_4()
+.gap_2()
+```
+
+`push` 显示一条通知且不获取焦点，并返回其 `ToastKey`，
+它同样可转换为 ElementId。只有最新的 `visible_limit` 个条目
+（默认三个）会被挂载，最新的在前；较早的条目会等待而不消耗
+时间，并在较新的条目关闭时显示出来。`with_duration` 为之后的推送设置生命周期。
+每个已挂载的 toast 都保留上述暂停、Escape 和焦点恢复
+约定，并在因任何原因关闭时从堆叠中移除。
+`replace` 更新仍处于打开状态的条目并重新开始其生命周期，当其
+已经关闭时返回 false。`dismiss(key)` 和 `dismiss_all` 关闭条目；
+`len`、`is_empty` 和 `visible` 暴露该堆叠。
+
+`focus_latest` 将焦点移入最新的通知。请将其绑定到
+应用的快捷键（例如 Alt+T），而不要在显示时调用它。
+Toaster 渲染一个带名称的 Group（默认为 `Notifications`），并将位置、
+间距和外观留给应用。

@@ -253,8 +253,8 @@ and make no network requests.
 
 ## Documentation
 
-The [documentation site](https://gpui-design.andongmin.com/) (English and
-Korean) covers [installation](https://gpui-design.andongmin.com/en/docs/installation/) — toolchain, native
+The [documentation site](https://gpui-design.andongmin.com/) (English,
+Korean, Japanese and Chinese) covers [installation](https://gpui-design.andongmin.com/en/docs/installation/) — toolchain, native
 prerequisites, running the examples, depending on the crate and copying recipes
 with the CLI — the [architecture](https://gpui-design.andongmin.com/en/docs/architecture/) of the rendering,
 behavior and presentation layers, one page per component and recipe with live
@@ -288,8 +288,9 @@ lints, type-checks and builds the Fumapress site in `docs/` together with the
 live previews in `crates/web-preview` for WebAssembly, then runs its Playwright
 tests. Cloudflare Workers Builds deploys `main` to the site from `docs/` with
 `npm run build` and `npm run deploy:cloudflare`. Pages are MDX files in
-`docs/content/docs`, with Korean translations beside them as `name.ko.mdx`;
-keep both languages updated together. Preview the site locally with `npm ci`,
+`docs/content/docs`, with translations beside them as `name.ko.mdx`,
+`name.ja.mdx` and `name.zh.mdx`; English is the source, so update the
+translations with it (an untranslated page shows the English text with a notice). Preview the site locally with `npm ci`,
 `npm run preview:build` and `npm run dev` in `docs/`; the preview build needs
 the `wasm32-unknown-unknown` target and `wasm-bindgen-cli` 0.2.127, which it
 installs itself on Linux when they are missing.

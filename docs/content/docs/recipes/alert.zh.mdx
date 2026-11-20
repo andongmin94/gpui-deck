@@ -1,0 +1,31 @@
+---
+title: Alert
+description: "行内的标题和描述，破坏性样式与显式的紧急性各自独立设置。"
+---
+
+[`alert.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/alert.rs) 呈现行内的标题和
+描述。普通内容使用原生的 `Note` 角色；`.urgent(true)` 选择
+原生的 `Alert` 角色。`.destructive(true)` 改变颜色，并且独立于该
+紧急性的决定。
+
+```rust
+Alert::new(
+    "session-name-alert",
+    "Session name is missing",
+    "Open Edit session and enter a name or use the default name.",
+    palette,
+)
+.destructive(true)
+.urgent(true)
+```
+
+Schedule 面板使用默认的信息性形式。在名称缺失的情况下关闭设置时，
+摘要上会显示紧急形式。重新打开设置会将其移除，
+此时由 Field 提供输入的校验详情，避免同一个错误出现两份可见副本。
+名称恢复之后，摘要中的警告就不再出现。
+
+Alert 不会移动焦点、打开模态、拥有关闭状态，也不会安排重复的
+播报。其角色如何呈现由原生无障碍适配器决定；
+暴露该角色并不能证明原生屏幕阅读器确实播报了它。
+需要显式确认的模态决定请使用 AlertDialog。
+当前的行内配方没有动作或媒体插槽；`Styled` 控制其边框。

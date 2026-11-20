@@ -1,0 +1,34 @@
+---
+title: Spinner
+description: "具名的不确定 Progress，带旋转的圆弧，并遵循 GPUI 的减弱动效设置。"
+---
+
+[`spinner.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/spinner.rs) 在现有的不确定 Progress 上
+添加了一个旋转的圆弧。请提供该操作的无障碍名称：
+
+```rust
+Spinner::new("preview-progress", "Preview progress", palette)
+    .size(rems(1.25))
+    .text_color(palette.accent)
+```
+
+默认尺寸为一 rem，默认颜色为使用方的 accent。
+`Styled` 控制根元素；圆弧跟随其实际边界和文本颜色。
+Progress 提供唯一的原生 ProgressIndicator 角色、标签和数值
+范围，没有当前数值。可视的圆弧不增加单独的角色、
+无障碍名称或 Tab 停靠点。这是一个不确定的进度指示器；它
+不提供自动的 live 播报。
+
+GPUI 的 `AnimationExt` 负责一秒的循环动画。当启用 `App::reduce_motion()` 时，
+它会渲染一个静态圆弧，而不请求动画帧。应用可以用
+`App::set_reduce_motion(bool)` 设置这一现有偏好；
+与操作系统偏好的自动同步不在该配方之内。没有配方专属的动画
+控制器、保留的加载状态或计时器。
+
+当应用认为某个操作处于等待中时挂载 Spinner，并在
+该操作完成时将其移除。在示例中，现有的 Unknown progress
+开关会在同一个有边界的行中，用 Spinner 和 Skeleton 替换确定的进度条。
+两种进度呈现都保留 `preview-progress` 的 ID 和
+无障碍名称。显示未知状态时，Slider 保留其已知的值，
+Reset preview 则回到 40% 的已知进度。这仍是一个
+受控的预览；该配方不会开始录制或后台任务。

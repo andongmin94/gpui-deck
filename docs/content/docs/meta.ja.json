@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "---はじめに---",
+    "index",
+    "installation",
+    "architecture",
+    "---コンポーネント---",
+    "...components",
+    "---レシピ---",
+    "...recipes",
+    "---ガイド---",
+    "guides",
+    "---プロジェクト---",
+    "coverage",
+    "contributing"
+  ]
+}

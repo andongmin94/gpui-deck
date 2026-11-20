@@ -1,0 +1,16 @@
+---
+title: Separator
+description: "语义性或装饰性的分隔，支持水平/垂直方向。"
+---
+
+<ComponentPreview name="separator" height={360} />
+
+`Separator::new(id)` 提供一个语义性的水平分隔符。
+`.axis(Axis::Vertical)` 会更改其原生方向；`.decorative(true)` 会省略
+其无障碍节点，用于纯视觉上的分隔。其原生语义角色是
+AccessKit 的 Splitter，没有焦点或激活操作。该组件是一个
+静态分隔符；并不意味着具有 Resizable 窗格分隔条的交互。
+
+使用普通的 GPUI 样式设置其尺寸和颜色，例如
+水平线可使用 `.h(px(1.)).w_full().bg(border)`。轴不会强加
+视觉布局。分隔符没有子元素，也没有 Tab 停靠点。

@@ -1,0 +1,23 @@
+---
+title: Message Scroller
+description: "底部跟随、基于键的历史锚定、未读计数和跳转到最新。"
+---
+
+<ComponentPreview name="message-scroller" height={360} />
+
+`MessageScrollerState::new(cx)` 持有现有的 ScrollHandle，以及上一帧
+稳定的消息键和阅读位置。为
+`MessageScroller::new(id, &state, cx)` 提供有界的高度，并使用
+`.item(stable_id, content)` 添加每条消息。ID 在一个会话内必须唯一，并且还会
+限定每条消息子控件的作用域，使其在重新排序时保持标识。
+切换到另一个会话时，请创建新的状态。现有的 ScrollArea 负责
+滚轮/触控板滚动、裁剪和滚动条交互。
+
+第一帧从底部开始。当读者位于底部时，追加消息、流式编辑和
+尺寸变化都会保持跟随。当读者向上移开后，在前置历史记录
+或较早的条目高度变化时，第一条可见消息会保持其像素位置；修正发生在同一个布局帧内。
+移除锚点时使用普通的原生偏移量限制。离开底部期间的追加会
+增加 `unread_count`，而 `jump_to_latest` 会恢复跟随，且不会
+将焦点从调用方的控件移走。回到底部会清除未读数，
+包括尺寸变化或内容移除在同一帧内露出底部的情况。
+不提供虚拟化或聊天传输。

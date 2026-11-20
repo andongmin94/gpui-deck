@@ -1,0 +1,62 @@
+---
+title: Toast
+description: "保持される存続期間、ホバー/フォーカス/ウィンドウによる一時停止、安全な閉鎖、表示数の上限を持つ積み重ね型の Toaster を提供します。"
+---
+
+<ComponentPreview name="toast" height={360} />
+
+`ToastState::new(window, cx)` は 5 秒間の通知の存続期間を管理します。必要であれば、マウント前に
+0 でない `.with_duration(...)` を設定します。対応する
+`Toast::new(id, &state)` は、閉じている間もビューに保持してください。アクセシブルなメッセージ、
+本体、通常のアクション Button を設定します。`ToastClose` が閉じるアクションを提供します。
+通知のスロットが 1 つなら ToastState を 1 つ、積み重ねるなら ToasterState を使用します。
+
+`show` は、フォーカスを取らずにメッセージを開始または置き換えます。マウントされたカウントダウンは、
+ホバー、内部へのフォーカス、ウィンドウの非アクティブ化の間は一時停止し、その後、
+残りの時間から再開します。`dismiss`、Escape、閉じるボタンは明示的な閉鎖であり、
+タイムアウトは `ToastEvent` で別に通知されます。明示的な閉鎖によって
+フォーカスされていた通知が削除された場合は、取得されていた以前のフォーカスが復元されます。フォーカスされていない状態での
+閉鎖は、ユーザーが使用中のコントロールを保ちます。ホスト全体を削除すると、取得されたフォーカスは復元されずに
+閉じられます。フォーカスされたコンテンツを削除する場合は、アプリケーションが残っているコントロールにフォーカスを移す必要があります。ネイティブのライブメタデータは、
+デフォルトで polite、`.urgent(true)` では assertive になります。実際のスクリーンリーダーでの
+読み上げは、各プラットフォームで確認する必要があります。
+
+## Toaster
+
+`ToasterState<T>` は、値 `T` がアプリケーションに属する通知のスタックを保持し、
+それぞれが独自の ToastState に支えられています。
+
+```rust
+let toasts = cx.new(|_| ToasterState::<SharedString>::new());
+
+// Anywhere with a window:
+let key = toasts.update(cx, |toasts, cx| toasts.push("Uploading…".into(), window, cx));
+// Later, update the same notification in place and restart its lifetime.
+toasts.update(cx, |toasts, cx| toasts.replace(key, "Upload complete".into(), window, cx));
+
+Toaster::new("notifications", &toasts, |key, message, state| {
+    Toast::new(key, state)
+        .accessibility_label(message.clone())
+        .child(message.clone())
+        .child(ToastClose::new((ElementId::from(key), "close"), state))
+})
+.absolute()
+.bottom_4()
+.right_4()
+.gap_2()
+```
+
+`push` はフォーカスを取らずに通知を表示し、その `ToastKey` を返します。
+これは ElementId にも変換できます。マウントされるのは最新の `visible_limit` 個
+（デフォルトは 3）のエントリだけで、新しいものが先頭に並びます。古いエントリは
+時間を消費せずに待機し、新しいものが閉じると表示されます。`with_duration` は、以降の
+プッシュの存続期間を設定します。マウントされたすべての Toast は、上記の一時停止、Escape、フォーカス復元の
+契約を保ち、どのような理由で閉じてもスタックから削除されます。
+`replace` はまだ開いているエントリを更新して存続期間を再開し、すでに閉じている場合は
+false を返します。`dismiss(key)` と `dismiss_all` はエントリを閉じ、
+`len`、`is_empty`、`visible` はスタックを公開します。
+
+`focus_latest` は最新の通知の内部にフォーカスを移します。表示するときに呼び出すのではなく、
+Alt+T などのアプリケーションのショートカットに割り当ててください。
+Toaster は名前付きの Group（デフォルトは `Notifications`）を描画し、配置、
+間隔、外観はアプリケーションに任せます。

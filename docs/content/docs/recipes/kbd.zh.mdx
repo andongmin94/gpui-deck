@@ -1,0 +1,34 @@
+---
+title: Kbd
+description: "静态的具名键帽以及以 + 连接的组合键。"
+---
+
+[`kbd.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/kbd.rs) 提供静态的单个
+键帽和组合键。每个 Kbd 都把其可见文本用作默认的
+原生 Label 名称。请为符号键显式提供可读的名称：
+
+```rust
+Kbd::new("guide-up-key", "↑", palette)
+    .accessibility_label("Arrow up");
+
+KbdGroup::new("context-menu-shortcut", palette)
+    .key(Kbd::new("context-menu-shift", "Shift", palette))
+    .key(Kbd::new("context-menu-f10", "F10", palette));
+```
+
+`KbdGroup` 保持所提供的顺序，并在键帽之间插入 `+`。其
+原生 Group 没有重复的名称；每个按键保留各自可读的 Label。
+同时按下的按键（如 Shift+Tab）请使用分组。展示备选项时，
+例如 Enter 或 Space，或方向键，请把相互独立的
+Kbd 元素放在普通的应用布局中。
+
+两种类型都实现了 `Styled`。调色板提供键帽的填充色、
+边框、圆角、前景色和字号，以及用于分组
+分隔符的弱化文本。按键标签和任何平台特有的字形选择归应用负责。
+该配方没有焦点停靠点、动作、快捷键绑定注册或快捷键
+派发；它显示的是相关联的控件已经提供的绑定。
+
+示例中的 Help → Keyboard 指南展示 Tab、Shift+Tab、方向键、Enter/Space
+和 Escape，并附上对其现有行为的描述。摘要
+为其现有的 ContextMenu 显示 Shift+F10。把纯文本提示替换为
+这些键帽，不会增加键盘命令或另一个焦点目标。

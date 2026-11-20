@@ -1,0 +1,50 @@
+---
+title: Slider
+description: "一个或多个有序数值、有界步长、每个滑块的焦点与无障碍、键盘/指针调整、禁用状态、垂直和 RTL 几何。"
+---
+
+<ComponentPreview name="slider" height={360} />
+
+只创建一次 `SliderState::new(min..=max, step, [values...], cx)`。单个值
+会创建单滑块的 Slider；两个值描述一个范围，更多的值则添加
+有序的停靠点。非空集合决定了滑块数量。边界和值
+必须是有限的，`min < max`，且 `step` 必须为正数。值会被限制并
+吸附到从最小值开始的步长网格上。该范围包含两端。
+
+将 `Slider::new(id, &state).accessibility_label(...)` 渲染为带名称的分组和
+轨道。提供轨道和填充，并按顺序为每个值提供一个
+`SliderThumb::new(&state, index).accessibility_label(...)`。
+每个滑块拥有其原生的 Slider 角色、焦点、按键和值操作。请为范围的
+两端起不同的名称，例如 "Trim start" 和 "Trim end"。`percentage(index)`
+给出该滑块的位置，范围为 0 到 1。根元素的边界定义其移动轨道；将滑块
+中心放在根元素上该比例的位置，并偏移应用滑块尺寸的一半。
+示例使用高度舒适的点击区域，并在其内部居中放置一条细轨道。
+库既不强加颜色，也不强加控件尺寸。
+
+状态暴露 `values`、`min_value`、`max_value`、`step_value`、`percentage`、
+`thumb_focus_handle(index)` 和 `is_disabled`。使用
+`set_thumb_value(index, value, window, cx)` 或 `set_values(values, window, cx)`
+进行程序化更新，并使用 `set_disabled(disabled, window, cx)` 控制用户
+交互。禁用期间仍可进行程序化更新。各个
+滑块会停在其相邻滑块处，而不会交换身份；允许值相等。
+当归一化后的值发生变化时，`SliderEvent::Change(values)` 会报告一次完整的有序值。
+观察该状态以更新应用的视觉效果。
+
+在轨道上按下会选择最近的滑块，拖动会一直保持该滑块直到
+松开，包括拖到轨道之外。`axis(Axis::Vertical)` 将最小值放在
+底部；水平方向的值遵循逻辑方向。每个滑块
+会暴露其无障碍名称、方向、当前值、步长以及受相邻滑块
+限制的数值边界。应用提供滑块的焦点呈现。
+
+| 输入 | 行为 |
+| --- | --- |
+| 左 / 下 | 减少一个步长 |
+| 右 / 上 | 增加一个步长 |
+| Home / End | 设为获得焦点的滑块所允许的最小值 / 最大值 |
+| PageDown / PageUp | 减少 / 增加十个步长 |
+| Tab / Shift-Tab | 按值的顺序访问每个已启用的滑块，然后离开该组 |
+
+已禁用的 Slider 会忽略用户的更改，并被 Tab 跳过。在获得焦点时
+被禁用的 Slider 会保留其焦点绑定足够长的时间，以便 Tab 离开。
+会话预览使用一个滑块；目录中的媒体裁剪控件使用两个
+独立的端点，并可在水平/垂直几何以及 RTL 之间切换。

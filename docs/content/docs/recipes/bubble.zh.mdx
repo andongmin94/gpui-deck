@@ -1,0 +1,22 @@
+---
+title: Bubble
+description: "接收/发送的界面、分组的作者/时间标签以及所提供的反应。"
+---
+
+目录在 `crates/base/examples/recipes` 下新增了两个相互独立、源码自有的
+呈现。`bubble.rs` 是目录条目 Bubble：
+接收/发送的对齐、分组的作者/时间元数据、自动换行的消息
+正文以及所提供的反应动作。现有的 Button 负责激活和焦点；
+消息分组和反应值归对话视图负责。它不增加
+传输、持久化或另一套消息状态引擎。
+
+`chart.rs` 是公开 Chart 组件族的呈现，不算作
+第二个目录条目。它提供原生 canvas 的折线/柱状/面积图、堆叠、
+饼图/环形图和雷达路径、坐标轴或辐条标签、
+数据系列 Toggle、被检查值的读数以及同数据的 Table。其颜色数组、
+布局和格式化归应用所有。共享的 Chart 约定请参阅
+[布局与数据指南](../guides/layout-data.mdx)。
+
+运行 `cargo run -p gpui-design --example catalogue --locked`，即可分别与
+MessageScroller/Questionnaire 和 Carousel/Direction 一起使用它们。现有的
+`two_styles` 示例继续承载面向会话的配方。

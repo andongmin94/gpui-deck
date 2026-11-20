@@ -1,0 +1,56 @@
+---
+title: Attachment
+description: "具名的文件元数据分组，包含文件名、所提供的媒体类型和大小，以及可选的现有动作。"
+---
+
+[`attachment.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/attachment.rs) 把文件的
+名称、媒体类型和大小呈现为应用提供的文本，并带有可选的现有
+动作。它描述元数据；内容本身仍归应用负责。
+
+```rust
+Attachment::new(
+    "configuration-attachment",
+    "session-configuration.json",
+    "application/json",
+    format!("{} bytes (UTF-8)", configuration.len()),
+    palette,
+)
+.action(inspect_json_button)
+```
+
+原生 Group 的无障碍名称是完整的文件名。其描述是
+显示在文件名下方的同一段 `media_type · size_label` 文本。可见的
+文件名和元数据子元素没有各自独立的原生角色或名称，因此每个
+值只通过该分组暴露一次。所提供的动作 Button 保留
+各自的名称和角色。附件框不增加 Tab 停靠点、整行点击、
+选择状态、链接目标或 live 播报。
+
+三个元数据值都是提供的字符串。应用自行选择单位、
+本地化，以及如何描述不可用的元数据；该配方不会
+解析文件名、推断类型、检查文件、格式化字节数量，也不会校验
+所声称的大小。零字节可以按字面显示。这里使用普通的 Group，
+是因为元数据本身并不提供文档查看器或文件链接。
+与 Item 通用的标题/描述行不同，Attachment 带有明确的文件
+元数据。与 Message 中有作者的 Comment 及其正文不同，它标识的是一个独立的
+内容资源，而不声称作者身份或送达状态。
+
+该框填满有边界的父级。文件名和元数据会换行而不截断，
+并且框会在垂直方向增长；动作位于文本下方，因此不会
+与文件名争抢宽度。`Styled` 可自定义该框和继承的
+文本呈现。较长的集合应放在应用现有的
+ScrollArea 中。`.action(...)` 接受一个元素，可以是现有的 Button，或
+控件能放入可用宽度的应用自有容器。Button
+继续负责启用状态、指针/Enter/Space 激活、焦点以及
+Tab/Shift+Tab 遍历。如果应用移除了获得焦点的动作，
+则焦点策略归应用负责；Attachment 没有新的焦点控制器。
+
+两种外观都在 Help 的 State ownership 面板中、现有 CodeBlock 之上
+使用 Attachment。使用方只序列化一次当前设置，把
+同一个字符串用于代码和元数据，并显示 `session-configuration.json`、
+`application/json` 及其 UTF-8 字节数。编辑名称或备注时，该
+元数据会随显示的 JSON 一起变化。Inspect JSON 会聚焦现有的代码视口，
+并使用其现有的滚动和键盘行为。说明文字
+指出该内容在内存中而且未保存。不会创建或打开任何文件，
+也不会发生上传或下载。现有 CodeBlock 的 Copy 动作仍保持
+独立；Attachment 不增加剪贴板操作、预览渲染器、进度
+状态、传输或存储机制。

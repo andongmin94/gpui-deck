@@ -1,0 +1,58 @@
+---
+title: 架构
+description: "渲染运行时、无头行为与应用呈现层如何分工。"
+---
+
+| 层 | 实现与来源 | 职责 |
+| --- | --- | --- |
+| 渲染与应用运行时 | Zed 的 GPUI，通过固定版本的 `gpui-pre` 快照包使用 | 窗口、布局、绘制、文本、事件、实体以及焦点基础设施 |
+| 无头行为 | 本仓库的 `gpui-design` crate，提取自 Longbridge 的 `gpui-base` 0.9.0 | 控件状态、交互约定、焦点策略和无障碍语义 |
+| 呈现与组合 | 应用代码，包括 `two_styles` 使用的可复制 `examples/recipes` 模块 | 颜色、尺寸、图标、组件的排布以及应用动作 |
+
+`crates/base` 是沿用自 GPUI Kit 的目录名。其 Cargo 包现在名为 `gpui-design`；
+所选源码在此处维护。原始的
+[`gpui-base` README](https://github.com/longbridge/gpui-kit/blob/7591a35eced761e3613c01e71ff04c10129dae1a/crates/base/README.md)
+已经把它描述为一个不带样式的行为基础。GPUI Design 在这一工作的基础上构建，
+公开接口范围更窄，并独立维护状态与焦点约定。上游源码的变更会经过审查后明确采纳。
+
+[`gpui-pre`](https://gpui-kit.com/docs/installation/#why-the-dependency-is-named-gpui-pre)
+发布与版本对齐的 Zed GPUI 快照。固定的 0.3.11 包记录的 Zed 修订为
+`f816e1f9263e3a8ef63c4baaa02e1441ce1c6038`。
+
+上面列出的控件都属于行为层。复合控件复用该层：Toggle 和 Collapsible 的触发器组合 Button，
+ToggleGroup 组合 Toggle，AlertDialog 组合 Dialog。DropdownMenu 和 ContextMenu 共享
+MenuState、MenuItem、MenuOption 和 MenuEvent。它们共同的菜单行为组合 Popover；
+只有触发器的交互和请求的位置不同。
+`MenuOption::checked(bool)`、`check_state(CheckboxState)` 和 `radio_checked(bool)`
+把应用自有的状态投射为原生菜单语义。`MenuSubmenu` 通过根 MenuState 路由叶子项的激活；
+它不会再增加另一个选择状态存储。
+Command 复用 Input 作为查询输入，并可承载于 Dialog 中。Combobox 复用
+Command 的过滤、结果光标、滚动和激活，支持单个或多个已提交的值，并由 Popup 定位建议面板。
+Textarea 渲染现有的多行编辑状态。Field 把关联的文本投射到该原生输入的语义中。
+Label 使用目标已有的 FocusHandle 实现点击后聚焦；
+固定版本的 GPUI API 没有在同级元素之间提供原生的 labelled-by 关系。
+Tooltip 复用 Button 和 GPUI 原生的提示层，同时保留悬停/焦点时的可见性。
+HoverCard 把 Button 与 Popup 定位以及保留的悬停/焦点生命周期结合起来，且不会从触发器夺走焦点。
+Calendar 组合 Button 用于日期激活，并使用已锁定的 Chrono 日期类型进行公历运算。
+DatePicker 把该 Calendar 与 Popover 的焦点和关闭生命周期协调起来；
+它没有重复的日期值或弹出引擎。Resizable 使用 GPUI 的 flex 布局和原生拖动，实现保留状态的多面板分组。
+Table 使用共享的 GPUI 列轨道和原生表格语义。ScrollArea 把 GPUI 的 ScrollHandle 视口
+与保留的 Scrollbar 实现组合起来，没有另设滚动引擎。
+Breadcrumb 提供原生的导航/列表结构和当前页元数据；
+使用方组合普通的 Button，并自行负责其目标回调。
+外观属于应用。本地的 `gpui-design-cli` 会把选定的呈现配方及其依赖复制到使用方自有的模块中。
+不提供远程注册表，也不提供单独发布的带样式组件包。
+
+关于状态归属、键盘约定和应用自有样式，请参阅
+[表单控件指南](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md)。
+Checkbox 和 Switch 通过回调报告下一个值；应用保存该值并通知其视图。
+RadioGroup 在实体中保留选中项和选项焦点，接受固定有序且值唯一的选项，
+并在方向键导航时立即改变选中项。
+
+[导航与浮层指南](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md)涵盖
+Breadcrumb、Tabs、Accordion、Collapsible、Popover、DropdownMenu、ContextMenu、Command、Tooltip、
+HoverCard 和 AlertDialog。未激活的面板不会产生布局、焦点或无障碍节点。
+Popover 复用现有的弹出定位原语，并允许键盘焦点在所属窗口或对话框内离开其内容。
+两种菜单触发器都使用该生命周期，并在派发命令之前关闭，因此命令可以打开另一个浮层而不丢失其新获得的焦点。
+[布局与数据指南](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md)解释了共享的 Table 列、
+ScrollArea 组合、Resizable 面板及其当前限制。

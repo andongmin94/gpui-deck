@@ -1,0 +1,69 @@
+---
+title: Sheet
+description: "基于 Dialog 的四边模态呈现，尺寸受视口限制，带固定的页眉/页脚和一个可滚动的主体。"
+---
+
+[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs) 把现有的 Dialog
+内容呈现在所选的窗口边缘，默认是全高的右侧面板：
+
+```rust
+Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", palette)
+    .side(SheetSide::Right)
+    .description("Choose the session's drawing and toolbar settings.")
+    .child(form_fields)
+    .footer(
+        DialogClose::new(&dialog)
+            .trigger(|button| button.child("Done")),
+    )
+```
+
+关闭时也请把 Sheet 挂载在 `gpui_design::Root` 之下。应用
+拥有并保留所提供的 `Entity<DialogState>` 和 `ScrollHandle`。
+请在该现有的 DialogState 上配置初始焦点，并使用其 `open` 和
+`close` 方法。Dialog 继续负责模态的焦点约束、Escape 和
+背景关闭，以及返回焦点。Sheet 不增加打开状态或选择
+模型。其标题和可选的描述既提供可见的页眉，也提供
+底层 Dialog 的无障碍名称和描述。
+
+首选宽度为 `palette.dialog_width`，并受视口宽度限制。
+默认的弹出层填满视口高度，带方形圆角，并在其左边缘使用
+一条边框。页眉和可选的页脚位于单个
+垂直 ScrollArea 主体之外。每个 `.child(...)` 都放入该主体，其内边距、
+间距和滚动条颜色来自使用方的调色板。主体占用
+剩余高度，并使用应用保留的滚动句柄。重新打开时，
+对初始焦点目标的原生定位显示可能会调整其偏移量。
+使用方必须让页眉和页脚合计的内容保持在
+视口高度之内。较长的表单内容应放在可滚动的主体中。
+
+使用 `.side(SheetSide::Left | Right | Top | Bottom)` 选择边缘。左/右
+填满高度，并以 `palette.dialog_width` 作为首选宽度；上/下填满
+宽度，并以该令牌作为首选高度。两个维度都以视口为上限。
+`Styled` 的覆盖在边缘默认值之后应用，因此无论构建器顺序如何，`.w(...)` 都会改变
+垂直面板的首选宽度，`.h(...)` 会改变水平面板的高度。请保留视口上限和 flex 布局。所有边
+都保持同样的固定页眉/页脚和可滚动主体。拖动手势和过渡
+动画不在该配方之内；Drawer 负责其拖动交互。
+
+目录的 Forms 部分使用同一个保留的 DialogState 和 ScrollHandle，
+从全部四个边缘打开当前的会话帮助。关闭时会恢复所选的
+触发器。帮助文本和会话值仍归应用所有。
+
+应用提供页脚控件，包括任何 `DialogClose` 及其
+禁用状态。键盘交互由所提供的控件和
+Dialog 现有的 Tab 约束负责。ScrollArea 会在其已启用的轴上显示获得焦点的后代元素，
+并提供原生的指针滚动；它不增加独立的
+滚动焦点目标或滚动键绑定。
+
+两种外观现在都为现有的 Session settings 表单使用 Sheet。
+示例复用其 DialogState、初始的名称输入焦点、主体滚动句柄、
+Preferences/Help/Schedule/Presets 各部分，以及 Done 的校验规则。Compact
+在 22 rem 的 Sheet 中保留 TabList/Tab/TabPanel。Settings 提供 46 rem 的首选
+宽度，并使用 Sidebar 配合所选的具名 Region。两种宽度仍以
+视口为上限；更宽的呈现让导航和表单内容有空间
+并排放置。关闭再重新打开会保持同样的输入、选择
+和表格状态。现有的 Edit
+触发器和菜单/命令动作会打开该状态；该配方不增加单独的
+选择。Avatar 和 AspectRatio 仍在其
+HoverCard 预览中渲染保留的预设。Search commands 和 Reset preview 保持其居中的 Dialog
+和 AlertDialog 呈现。
+示例还让其延迟显示的 Select、Combobox、Calendar 和 Help 弹出层的宽度
+相对于窗口设置上限；这些界面不会继承 Sheet 的宽度上限。

@@ -1,0 +1,48 @@
+---
+title: 导航与浮层
+description: "two-style 示例用紧凑的深色和宽松的浅色两种呈现，组合了同一套设置行为。"
+---
+
+[two-style 示例](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)用紧凑的深色和宽松的浅色两种呈现，
+组合了同一套设置行为。其
+Session actions 菜单和摘要的 ContextMenu 可以打开 Dialog、切换
+应用的值，或通过 AlertDialog 请求重置预览。HoverCard
+预览当前的预设、日期和备注状态，而预设按钮仍保留
+其普通的设置动作。一个 Collapsible 容纳预览控件。
+Search commands 会在 Dialog 内打开一个 Command 查询和结果列表；两个菜单
+派发相同的应用动作。Separator 在内容区域之间提供语义上的分隔，设置表单包含保留状态的多行备注。
+Compact 使用 Preferences、Help、Schedule 和 Presets 标签页及其激活面板。
+Settings 使用 [Sidebar 配方](../recipes/sidebar.mdx)，并为当前小节使用具名的
+Region。Help 包含一个 Accordion，其键盘部分会在非模态的 Popover 中打开一份指南。Breadcrumb 显示该指南的
+位置，而应用自有的
+[Kbd 配方](../recipes/kbd.mdx)则展示现有的键盘操作。
+所有样式都在示例中。
+
+调用 `gpui_design::init(cx)`，并把窗口托管在 `gpui_design::Root` 中。把
+状态实体及其观察订阅保留在你的视图中。示例
+展示了完整的设置以及应用自有的样式。
+
+## 验证
+
+现有的 GPUI 测试框架会检查选中和禁用的元数据、方向、
+焦点遍历、未激活的面板、弹出层关闭、命令派发，以及
+跨两种外观和目录的典型组合流程。组合测试涵盖命令
+打开 Dialog、不展开的标题导航、带有
+已打开 Popover 的面板折叠、展开内容的挂载，以及显式的预览重置确认。
+使用方流程涵盖从命令搜索进入多行设置
+表单、正常和禁用字段的 Tab 遍历，以及保留的备注。
+它们还涵盖 tooltip 触发器、Field 的标签/反馈，以及 Dialog 内可搜索的预设
+选择，包括查询的取消和保留的选择。
+现有流程还会演练键盘和指针触发的上下文菜单命令
+打开该 Dialog，以及 HoverCard 触发器保留其普通动作和
+返回焦点的目标。带勾选的命令借助同样的流程，验证两种菜单宿主中当前的
+应用值，以及不变的动作/焦点行为。底层原语测试在其所属层级涵盖点位置的放置和指针
+预览的时序。
+Breadcrumb 的验证范围是其原生的 navigation/list/item 角色、
+当前页元数据，以及现有 Help
+流程中组合的祖先动作。该流程还会检查静态的按键提示不会占用现有
+控件的焦点。这些约定并不能确立原生屏幕阅读器的播报
+或路径与键帽的视觉外观。
+完整的测试套件在 Linux 上运行一次，包括独立的配方检查。Windows 和
+macOS 运行真实的使用方组合流程，并过滤掉仅针对配方的测试，
+三个平台都会构建原生示例。它们不能取代桌面上原生的 IME、屏幕阅读器、DPI 和视觉检查。

@@ -1,0 +1,36 @@
+---
+title: Collapsible
+description: "単一の開閉、アクティブ時のみのコンテンツ、無効なトリガー、コンテンツを閉じたときのフォーカスに対応します。"
+---
+
+<ComponentPreview name="collapsible" height={360} />
+
+単一の開閉には `CollapsibleState::new(cx)` を一度だけ作成します。初期状態は閉じています。
+`.default_open(true)` はイベントを発行せずに最初から開きます。レンダリングのために State を
+observe し、コンテンツが削除されて再びマウントされても値が保たれるよう、子エンティティはアプリケーションのビューで保持してください。
+
+1 つの `CollapsibleTrigger::new(&state)` と 1 つの `CollapsibleContent::new(&state)` を
+`Collapsible::new(id, &state)` で囲んで描画します。
+閉じている間もルートとトリガーはマウントしたままにしてください。トリガーとコンテンツの両方に
+`accessibility_label` を指定し、スタイルと子要素はアプリケーションが用意します。
+トリガーは Button を組み合わせ、expanded/disabled の状態を公開します。開いている
+コンテンツは名前付きの Region であり、閉じたコンテンツにはレイアウト、フォーカスストップ、
+アクセシビリティノードがありません。トリガーとコンテンツを結ぶネイティブの明示的な関係は、
+固定された GPUI API では出力されません。
+
+クリック、Enter、Space で開閉を切り替えます。開いてもフォーカスは
+トリガーに残り、通常の Tab 移動で子要素に入れます。このコンポーネントは
+見出しや矢印/Home/End キーの処理を導入しません。静的コンテンツ自体にフォーカスを受け取らせたい場合は、
+コンテンツに `.tab_stop(true)` を使用します。
+
+State のメソッドには `is_open`、`is_disabled`、`trigger_focus_handle`、
+`content_focus_handle`、`set_open(open, window, cx)`、`toggle(window, cx)`、
+`set_disabled(disabled, window, cx)` があります。`CollapsibleEvent::Change(bool)` は実際の
+変更を通知し、繰り返しの要求ではイベントは発行されません。無効化するとユーザーによる切り替えは防がれますが、
+現在の表示状態は保持され、コンテンツは無効化されません。
+プログラムによる `set_open` は無効の間も利用できます。
+
+フォーカスを持つコンテンツを閉じると、フォーカスはまだマウントされているトリガーへ移動します。
+そのトリガーが無効な場合は、既存の Tab ストップではないルートスコープがフォーカスを受け取り、
+Tab で離れられます。開閉部分の外にあるフォーカスは保持されます。Accordion と同様に、
+ホスト全体を削除するには、まずアプリケーションが残っているコントロールにフォーカスを当てる必要があります。

@@ -1,0 +1,35 @@
+---
+title: アーキテクチャ
+description: "レンダリングランタイム、ヘッドレスな動作、アプリケーションのプレゼンテーションの各レイヤーがどのように役割を分担するかを説明します。"
+---
+
+| レイヤー | 実装と出典 | 責務 |
+| --- | --- | --- |
+| レンダリングとアプリケーションランタイム | Zed の GPUI。固定された `gpui-pre` スナップショットパッケージ経由で利用 | ウィンドウ、レイアウト、描画、テキスト、イベント、エンティティ、フォーカスの基盤 |
+| ヘッドレスな動作 | このリポジトリの `gpui-design` クレート。Longbridge の `gpui-base` 0.9.0 から抽出 | コントロールの状態、インタラクションの契約、フォーカスポリシー、アクセシビリティのセマンティクス |
+| プレゼンテーションと構成 | アプリケーションコード。`two_styles` が使用するコピー可能な `examples/recipes` モジュールを含む | 色、サイズ、アイコン、コンポーネントの配置、アプリケーションのアクション |
+
+`crates/base` は GPUI Kit から引き継いだディレクトリ名です。その Cargo パッケージは
+現在 `gpui-design` であり、選択したソースはここで保守されています。元の
+[`gpui-base` README](https://github.com/longbridge/gpui-kit/blob/7591a35eced761e3613c01e71ff04c10129dae1a/crates/base/README.md)
+は、すでにスタイルのない動作基盤について説明していました。GPUI Design はその成果の上に、より絞った公開インターフェースと、独立して保守される状態およびフォーカスの契約を築いています。上流のソース変更は、レビューのうえ明示的に取り込みます。
+
+[`gpui-pre`](https://gpui-kit.com/docs/installation/#why-the-dependency-is-named-gpui-pre)
+は、Zed の GPUI のバージョンが揃ったスナップショットを公開しています。固定している 0.3.11 パッケージには、Zed のリビジョン `f816e1f9263e3a8ef63c4baaa02e1441ce1c6038` が記録されています。
+
+上に挙げたコントロールは動作レイヤーに属します。複合コントロールはそのレイヤーを再利用します。Toggle と Collapsible のトリガーは Button を合成し、ToggleGroup は Toggle を合成し、AlertDialog は Dialog を合成します。DropdownMenu と ContextMenu は MenuState、MenuItem、MenuOption、MenuEvent を共有します。それらに共通するメニューの動作は Popover を合成し、異なるのはトリガーのインタラクションと要求される配置だけです。
+`MenuOption::checked(bool)`、`check_state(CheckboxState)`、`radio_checked(bool)` は、アプリケーションが所有する状態をネイティブのメニューセマンティクスに投影します。`MenuSubmenu` はリーフの起動をルートの MenuState 経由でルーティングし、別の選択ストアは追加しません。
+Command はクエリに Input を再利用し、Dialog 内にホストできます。Combobox は Command のフィルタリング、結果カーソル、スクロール、起動を再利用し、単一または複数の確定値と、Popup が配置するサジェスト表示面を備えます。Textarea は既存の複数行編集状態を描画します。Field は関連するテキストを、そのネイティブ入力のセマンティクスに投影します。Label はクリックでフォーカスするために対象の既存の FocusHandle を使用します。固定された GPUI API は、兄弟要素間のネイティブな labelled-by 関係を公開していません。Tooltip は Button と GPUI のネイティブなツールチップレイヤーを再利用しつつ、ホバーとフォーカスによる可視性を保持します。HoverCard は Button と Popup の配置、および保持されるホバー/フォーカスのライフサイクルを組み合わせ、トリガーからフォーカスを奪いません。
+Calendar は日の起動に Button を合成し、グレゴリオ暦の計算にはすでにロックされている Chrono の日付型を使用します。DatePicker はその Calendar を Popover のフォーカスと解除のライフサイクルと連携させ、重複する日付値やポップアップエンジンは持ちません。Resizable は GPUI の flex レイアウトとネイティブのドラッグを使い、保持される複数パネルのグループを実現します。
+Table は共有される GPUI の列トラックとネイティブのテーブルセマンティクスを使用します。ScrollArea は GPUI の ScrollHandle ビューポートを、保持される Scrollbar の実装と合成し、別のスクロールエンジンは持ちません。
+Breadcrumb はネイティブのナビゲーション/リスト構造と現在のページのメタデータを提供します。コンシューマーは通常の Button を組み合わせ、その遷移先のコールバックを所有します。
+外観はアプリケーションに属します。ローカルの `gpui-design-cli` は、選択したプレゼンテーションレシピとその依存関係を、コンシューマーが所有するモジュールにコピーします。リモートレジストリや、別途公開されるスタイル付きコンポーネントパッケージは提供されません。
+
+状態の所有、キーボードの契約、アプリケーションが所有するスタイリングについては、[フォームコントロールガイド](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md)をご覧ください。Checkbox と Switch は次の値をコールバックで通知し、アプリケーションがそれを保存してビューに通知します。
+RadioGroup は選択とオプションのフォーカスをエンティティ内に保持し、一意な値を持つ固定の順序付きオプションを受け取り、矢印キーによる移動で即座に選択を変更します。
+
+[ナビゲーションとオーバーレイのガイド](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md)は、Breadcrumb、Tabs、
+Accordion、Collapsible、Popover、DropdownMenu、ContextMenu、Command、Tooltip、
+HoverCard、AlertDialog を扱います。非アクティブなパネルは、レイアウト、フォーカス、アクセシビリティノードに寄与しません。Popover は既存のポップアップ配置プリミティブを再利用し、キーボードフォーカスが、それを囲むウィンドウまたはダイアログ内でコンテンツの外へ移動できるようにします。両方のメニュートリガーはそのライフサイクルを使用し、コマンドをディスパッチする前に閉じるため、コマンドは新しいフォーカスを失わずに別のサーフェスを開けます。
+[レイアウトとデータのガイド](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md)では、共有される Table の列、
+ScrollArea の合成、Resizable のペイン、およびそれらの現在の制限を説明しています。

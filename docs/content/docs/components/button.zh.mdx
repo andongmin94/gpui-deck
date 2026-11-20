@@ -1,0 +1,45 @@
+---
+title: Button
+description: "指针与键盘激活、禁用状态、焦点、无障碍名称与角色，以及可选的当前页面元数据。"
+---
+
+<ComponentPreview name="button" height={360} />
+
+`Button` 是其他控件所依赖的激活基础元素。它负责
+指针和 Enter/Space 激活、焦点、禁用状态以及原生
+Button 角色；其内容、间距、形状和状态样式由
+应用负责。
+
+```rust
+Button::new("save")
+    .accessibility_label("Save session")
+    .px_3()
+    .py_2()
+    .rounded(px(6.))
+    .bg(palette.accent)
+    .text_color(palette.accent_foreground)
+    .focus_visible(|style| style.border_color(palette.ring))
+    .styles(|styles| styles.disabled(|style| style.opacity(0.5)))
+    .on_click(|_, window, cx| {
+        // The application decides what activation does.
+    })
+    .child("Save")
+```
+
+## 激活与焦点
+
+点击、Enter 或 Space 会激活按钮一次。`.disabled(true)` 会忽略
+激活并移除 Tab 停靠点；在拥有焦点时被禁用的按钮会保留其
+焦点绑定，直到焦点离开，因此 Tab 可以向任一方向继续。
+`.track_focus(&handle)` 使用应用持有的焦点句柄，例如用于在
+对话框关闭后恢复焦点。`.tab_index(...)` 和 `.tab_stop(...)`
+用于调整遍历顺序。
+
+## 无障碍
+
+当按钮的子元素不是纯文本（例如仅有图标的按钮）时，请使用 `.accessibility_label(...)` 为其命名。`.selected(true)` 仅驱动选中
+样式；`.current(true)` 则单独为导航条目输出 `aria-current="page"`，
+因此选中的外观绝不会暗示当前页面。
+
+Toggle、Collapsible 与 Tooltip 的触发器、CarouselControl 以及菜单
+触发器都组合了 Button，因此它们共享这套激活和焦点约定。

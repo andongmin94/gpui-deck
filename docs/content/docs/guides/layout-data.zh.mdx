@@ -1,0 +1,23 @@
+---
+title: 布局与数据
+description: "Table、ScrollArea 和 Resizable 提供可复用的结构和原生行为。"
+---
+
+Table、ScrollArea 和 Resizable 提供可复用的结构和原生行为。应用负责自己的数据、布局尺寸、颜色、字体和单元格内容。
+[two-style 示例](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)在其
+Schedule 标签页中把它们组合起来，并用 ScrollArea 承载外围的表单。
+
+## 滚动区域内的表格
+
+当列宽应超出视口时，请显式设置表格的宽度或最小宽度。原生示例在支持双轴滚动的 ScrollArea 内
+使用三个总计 490 像素的固定列。其外围的设置表单沿垂直方向滚动。
+嵌套的表格可以水平移动，而不会改变表单的日期，也不会滚动无关的同级元素。
+日期选择以及名称/预设的编辑，会通过与其他控件相同的保留状态更新表格。
+
+## 验证边界
+
+针对性的测试涵盖列对齐、表格元数据、可交互的单元格子元素、
+原生滚动与定位显示、分隔条的拖动/键盘行为，以及
+从 DatePicker 到 resizable 方案的示例流程。现有的
+CI 还会在 Linux、Windows 和 macOS 上构建原生示例。自动化的 GPUI
+事件/布局检查并不能确立原生的视觉、屏幕阅读器、混合 DPI 或性能结果。

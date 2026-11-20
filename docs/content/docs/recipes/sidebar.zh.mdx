@@ -1,0 +1,82 @@
+---
+title: Sidebar
+description: "具名的分组导航、普通 Button、当前页元数据、可选的整体/分组 Collapsible 状态，以及可选的图标栏。"
+---
+
+[`sidebar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sidebar.rs) 用普通的 Button 以及保留的
+`TabsState` 的固定条目和选择，组合出具名的
+导航：
+
+```rust
+// Create and retain a state dedicated to this Sidebar, and observe its changes.
+let sections = cx.new(|cx| TabsState::new(items, cx));
+
+Sidebar::new("settings-sections", &sections, "Settings sections", palette);
+```
+
+根元素暴露原生的 Navigation 语义和所提供的标签。每个条目
+都是以其条目标签命名的 Button，并使用该条目稳定的
+`tab_focus_handle(index)`。禁用的条目保留其禁用呈现，
+并会被普通的 Tab 遍历跳过。选中的条目会设置
+`Button::current(true)`，提供原生的 `AriaCurrent::Page`，它独立于
+`Button::selected(...)` 及其视觉高亮。条目保留 Button 角色；
+该导航不暴露 tab 选中的元数据。
+
+| 输入 | 结果 |
+| --- | --- |
+| Tab / Shift-Tab | 在已启用的条目和周围的控件之间移动，而不改变选中的区段 |
+| Enter / Space / 点击 | 通过 `TabsState::select_value` 选中被激活的条目 |
+| 方向键 | 不改变选中的区段 |
+
+内容的渲染和目标焦点归应用负责。只渲染
+选中的区段，并为其提供合适的具名 Region；未激活的区段
+不得留下已挂载的控件或无障碍节点。请把输入实体和
+表单值保留在应用中，这样切换区段时它们会被保留。
+通过 `select_value` 进行选择不会移动焦点；来自其他
+界面（如 Breadcrumb）的显式导航，也必须选择一个保留的焦点目标。
+
+请为 Sidebar 使用全新的 `TabsState`，并让它与 TabList、Tab
+或 TabPanel 使用的任何状态分开。TabList 会安装自动的焦点选择
+订阅，在其卸载后仍保留在它的状态上。把该
+状态复用于 Sidebar，会使焦点改变选择，并破坏显式
+激活的约定。这一限制既适用于在两种
+呈现之间切换，也适用于把它们同时挂载。示例为每种固定的外观
+创建各自独立的 Demo 和状态。
+
+默认的 Sidebar 是 10 rem 的垂直列。`Styled` 可以改变其宽度、
+间距和呈现；使用方把它放在当前内容旁边，或把
+两者堆叠。Settings 在现有的 Sheet 内使用它。在视口宽度
+低于 640 px 时，Sidebar 变为位于当前 Region 之上的全宽。这只改变
+布局：它保留同样的 Button、选中的条目、键盘行为
+和焦点句柄。Compact 继续使用其自己的水平 TabList 和
+TabPanel 组合。Breadcrumb 的 Session settings 动作在两种外观中都会显式选中
+Preferences 并聚焦其导航条目。
+
+使用 `.group("Workspace", ["preferences", "help"])` 创建带原生
+标题的具名分组。值必须指向现有的条目，且最多出现在一个分组中。
+不属于任何分组的条目排在最前。分组改变呈现顺序，而条目 ID
+和焦点句柄保留其源索引。
+
+保留并观察 `CollapsibleState::new(cx).default_open(true)`，即可添加
+`.collapsible(&sidebar_disclosure)` 或
+`.collapsible_group("Session", ["schedule", "presets"], &session_disclosure)`。
+现有的 Collapsible 负责展开/禁用元数据、键盘激活、
+仅激活的内容，以及关闭导致获得焦点的条目被移除时的焦点恢复。
+展开的触发器保持挂载。关闭导航会保留选中的
+页面；应用继续负责其独立的 Region。目录的
+Project 侧边栏演示了整体和分组的关闭，包括窄布局。
+
+`.rail(&rail_state)` 则把 Sidebar 折叠为图标栏，类似 shadcn 的
+`collapsible="icon"`。打开状态显示标签；关闭状态把
+导航收窄到 3.5 rem，并让每个条目作为仅图标的 Button 保持挂载，
+保留相同的无障碍名称、当前页元数据和焦点句柄，外加一个为其命名的 GPUI
+悬停提示。分组标题和分组展开区在
+图标栏中被隐藏，而具名的 Group 仍保留。条目之后的 CollapsibleTrigger，
+名称为 `"<label> labels"`，用于切换该状态并将其暴露为展开/折叠。
+`.icon(value, || element)` 为每个条目提供一个装饰性图标；其他条目在小边框内显示
+其首字母。应优先使用绘制的形状，而不是依赖
+已安装字体的符号字形。Sidebar 使用 `.rail` 或 `.collapsible` 之一，不能
+同时使用。Settings 的 Session sections Sidebar 演示了图标栏。
+
+该配方不增加路由、导航历史或单独的选择模型。
+Settings 使用现有 Sheet 的可滚动主体和模态焦点约束。

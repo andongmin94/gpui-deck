@@ -1,0 +1,58 @@
+---
+title: Message
+description: "只读的评论，带作者/时间元数据、自动换行的段落和可选的现有动作。"
+---
+
+[`message.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/message.rs) 呈现一条只读的
+消息，其作者、时间元数据和正文均由应用提供。它组合
+现有的 GPUI 布局和 Typography 的 Paragraph；可选的动作是所提供的
+控件，保留各自的行为：
+
+```rust
+Message::new(
+    "session-note-message",
+    "You",
+    "Edited 2026-11-10 09:30:00 UTC",
+    current_note,
+    palette,
+)
+.action(edit_note_button)
+```
+
+根元素带有原生的 Comment 语义，且没有重复的无障碍名称。作者
+和时间是按阅读顺序分别命名的 Label，其后是 Paragraph，
+其完整文本即是它的无障碍名称。时间是调用方格式化的字符串：该
+配方不会解析日期、选择时区、推断送达状态，也不会添加
+live 播报。元数据和正文不增加焦点停靠点。应用负责
+稳定的 ID，以及所提供的作者、时间和文本的含义。
+
+该边框填满有边界的父级，并在垂直方向增长。堆叠的作者/时间
+元数据和正文使用 GPUI 的文本布局换行，包括较长的韩文或英文
+内容；正文中显式的换行会被保留。没有正文截断、
+固定的内容高度或内部滚动控制器。较长的消息应放在
+应用现有的 ScrollArea 中。`Styled` 改变边框和继承的
+元数据呈现；Paragraph 保留其调色板样式。请允许高度增长，
+并为所提供的动作配上能放入可用宽度的布局。动作位于
+正文下方，不与其宽度争抢。`.action(...)` 接受一个
+元素，因此应用可以提供现有的 Button 或由多个控件组成的容器。Button 保留各自的
+无障碍名称、启用状态、指针/Enter/Space 激活以及普通的
+Tab/Shift+Tab 遍历。该消息没有整行激活或选择
+状态，并且在应用移除某个动作时不会管理焦点。
+
+Message 标识有作者的内容及其来源。Marker 标注内容
+之间的分界，Item 则组合通用的标题、描述和尾部
+控件。在所有这些组合中，动作行为都由 Button 提供；Message
+不增加另一种按钮、输入或焦点模型。Avatar 是独立的，不要求
+重复元数据中已经命名的作者。
+
+两种外观都把 Message 用在 Schedule 现有的备注/计划面板下方。正文
+读取同一个保留的 Textarea 状态，应用以 UTC 记录最近一次
+本地 `InputEvent::Change` 的时间。Edit note 会聚焦该现有输入；
+编辑它会更新只读的呈现。程序调用 `set_value` 不会
+触发该编辑事件；没有记录编辑元数据的内容会显示
+`Edit time not recorded`。聚焦输入或更改录制日期
+不会更新编辑时间戳。当备注为空时，
+使用方会显示现有的 EmptyState，而不是凭空造出一条消息。本地的
+编辑时间戳不是发送或送达回执。关闭设置会保留
+备注及其元数据；没有第二个备注值、对话记录、传输、
+流式渲染器或时间线状态。

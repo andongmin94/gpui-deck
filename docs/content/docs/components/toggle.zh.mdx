@@ -1,0 +1,54 @@
+---
+title: Toggle 与 Toggle Group
+description: "基于 Button 的激活、焦点和禁用行为的受控按下状态。"
+---
+
+<ComponentPreview name="toggle" height={360} />
+
+`Toggle::new(id).pressed(bool)` 是一个受控的切换按钮。它组合了
+现有的 Button，复用原生的点击/Enter/Space 激活、禁用行为
+和焦点。它新增的约定是按下的无障碍状态以及
+`on_change(next_pressed, event, window, cx)`。应用存储该值，
+通知其视图，并提供内容和按下状态的样式。稳定的标签
+为操作命名，而按下元数据描述其当前状态。
+
+Toggle 接受 `accessibility_label`、`disabled`、`track_focus`、`tab_index`
+和 `tab_stop`，以及常规的 GPUI 样式和子元素。
+
+对于可以同时按下的独立选项，请使用固定有序的
+`ToggleItem::new(value, label)` 条目（值唯一）创建
+`ToggleGroupState::new(items, cx)`。使用 `.disabled(true)` 标记不可用的条目，
+并可选地设置 `.default_values([values])`。默认值
+必须指向已启用的条目。未提供默认值时，选择初始为空。
+使用 `.single_selection()` 实现可选的互斥选择。激活另一个选项
+会替换之前的值；激活已按下的选项会清除选择。
+单选的默认值最多只能包含一个不同的值，无论
+`.single_selection()` 和 `.default_values(...)` 的先后顺序如何。
+
+渲染 `ToggleGroup::new(id, &state).accessibility_label(...)`，并为每个条目渲染一个
+`ToggleOption::new(&state, index)`。每个选项都组合了 Toggle。
+该组提供 Group 角色和方向；布局代码由应用
+另行提供。读取 `items()`、`is_pressed(index)` 和 `selected_values()` 获得
+当前的呈现。观察该实体，并订阅
+`ToggleGroupEvent::Change(values)` 以获知所选集合的变化；值遵循
+原始的条目顺序。
+
+`set_selected_values(values, window, cx)` 会替换按下的集合，且不触发用户
+事件、焦点变化或光标变化。重复的值会被去重；空的
+迭代器会将其清空。未知/已禁用的值，或单选
+模式下的多个不同的值，会返回 false 且不改变任何内容。该组被禁用时，
+仍允许应用更新。会话示例通过这些保留状态的设置方法应用其初始的单选和
+格式值。
+
+该组有一个 Tab 停靠点，位于上一次获得焦点的已启用选项，或初始时的第一个
+已启用选项。水平方向的左/右或垂直方向的上/下在
+已启用的选项之间移动并循环。Home/End 到达第一个/最后一个已启用的选项。另一个
+轴则向上传播。移动焦点绝不会改变所选的集合；点击、Enter 和
+Space 会根据选择模式切换获得焦点的选项。Tab 离开该组。
+
+`set_disabled(disabled, window, cx)` 禁用整个组，同时保留
+选择。`option_focus_handle(index)` 暴露稳定的选项焦点。RadioGroup
+提供互斥选择，并在方向键导航期间立即选中；
+ToggleGroup 在两种模式下都使焦点移动与选择保持独立。
+会话示例使用独立的粗体/斜体摘要文本样式，而
+目录使用单选实现可选的文档对齐方式 Center/End。

@@ -1,0 +1,28 @@
+---
+title: Alert Dialog
+description: "在 Dialog 的模态生命周期之上加入警示语义，并阻止通过背景点击关闭。"
+---
+
+<ComponentPreview name="alert-dialog" height={360} />
+
+`AlertDialog::new(&dialog_state)` 复用现有的 Dialog 宿主，用于简短的决策。
+请使用同一个保留的 `DialogState`，以及 `DialogBackdrop`、`DialogPopup`、
+`DialogTitle`、`DialogDescription` 和 `DialogClose` 这些部件；它没有单独的
+警示状态，也没有重复的模态生命周期。关闭时请保持宿主处于挂载状态。
+
+为宿主提供 `accessibility_label` 和 `accessibility_description`，并
+提供其背景和弹出层。该封装会将原生角色固定为 AlertDialog，
+并阻止背景点击将其关闭。Escape 仍会通过
+Dialog 现有的关闭路径取消。Tab 焦点限制和返回焦点同样由
+Dialog 和 Root 负责。
+
+为取消按钮创建一个稳定的焦点句柄，并将其传给
+`DialogState::new(cx).with_initial_focus(&cancel_focus)`。将同一个句柄
+应用到 `DialogClose::trigger` 所提供的 Button 上。确认按钮是一个普通的
+Button，由应用的回调执行操作并关闭该状态。
+单是关闭对话框并不意味着确认；请不要将
+确认操作挂在通用的 `DialogEvent::Closed` 通知上。
+
+示例中的 Reset preview 菜单命令会打开此宿主。Cancel 最初拥有
+焦点，并保留当前预览。只有显式点击 Reset preview 按钮，
+才会将已知进度恢复为 40%，然后把焦点返回到菜单触发器。

@@ -1,0 +1,56 @@
+---
+title: Code Block
+description: "只读的多行代码、精确的全文 Copy 动作，以及支持键盘访问的有边界双轴滚动。"
+---
+
+[`code_block.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/code_block.rs) 把只读的
+多行代码与现有的 Button、GPUI 剪贴板和 ScrollArea 组合在一起：
+
+```rust
+CodeBlock::new(
+    "session-configuration",
+    configuration_json,
+    "Session configuration",
+    &configuration_scroll,
+    &configuration_focus,
+    palette,
+);
+```
+
+请在应用中保留 `ScrollHandle` 和 `FocusHandle`。所提供的标签
+显示在 Copy 按钮旁边，该按钮的无障碍名称为 `Copy {label}`。
+代码暴露原生的 Code 语义，并以其完整的原始文本作为
+无障碍名称。视口是键盘焦点目标；Copy 仍是
+普通的 Button，保留其现有的指针、Enter、Space 和焦点行为。
+该配方不增加文本输入节点、编辑器状态或选择模型。
+
+默认的边框高 12 rem，并填满可用宽度。其页眉位于
+有边界的代码视口之外。`Styled` 可自定义边框；请保持有边界的
+高度和宽度，以便 ScrollArea 能容纳较长的正文和行。代码使用
+调色板的代码字体和前景色。GPUI 原生的文本布局会不带软换行地显示
+所提供的各行；水平和垂直溢出都保留在
+同一个 ScrollArea 内。该配方既不解析代码，也不增加语法
+高亮、行号或虚拟化渲染。
+
+Copy 会把整个所提供的字符串发送到 `App::write_to_clipboard`，包括
+屏幕外的内容和空字符串。它不会修剪、规范化或替换
+空格、行尾或末尾的换行。LF、CRLF 和 Unicode 内容
+都会保留在复制的内容中。可见文本由 GPUI 整形；该配方
+没有定义额外的制表位策略或视觉上的 CRLF 规范化。
+没有单独的“已复制”状态计时器，也没有自动播报。
+
+当代码视口本身获得焦点时，不带修饰键的方向键会在
+各自的轴上滚动，Page Up/Down 垂直滚动，Home 回到左上角，
+End 移到右下角。偏移量保持在内容的滚动
+范围之内。Tab 和 Shift-Tab 保持正常遍历，Escape 仍可供
+外围的模态使用，带修饰键的按键则留给应用。复制按钮的
+按键事件遵循 Button 的约定。代码上的滚轮手势即使到达边缘，也会停留在
+该视口内；要移动父级 Sheet，请在视口之外滚动。
+
+两种外观都在 Help 的 State ownership 面板中、在
+源路径标识符之前使用 CodeBlock。使用方用现有的 `serde_json` 依赖，把当前保留的设置
+序列化为 JSON。这是一个用于显示和复制的
+快照；复制不会解析或应用配置。示例把其
+使用方构建器与主渲染函数分开，并复用现有的
+Sheet、焦点约束和父级滚动。Typography 仍负责
+正文和较短的行内代码；CodeBlock 负责有边界的多行呈现。

@@ -1,0 +1,18 @@
+---
+title: Menubar
+description: "唯一的顶层焦点入口、菜单切换、打开方式和共享的命令树。"
+---
+
+<ComponentPreview name="menubar" height={360} />
+
+使用引用现有 `MenuState` 实体的有序 `MenubarItem` 值构建 `MenubarState`。
+渲染 `Menubar`，并为每个条目提供一个 `MenubarMenu`。每个菜单
+条目提供其触发器和内容，同时保留共享的 Menu 命令
+约定，包括嵌套子菜单和受控的复选/单选值。
+
+只有一个顶层条目是 Tab 停靠点。左/右键按逻辑顺序移动，
+Home/End 到达两端，并跳过已禁用的条目。下/上键打开第一个/最后一个
+已启用的命令。菜单打开期间，方向键和指针移动可以切换到
+另一个顶层菜单；始终只有一个分支保持打开。Escape 返回到
+对应的条目。目录中的 Navigation 视图演示了这些切换，
+并将叶子命令路由到保留的应用状态。

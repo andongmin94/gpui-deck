@@ -1,0 +1,27 @@
+---
+title: Pagination
+description: "制御される前へ/次へのボタン、現在のページのテキスト、空/最初/最後のページの境界。"
+---
+
+[`pagination.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/pagination.rs) は、通常の
+Button を、名前付きのネイティブなナビゲーションに合成します。アプリケーションは、0 始まりの
+ページインデックス、ページ数、コールバックを渡します。
+
+```rust
+Pagination::new("preset-pages", "Recording preset pages", page, page_count, palette)
+    .on_change(move |page, _, cx| {
+        table_state.update(cx, |state, cx| state.set_page(page, cx));
+    })
+```
+
+空でないコレクションでは、ページインデックスはページ数より小さくなければなりません。空の
+結果ではインデックス 0、ページ数 0 を使用し、`No pages` を表示して、
+Previous と Next の両方を無効にします。それ以外の場合は、Previous の後に番号付きのボタンが続きます。最大 7 ページまでは
+直接表示され、それより長いコレクションでは、最初と最後のページ、
+現在のページとその隣を残し、省略された区間はそれぞれ静的な
+`More pages` ラベルとして表示されます。ページ送りの間もエントリー数は 7 のままなので、コントロールが
+ずれることはありません。現在のページにはネイティブな現在のページのメタデータと選択
+スタイルがあり、変更は要求しません。Previous は最初のページで、
+Next は最後のページで無効になります。ボタンは通常の Tab 操作と起動の動作を保ち、
+アクションの後で無効になるボタンのフォーカスも含みます。レシピは
+保持されるページやデータを所有せず、ルーティングと取得はアプリケーションに属します。

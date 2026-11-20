@@ -1,3 +1,11 @@
+/** The site's languages, in menu order, with their own names. */
+export const languages = [
+  { code: "en", name: "English" },
+  { code: "ko", name: "한국어" },
+  { code: "ja", name: "日本語" },
+  { code: "zh", name: "简体中文" },
+] as const;
+
 /** Interface strings of the site shell, by language. */
 export const shellCopy = {
   en: {
@@ -11,7 +19,7 @@ export const shellCopy = {
     next: "Next",
     menu: "Toggle navigation",
     theme: "Toggle theme",
-    language: "한국어",
+    language: "Language",
     footer: "A headless UI foundation for Rust and GPUI. The source code is available on",
   },
   ko: {
@@ -25,17 +33,41 @@ export const shellCopy = {
     next: "다음",
     menu: "탐색 열기/닫기",
     theme: "테마 전환",
-    language: "English",
+    language: "언어",
     footer: "Rust와 GPUI를 위한 헤드리스 UI 기반입니다. 소스 코드는 다음에서 볼 수 있습니다:",
+  },
+  ja: {
+    docs: "ドキュメント",
+    components: "コンポーネント",
+    recipes: "レシピ",
+    guides: "ガイド",
+    search: "ドキュメントを検索...",
+    onThisPage: "このページの内容",
+    previous: "前へ",
+    next: "次へ",
+    menu: "ナビゲーションを開閉",
+    theme: "テーマを切り替え",
+    language: "言語",
+    footer: "Rust と GPUI のためのヘッドレス UI 基盤です。ソースコードはこちらで公開しています:",
+  },
+  zh: {
+    docs: "文档",
+    components: "组件",
+    recipes: "配方",
+    guides: "指南",
+    search: "搜索文档...",
+    onThisPage: "本页内容",
+    previous: "上一页",
+    next: "下一页",
+    menu: "切换导航",
+    theme: "切换主题",
+    language: "语言",
+    footer: "面向 Rust 与 GPUI 的无头 UI 基础。源代码发布在",
   },
 } as const;
 
 export type ShellCopy = (typeof shellCopy)[keyof typeof shellCopy];
 
 export function copyFor(lang: string): ShellCopy {
-  return lang === "ko" ? shellCopy.ko : shellCopy.en;
-}
-
-export function otherLanguage(lang: string): string {
-  return lang === "ko" ? "en" : "ko";
+  return shellCopy[lang as keyof typeof shellCopy] ?? shellCopy.en;
 }

@@ -1,12 +1,13 @@
 "use client";
 
+import { Menu as LanguageMenu } from "@base-ui/react/menu";
 import { Link, useRouter } from "fumapress/client";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
 import { Languages, Menu, Moon, Search, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
 import { GIT, SITE_NAME } from "@/lib/site";
-import { copyFor, otherLanguage } from "./copy";
+import { copyFor, languages } from "./copy";
 
 function GitHubIcon() {
   return (
@@ -33,7 +34,6 @@ export function SiteHeader({
   const { path } = useRouter();
   const { setOpenSearch } = useSearchContext();
   const { resolvedTheme, setTheme } = useTheme();
-  const other = otherLanguage(lang);
   const current = path.replace(/\/$/, "");
   const links = [
     { href: `/${lang}/docs`, label: t.docs, exact: true },
@@ -41,7 +41,8 @@ export function SiteHeader({
     { href: `/${lang}/docs/recipes`, label: t.recipes },
     { href: `/${lang}/docs/guides/forms`, label: t.guides, prefix: `/${lang}/docs/guides` },
   ];
-  const otherPath = current.replace(new RegExp(`^/${lang}(?=/|$)`), `/${other}`);
+  const pathIn = (code: string) =>
+    current.replace(new RegExp(`^/${lang}(?=/|$)`), `/${code}`) || `/${code}`;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
@@ -99,14 +100,28 @@ export function SiteHeader({
           >
             <Search className="size-4" />
           </button>
-          <Link
-            href={otherPath || `/${other}`}
-            aria-label={t.language}
-            title={t.language}
-            className={iconButton}
-          >
-            <Languages className="size-4" />
-          </Link>
+          <LanguageMenu.Root>
+            <LanguageMenu.Trigger aria-label={t.language} title={t.language} className={iconButton}>
+              <Languages className="size-4" />
+            </LanguageMenu.Trigger>
+            <LanguageMenu.Portal>
+              <LanguageMenu.Positioner sideOffset={6} align="end" className="z-50">
+                <LanguageMenu.Popup className="min-w-36 rounded-lg border bg-fd-popover p-1 text-sm text-fd-popover-foreground shadow-md outline-none">
+                  {languages.map((language) => (
+                    <LanguageMenu.LinkItem
+                      key={language.code}
+                      href={pathIn(language.code)}
+                      lang={language.code}
+                      aria-current={language.code === lang ? "true" : undefined}
+                      className="flex h-8 items-center rounded-md px-2 outline-none data-[highlighted]:bg-fd-accent aria-[current=true]:font-semibold"
+                    >
+                      {language.name}
+                    </LanguageMenu.LinkItem>
+                  ))}
+                </LanguageMenu.Popup>
+              </LanguageMenu.Positioner>
+            </LanguageMenu.Portal>
+          </LanguageMenu.Root>
           <a
             href={`https://github.com/${GIT.user}/${GIT.repo}`}
             target="_blank"

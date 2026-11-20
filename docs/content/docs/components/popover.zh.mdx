@@ -1,0 +1,52 @@
+---
+title: Popover
+description: "非模态的打开/关闭状态、角落或感知碰撞的方向/对齐定位、焦点、外部关闭和 Escape。"
+---
+
+<ComponentPreview name="popover" height={360} />
+
+`PopoverState` 持有打开状态、触发器焦点、弹出层焦点范围以及禁用
+状态。使用 `cx.new(PopoverState::new)` 只创建一次，并观察它以进行渲染。
+可以选择使用 `.with_initial_focus(&handle)` 指向弹出层内的某个控件。
+否则，打开时会聚焦内容范围，Tab 进入其第一个控件。
+
+使用以下内容构建 `Popover::new(id, &state)`：
+
+- `.trigger(|button| ...)`，使用现有的 Button API 提供触发器的内容、无障碍名称和
+  外观。
+- `.accessibility_label(...)`，为弹出层的非模态对话框界面命名。
+- `.content(...)`，用于由应用负责的弹出内容和界面样式。
+- `.anchor(...)` 用于角落锚定，`.offset(...)` 用于触发器间距。
+- `.side(Placement::Right).align(Align::Start)` 用于按侧边定位的弹出层，并带有
+  碰撞翻转。仅调用 `.align(...)` 时选择 Bottom；其默认的
+  侧边对齐为 Center。Top/Bottom 的 Start/End 遵循限定作用域的逻辑
+  方向。定位器会跟踪触发器的当前框架，并限制在
+  视口内。显式的角落锚点和上下文菜单的指针坐标
+  保留各自独立的定位约定。
+
+库负责触发器的激活、焦点、禁用状态以及展开
+元数据。所提供的 `id` 标识该触发器。其按钮构建器应
+提供外观和无障碍名称，而弹出层内的应用按钮
+可以调用 `PopoverState::close(window, cx)`。
+
+状态方法包括 `open`、`close`、`is_open`、`is_disabled`、
+`set_disabled(disabled, window, cx)`、`focus_handle` 和 `content_focus_handle`。
+禁用会关闭已打开的弹出层，并阻止重新打开。关闭时请保持 Popover 处于挂载
+状态，使其触发器保持标识，并能测量其锚定几何。
+
+Popover 是非模态的：它不会困住焦点。Tab 会遍历其内容，然后
+移到其触发器之后的下一个普通控件，同时关闭弹出层。在
+第一个内容控件之前按 Shift-Tab 会关闭它并返回到触发器。外层的
+Dialog 仍会限定该遍历。
+
+Escape 会关闭获得焦点的弹出层并恢复触发器的焦点。如果 Popover 位于
+Dialog 内，第一次 Escape 会让父对话框保持打开。在外部按下指针
+会关闭弹出层，同时允许被点击的控件获得焦点。焦点移到
+别处、父界面关闭以及窗口失去活动状态同样会将其关闭；
+在另一个界面取得焦点之后，弹出层不会把焦点抢回来。
+
+当应用移除整个获得焦点的 Popover 宿主（包括其
+触发器）时，必须在同一次更新中将焦点移到仍然存在的控件。
+弹出层会清理其打开状态，而不会任意选择替代目标。
+示例中的标签切换和 Dialog 关闭，已经会在移除
+弹出层界面之前移动焦点。

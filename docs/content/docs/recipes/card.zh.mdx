@@ -1,0 +1,22 @@
+---
+title: Card
+description: "具名的 region，包含标题、描述、头部动作、主体和页脚。"
+---
+
+[`card.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/card.rs) 提供一个具名的 region，带
+二级标题。描述接受文本；头部动作、内容
+和页脚各接受一个元素，因此应用可以把多个
+子元素组合在一个 `div()` 中。
+
+```rust
+Card::new("session-card", "Session", palette)
+    .description("Recording preferences")
+    .header_action(Badge::new("toolbar-status", "Toolbar pinned", palette).accent(true))
+    .content(session_summary)
+    .footer(session_controls)
+    .w_full()
+```
+
+卡片不增加焦点停靠点。放在其插槽中的控件保留各自的
+键盘和指针行为。其 `Styled` 实现允许覆盖边框；
+若需要不同的标题级别或页眉/页脚布局，请修改复制的源码。

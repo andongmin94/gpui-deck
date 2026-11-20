@@ -1,0 +1,81 @@
+---
+title: Sidebar
+description: "名前付きでグループ化されたナビゲーション、通常の Button、現在のページのメタデータ、任意の全体/グループの Collapsible 状態、任意のアイコンレール。"
+---
+
+[`sidebar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sidebar.rs) は、通常の Button と、保持される
+`TabsState` の固定のアイテムと選択から、名前付きの
+ナビゲーションを合成します。
+
+```rust
+// Create and retain a state dedicated to this Sidebar, and observe its changes.
+let sections = cx.new(|cx| TabsState::new(items, cx));
+
+Sidebar::new("settings-sections", &sections, "Settings sections", palette);
+```
+
+ルートはネイティブな Navigation セマンティクスと、渡されたラベルを公開します。各エントリーは、
+アイテムのラベルで名前付けされた Button で、そのアイテムの安定した
+`tab_focus_handle(index)` を使用します。無効なアイテムは無効の表示を保ち、
+通常の Tab による移動ではスキップされます。選択されたエントリーは
+`Button::current(true)` を設定し、`Button::selected(...)` とその視覚的なハイライトとは独立して、
+ネイティブな `AriaCurrent::Page` を提供します。エントリーは Button のロールを保ち、
+ナビゲーションは tab-selected のメタデータを公開しません。
+
+| Input | Result |
+| --- | --- |
+| Tab / Shift-Tab | 選択されたセクションを変えずに、有効なエントリーと周囲のコントロールの間を移動する |
+| Enter / Space / click | `TabsState::select_value` を通じて、起動されたエントリーを選択する |
+| Arrow keys | 選択されたセクションを変更しない |
+
+コンテンツの描画と移動先のフォーカスは、アプリケーションが担います。選択された
+セクションだけを描画し、適切な名前付きの Region を与えてください。非アクティブなセクションの
+コントロールやアクセシビリティノードを、マウントしたままにしてはいけません。入力エンティティと
+フォームの値はアプリケーションで保持し、セクションを切り替えても維持されるようにします。
+`select_value` による選択はフォーカスを移動しません。Breadcrumb のような別のサーフェスからの明示的なナビゲーションでも、
+保持されているフォーカス対象を選ぶ必要があります。
+
+Sidebar には新しい `TabsState` を使用し、TabList、Tab、TabPanel で使われる
+状態とは分けて保持してください。TabList は、アンマウントされた後もその状態に残る
+自動的なフォーカスによる選択のサブスクリプションを登録します。
+その状態を Sidebar に再利用すると、フォーカスが選択を変えてしまい、明示的な
+起動の契約が崩れます。この制約は、2 つのプレゼンテーションを同時にマウントする場合だけでなく、
+切り替える場合にも当てはまります。サンプルは、固定された外観ごとに、別々の
+Demo と状態を作成しています。
+
+デフォルトの Sidebar は、幅 10 rem の縦方向の列です。`Styled` で幅、
+間隔、プレゼンテーションを変更でき、コンシューマーは現在のコンテンツの隣に置くか、
+2 つを積み重ねます。Settings は、既存の Sheet の内部で使用しています。ビューポートの幅が
+640 px 未満になると、Sidebar は現在の Region の上で全幅になります。これは
+レイアウトを変えるだけで、同じ Button、選択されたアイテム、キーボードの動作、
+フォーカスハンドルが維持されます。Compact は引き続き、独自の水平方向の TabList と
+TabPanel の構成を使用します。Breadcrumb の Session settings アクションは、どちらの外観でも、
+明示的に Preferences を選択し、そのナビゲーションのエントリーにフォーカスします。
+
+ネイティブな見出しを持つ名前付きのグループには、`.group("Workspace", ["preferences", "help"])` を使用します。
+値は既存のアイテムを指し、最大 1 つのグループにだけ現れる必要があります。グループに属さない
+アイテムが最初に表示されます。グループ化は表示順を変えますが、アイテムの ID と
+フォーカスハンドルは、元のインデックスを保ちます。
+
+`CollapsibleState::new(cx).default_open(true)` を保持して監視すると、
+`.collapsible(&sidebar_disclosure)` または
+`.collapsible_group("Session", ["schedule", "presets"], &session_disclosure)` を追加できます。
+既存の Collapsible が、展開/無効のメタデータ、キーボードによる起動、
+アクティブなコンテンツのみのマウント、そして閉じることでフォーカス中のエントリーが取り除かれるときの
+フォーカスの復元を担います。開閉のトリガーはマウントされたままです。ナビゲーションを閉じても、選択された
+ページは維持されます。それとは別の Region は、引き続きアプリケーションが所有します。カタログの
+Project のサイドバーは、狭いレイアウトを含め、全体とグループの閉じ方をデモしています。
+
+代わりに `.rail(&rail_state)` を使うと、shadcn の
+`collapsible="icon"` のように、Sidebar がアイコンレールに折りたたまれます。開いた状態ではラベルが表示されます。閉じた状態では、
+ナビゲーションが 3.5 rem に狭まり、すべてのエントリーが、同じアクセシブルな名前、
+現在のページのメタデータ、フォーカスハンドルを持つアイコンのみの Button としてマウントされたままになり、さらに
+その名前を示す GPUI のホバーツールチップが付きます。レールでは、グループの見出しとグループの開閉は非表示になりますが、
+名前付きの Group は残ります。エントリーの後ろに置かれ、
+`"<label> labels"` という名前を持つ CollapsibleTrigger が、状態を切り替え、展開/折りたたみとして公開します。
+`.icon(value, || element)` は、エントリーごとに装飾的なアイコンを渡します。渡さない場合は、
+小さなフレームにそのイニシャルが表示されます。インストール済みのフォントに依存する記号グリフより、描画した形状を優先してください。Sidebar では `.rail` と `.collapsible` の
+どちらか一方を使用し、両方は使いません。Settings の Session sections の Sidebar が、レールをデモしています。
+
+レシピは、ルーティング、ナビゲーション履歴、別個の選択モデルを追加しません。
+Settings は、既存の Sheet のスクロールする本体とモーダルのフォーカスの封じ込めを使用します。

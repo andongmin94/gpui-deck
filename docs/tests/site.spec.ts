@@ -20,17 +20,24 @@ test("a component page embeds its live preview", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Button");
   await expect(page.locator('iframe[title="button preview"]')).toHaveAttribute(
     "src",
-    /\/preview\?c=button&theme=(light|dark)$/,
+    /\/preview\?c=button$/,
   );
 });
 
-test("a Korean page links to its English original", async ({ page }) => {
-  await page.goto("/ko/docs/components/button");
-  await expect(page.getByRole("link", { name: "영어 원문 보기" })).toHaveAttribute(
-    "href",
-    "/en/docs/components/button",
-  );
-});
+for (const [lang, label] of [
+  ["ko", "영어 원문 보기"],
+  ["ja", "英語の原文を見る"],
+  ["zh", "查看英文原文"],
+]) {
+  test(`a ${lang} page links to its English original`, async ({ page }) => {
+    await page.goto(`/${lang}/docs/components/button`);
+    await expect(page.locator("html")).toHaveAttribute("lang", lang);
+    await expect(page.getByRole("link", { name: label })).toHaveAttribute(
+      "href",
+      "/en/docs/components/button",
+    );
+  });
+}
 
 test("search finds a component page", async ({ page }) => {
   await page.goto("/en/docs");

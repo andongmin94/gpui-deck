@@ -1,0 +1,20 @@
+---
+title: Direction
+description: "限定作用域的逻辑方向、嵌套覆盖，以及一致的水平按键/指针几何。"
+---
+
+<ComponentPreview name="direction" height={360} />
+
+使用 `DirectionProvider::new(Direction::Rtl)` 或 `Direction::Ltr` 包裹一棵子树。
+后代控件在渲染时解析最近的方向。嵌套的
+提供者会为其后的同级元素恢复外层的方向，而控件的
+显式 `.direction(...)` 会覆盖继承。在该作用域内构造后代元素时，
+可以使用 `Direction::current(cx)`。
+
+Direction 控制 Tabs、RadioGroup、
+ToggleGroup、Slider、Carousel、Chart、Menubar 和 NavigationMenu 的逻辑水平导航。Slider 还会
+镜像水平指针坐标。上/下键以及逻辑上的 Home/End 保留
+其通常的含义。请使用
+`direction.row(div())` 或 `direction.row(TabList::new(...))` 提供匹配的应用布局；该提供者
+不会改写任意的 GPUI flex 容器。它将文本对齐到逻辑起始端，
+而文本整形、双向编辑和平台 IME 行为仍由 GPUI 负责。

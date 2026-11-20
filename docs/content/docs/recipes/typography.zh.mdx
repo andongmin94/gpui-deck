@@ -1,0 +1,69 @@
+---
+title: Typography
+description: "带显式级别的具名标题、带原生行内代码文本段的段落，以及独立命名的代码元素。"
+---
+
+[`typography.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/typography.rs) 把 `Heading`、
+`Paragraph` 和 `InlineCode` 作为一个呈现配方提供。GPUI 负责文本整形、
+布局和绘制。应用提供内容、大纲级别、字体
+选择、可用宽度以及周围的间距。
+
+```rust
+Heading::new("help-title", "Help", 2, palette);
+
+Paragraph::new("state-ownership", palette)
+    .text("The application retains ")
+    .code("DialogState")
+    .text(" and ")
+    .code("InputState")
+    .text(" while panels are closed.");
+
+InlineCode::new(
+    "help-source",
+    "crates/base/examples/two_styles.rs",
+    palette,
+);
+```
+
+`Heading::new` 要求一个为正的原生标题级别。其可见文本同时
+提供其完整的无障碍名称。请根据内容大纲选择级别：
+改变它会改变语义层级，而与默认的视觉
+大小无关。每个级别都从 `1.25 * palette.font_size` 开始，字重为半粗。
+若需要不同的视觉比例、颜色或间距，请使用普通的 `Styled` 调整。
+
+`Paragraph::text` 和 `Paragraph::code` 按顺序追加其所提供的文本，
+不会插入空格，也不会解释标记。请把标点和空格
+包含在文本段中。一个原生的 `StyledText` 会对整个段落进行整形，因此
+行内代码仍属于同一文本流和同一换行。段落
+默认使用正常换行、调色板的正文字号和前景色，以及为字号
+1.5 倍的行高。请给它的父级一个可用宽度，并对较长的文本让
+高度保持自动。该配方不增加截断、固定高度或
+独立滚动；溢出由外围的 Sheet/ScrollArea 内容负责。
+
+段落暴露原生的 Paragraph 语义，并把其完整拼接的文本
+作为一个无障碍名称。其代码范围使用使用方的代码字体和
+背景，作为原生文本段的样式。GPUI 没有为每个带样式的范围暴露无障碍角色，
+因此这些范围不会创建单独的 Code 节点。
+当代码需要自己的元素时，`InlineCode` 提供一个独立命名的原生 Code 元素。
+当代码属于一个散文句子内部时，请使用 `Paragraph::code`。
+这三种类型都是静态文本，不增加焦点停靠点或键盘动作。
+
+使用方的 `palette.code_font_family` 选择所请求的代码字体。
+示例在 Linux 上请求 DejaVu Sans Mono，在 Windows 上请求 Consolas，在
+macOS 上请求 Menlo；应用应提供适合其自身环境的字体。
+`Styled` 控制每个元素的布局和文本呈现。Paragraph 的代码
+范围在正文中保留其显式的代码字体和背景样式。
+改变可见大小不会改变 Heading 的原生级别，也不会改变
+用于无障碍名称的文本。
+
+两种外观都在 Help 标签页中使用该配方：二级的 Help 标题位于
+现有的三级 Accordion 标题之上，面板包含关于保留的应用状态的
+文字，以及一个独立命名的源标识符。
+键盘帮助弹出层增加了一个简短的标题，同时保留其现有的
+Breadcrumb 动作和 Kbd 提示。较长的说明仍位于 Sheet 的
+可滚动主体内。使用方的构建器保留在小的辅助函数中，以限制
+调试渲染期间的栈使用。
+
+该配方提供文本呈现和元数据。Markdown 解析、语法
+高亮、代码复制、文本编辑，以及多行 Code Block 的组合，
+都不在其范围之内。它不引入保留的状态，也没有第二个文本渲染器。

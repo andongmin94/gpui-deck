@@ -1,0 +1,16 @@
+---
+title: Badge
+description: "带 secondary 和 accent 两种外观的静态标签。"
+---
+
+[`badge.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/badge.rs) 是一个静态的具名标签。
+默认外观是 secondary；`.accent(true)` 使用调色板的 accent
+颜色。示例用这两种外观显示实际的光标和工具栏设置。
+
+```rust
+Badge::new("cursor-status", "Cursor visible", palette).accent(true)
+```
+
+Badge 不增加 Tab 停靠点、按钮动作、按下状态或 live 播报。其
+文本必须在不依赖颜色的情况下说明该状态。可交互的标签（chip）应使用
+现有的 Button 或 Toggle，并配以应用自己的样式。

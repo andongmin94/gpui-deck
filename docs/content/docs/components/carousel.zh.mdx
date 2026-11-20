@@ -1,0 +1,36 @@
+---
+title: Carousel
+description: "首张幻灯片、每屏一张或多张幻灯片、可选启用的悬停暂停自动播放、有界/循环导航、离散滑动、RTL 和焦点恢复。"
+---
+
+<ComponentPreview name="carousel" height={360} />
+
+`CarouselState::new(labels, cx)` 保留一个固定的有序集合以及所选的
+（首张）幻灯片。选择默认是有界的；`.looping(true)` 允许循环。
+`.slides_per_view(n)` 或 `set_slides_per_view(n, window, cx)` 会显示 `n`
+张连续的幻灯片，类似 shadcn 的分数式 item basis。每一步移动一张
+幻灯片，且最后一屏始终是满的，因此存在 `snap_count()` 个首张位置，
+`visible_range()` 给出已挂载的幻灯片；循环模式下会在最后一个完整
+视图与第一个视图之间环绕。`Carousel::new(id, &state, label)` 提供一个带名称且可聚焦的
+区域，`CarouselSlide::new(&state, index)` 只挂载当前
+视图内的幻灯片。应用保留幻灯片数据，并提供媒体、幻灯片宽度（例如
+一行中等宽的 `flex_1` 幻灯片）、内容和指示器的呈现。
+`CarouselControl::previous/next` 组合了 Button，并带有边界处的禁用行为。
+
+水平区域本身拥有焦点时，左/右键生效；垂直区域则使用上/下键；Home/End 选择第一个和最后一个视图。幻灯片内的后代元素保留
+各自的按键。在 `Carousel` 上配置轴和方向；每张幻灯片使用同一个
+状态来处理滑动。方向默认继承。40 个逻辑像素的指针拖动
+每次手势只吸附一次，包括一次移动后
+立即释放的情况。将幻灯片移出视图（包括通过缩小
+视图）时，其内部的焦点会在卸载前返回到轮播范围；仍然
+可见的幻灯片内的焦点以及外部的上一张/下一张控件上的焦点会被保留。不提供
+惯性、动画运动或吸附点之间的自由滚动。
+
+`set_autoplay(Some(interval), window, cx)` 每隔一个间隔前进一张幻灯片，
+并从最后一个视图环绕到第一个；`None` 和 `is_autoplaying()` 用于控制和
+报告该状态。当指针位于轮播之上、焦点位于其内部、
+窗口处于非活动状态或开启了减弱动态效果时，轮播会暂停，而键盘、滑动和
+`CarouselControl` 导航会将其停止，类似 Embla 的默认自动播放插件。
+诸如分页的 `select` 之类的应用调用不会将其停止。请渲染一个可见的
+播放/暂停 Button（如目录中的 "Play slideshow"），以便用户可以
+停止轮播（WCAG 2.2.2）。

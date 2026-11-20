@@ -1,0 +1,34 @@
+---
+title: Marker
+description: "装饰性分隔符之间的一个具名日期/状态标签，文本会换行且没有焦点停靠点。"
+---
+
+[`marker.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/marker.rs) 在两个现有的装饰性 Separator
+之间放置一个静态标签。请提供适合应用的日期或状态分界的
+文本：
+
+```rust
+Marker::new("schedule-marker", "Selected date · 2026-11-09", palette);
+```
+
+该标签暴露原生 Label 语义，并以其完整的可见文本作为
+无障碍名称。外围布局没有角色或名称，两个
+Separator 都使用 `decorative(true)`，省略了它们的原生角色和方向。
+因此该标记只贡献一个有意义的标签，没有重复的
+分隔符语义。它不增加焦点句柄、Tab 停靠点、动作或 live-region
+播报。
+
+该边框填满可用宽度。居中的标签使用调色板的正文
+字号和弱化颜色、为字号 1.5 倍的行高、正常换行，
+以及最多为边框宽度 75% 的宽度。两条水平线厚一个像素，
+使用调色板的边框颜色，并平分剩余空间。较长的文本可以
+在垂直方向增长而不会被截断。`Styled` 控制边框和继承的文本
+呈现；请提供有边界的宽度，并允许标签的高度增长。该
+配方使用 GPUI 现有的文本布局，不增加文本渲染器或时间线状态。
+
+两种外观都把 Marker 放在 Schedule 的 DatePicker 与其备注/计划
+面板之间。使用方读取 `CalendarState::selection().first_date()`，并格式化为
+`Selected date · YYYY-MM-DD`，选择为空时则为 `No date selected`。
+在不提交选择的情况下移动日历光标，不会改变这一
+分界。日期格式化仍归应用负责，该标记也不会
+开始录制或维护第二个选中的日期。

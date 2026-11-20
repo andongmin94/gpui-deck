@@ -1,0 +1,47 @@
+---
+title: Label
+description: "带名称的原生文本标签，点击时聚焦已有控件，带有显式的禁用标志，且不增加额外的 Tab 停靠点。"
+---
+
+<ComponentPreview name="label" height={360} />
+
+`Label::new(id, &focus_handle, text)` 渲染带有原生 Label 语义的纯文本，
+其无障碍名称与该文本一致。点击它会聚焦所提供的已有控件。
+Label 自身没有焦点句柄或 Tab 停靠点，
+因此普通的键盘遍历仍保留在控件上。它的 `Styled` 接口
+提供由应用负责的文本样式和布局；它接受文本，而不接受
+交互式的子内容。
+
+```rust
+let preview = self.preview.read(cx);
+let label = Label::new(
+    "preview-percentage-label",
+    preview.thumb_focus_handle(0),
+    "Preview percentage",
+)
+.disabled(preview.is_disabled())
+.text_color(muted);
+let slider = Slider::new("preview-percentage", &self.preview)
+    .accessibility_label("Preview percentage")
+    .child(SliderThumb::new(&self.preview, 0).accessibility_label("Preview percentage"));
+
+div().flex().flex_col().gap_1().child(label).child(slider)
+```
+
+请让被引用的目标保持挂载在同一个窗口中，并在每次渲染时用 `.disabled(bool)` 镜像其禁用
+状态。已禁用的 Label 不会移动
+焦点。所提供的 FocusHandle 标识目标，但不会告诉 Label
+该控件是否已启用；该策略由应用负责，并在其变化时
+重绘。Label 不保留第二份控件状态。
+
+聚焦动作不会激活目标：它不会打开 Select、调整
+Slider，也不会切换 Checkbox/Switch。原生示例在 Drawing tool
+和 Preview percentage 上方使用它；点击任一标签，在控件收到普通键盘输入之前，
+选择或值都保持不变。
+
+请单独设置目标的 `accessibility_label(...)`。固定版本的 GPUI API
+没有为这些同级元素暴露公开的 labelled-by 关系，
+因此 Label 不会自动为目标命名。其原生 Label 角色和文本
+名称描述的是标签本身。对于 Input/Textarea 的标签、帮助和验证
+关联，请使用 Field，它会将元数据投射到其保留的输入上，
+并在点击标签时检查输入的实时禁用状态。

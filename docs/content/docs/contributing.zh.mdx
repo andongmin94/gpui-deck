@@ -1,0 +1,41 @@
+---
+title: 贡献
+description: "各部分源码的位置，以及如何验证一次更改。"
+---
+
+| Location | Responsibility |
+| --- | --- |
+| `crates/cli/` | 源码复制 CLI 与配方依赖目录 |
+| `crates/base/src/` | `gpui-design` 库及其行为级测试 |
+| `crates/base/tests/` | 使用公开 API 的集成测试 |
+| `crates/base/examples/starter.rs` | 仅使用公开 API 的小型完整应用 |
+| `crates/base/examples/two_styles.rs` | 原生示例与应用自有样式 |
+| `crates/base/examples/presentation.rs` | 呈现配方使用的可复制浅色/深色应用令牌 |
+| `crates/base/examples/recipes/` | 二十三个目录配方以及 Chart 的配套呈现；可复制的应用自有源码 |
+| `crates/base/examples/assets/` | 预设预览及其图像解码回归测试所用的内嵌示例图片 |
+| `docs/` | 本文档站点：Fumapress（基于 Vite 的 Fumadocs）；页面位于 `docs/content/docs` |
+| `crates/web-preview/` | 使用 GPUI 的 web 后端编译为 WebAssembly 的在线文档预览 |
+| `Cargo.toml` / `Cargo.lock` | 工作区及与之匹配的依赖集合 |
+
+使用 `gpui_design::init(cx)` 初始化库，并在 `gpui_design::Root` 中承载应用内容。
+以 starter 作为小型启动参考，以其他原生示例作为较大组合的参考。
+使用方应用可以直接使用这份源码，并提供自己的呈现，同时复用行为层。
+
+## 验证更改
+
+运行 README 中
+[Verify changes](https://github.com/andongmin94/gpui-design#verify-changes) 一节列出的格式化、Clippy、测试和构建命令；Verify 工作流会在 Linux、Windows 和 macOS 上运行同样的矩阵。
+
+## 文档站点
+
+本站是位于 `docs/` 的 Fumapress 应用（基于 Vite 的 Fumadocs），部署在 Cloudflare Workers 上。页面是 `docs/content/docs` 中的 MDX 文件；每个页面旁边都有一份翻译，例如韩语翻译为 `name.ko.mdx`。
+在线预览来自 `crates/web-preview`，它被构建为 WebAssembly：
+
+```sh
+cd docs
+npm ci
+npm run preview:build   # cargo build for wasm32 + wasm-bindgen into public/preview
+npm run dev
+npm run lint && npm run typecheck
+npm run build && npm run test:browser
+```

@@ -1,0 +1,23 @@
+---
+title: Progress
+description: "受控的百分比或不确定进度、无障碍名称和数值范围。"
+---
+
+<ComponentPreview name="progress" height={360} />
+
+`Progress::new(id).value(percentage).accessibility_label(...)` 提供一个带名称的、
+非交互式的 ProgressIndicator，数值范围为 0 到 100。超出
+该范围的有限值会被限制到范围内；非有限值属于配置错误。默认值
+是已知进度 0%。当进度量未知时，使用 `.indeterminate(true)`；
+这会省略当前数值。
+
+使用普通的 GPUI 子元素提供可视的轨道和填充。应用
+同样负责标签以及未知进度的任何动画。Progress 不添加焦点
+句柄或 Tab 停靠点。示例将 Slider 连接到 Progress，以演示
+受控的填充随应用保留的数值状态而更新。
+
+可复制的 [Spinner 配方](../recipes/spinner.mdx) 将同一个
+不确定的 Progress 与 GPUI 动画组合在一起。示例中的 Unknown progress 开关
+会用 Spinner 和一个装饰性的 Skeleton 替换数值进度条；切换回来时
+使用保留的 Slider 值。Reset preview 会显式地将已知进度恢复为
+40%。

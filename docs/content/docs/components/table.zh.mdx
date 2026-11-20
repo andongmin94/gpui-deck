@@ -1,0 +1,67 @@
+---
+title: Table
+description: "共享的固定/弹性列、表头/表体/表尾结构、原生的行/单元格语义、行选择和表头排序元数据。"
+---
+
+<ComponentPreview name="table" height={360} />
+
+Table 只定义一次列，并将其应用于表头、表体和表尾。
+每一行必须为每一列恰好提供一个单元格。使用固定宽度获得稳定的
+轨道，并使用正的弹性权重来分配剩余宽度：
+
+```rust
+Table::new(
+    "sessions",
+    [TableColumn::fixed(px(180.)), TableColumn::flex(1.)],
+)
+.accessibility_label("Sessions")
+.w_full()
+.header(
+    TableRow::new("sessions-header")
+        .cell(TableCell::new("session-heading").p_2().child("Session"))
+        .cell(TableCell::new("date-heading").p_2().child("Date")),
+)
+.row(
+    TableRow::new("session-1")
+        .cell(TableCell::new("session-1-name").row_header(true).p_2().child("Workshop"))
+        .cell(TableCell::new("session-1-date").p_2().child("2026-11-09")),
+)
+.caption(TableCaption::new("sessions-caption").child("Scheduled sessions"))
+```
+
+`header` 和 `footer` 各接受一行。通过 `row` 或
+`rows` 追加表体行；`TableRow::cells` 也接受迭代器。空的表体是有效的，因此
+应用可以在表格旁边渲染其空状态说明。
+
+每个部件都实现了 `Styled`。单元格和标题说明接受任意子元素；
+应用可以在单元格中放入现有的 Button 或 Checkbox。结构性的
+表格部件不添加 Tab 停靠点，也不会拦截这些控件的激活。
+Table 负责行的水平布局。请在单元格内部设置间距，而不要
+添加水平的行内边距、外边距或间隙。单元格样式作用于内部的
+内容表面，即使表头和表体的内边距不同，也能保持共享的外层列宽。
+
+| 部件 | 原生语义 |
+| --- | --- |
+| Table | Table、行数、列数以及显式的无障碍标签 |
+| 表头/表体/表尾 | RowGroup |
+| 行 | Row 及其从零开始的索引 |
+| 表头单元格 | 带行/列索引的 ColumnHeader |
+| 普通单元格 | 带行/列索引的 Cell |
+| 设置了 `row_header(true)` 的单元格 | RowHeader，除非它属于列表头所在的行 |
+| 标题说明 | 没有焦点操作的 Caption |
+
+索引包含表头和表尾。可见的标题说明不会自动
+为表格命名；请单独提供 `accessibility_label`。当可见内容未提供标签时，单元格也接受
+显式的无障碍标签。
+
+这是一个普通表格，没有单元格导航，也没有数据控制器。不提供行或
+列的跨越、自动的固有列宽计算、排序、过滤、分页、
+选择管理和虚拟化。`TableRow::selected`
+和 `TableCell::sort_direction` 将由应用持有的选择和排序
+投射为原生元数据；它们不执行数据操作。当真实的应用需要时，
+应在此结构之上组合数据操作。
+
+可复制的 [DataTable 配方](../recipes/data-table.mdx) 添加了文本
+过滤、单列排序、分页、页/行复选框选择、列
+可见性、空状态恢复，以及基于稳定 ID 的行操作。原生示例使用它来浏览并应用录制预设；
+其查询和页面状态属于应用，位于 Table 之外。

@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "---快速开始---",
+    "index",
+    "installation",
+    "architecture",
+    "---组件---",
+    "...components",
+    "---配方---",
+    "...recipes",
+    "---指南---",
+    "guides",
+    "---项目---",
+    "coverage",
+    "contributing"
+  ]
+}

@@ -1,0 +1,59 @@
+---
+title: Context Menu
+description: "セカンダリクリック、タッチの長押し、キーボードによる表示、ポインター位置への配置、および共有メニューツリーのコマンド、ナビゲーション、閉じる動作、フォーカスに対応します。"
+---
+
+<ComponentPreview name="context-menu" height={360} />
+
+表示されているリージョンに関連するコマンドには、同じ `MenuState::new(items, cx)`、`MenuItem`、`MenuOption`、
+`MenuEvent::Action(value)` の契約を使用します。
+マウントされるメニューホストごとに別々の State エンティティを作成してください。サンプルの
+DropdownMenu と ContextMenu は項目定義とアプリケーションのコールバックを共有しますが、
+開閉状態、カーソル、復帰先のフォーカスは別々に保ちます。
+
+```rust
+ContextMenu::new("session-summary", &menu)
+    .target_label("Session summary")
+    .accessibility_label("Session actions")
+    .target(summary_content)
+    .content(menu_surface)
+    .p_2()
+    .border_1()
+    .focus_visible(|style| style.border_color(accent))
+```
+
+ターゲットはフォーカス可能な名前付きリージョンであり、アクションボタンではありません。
+`.target(...)` で操作できないターゲットの内容を指定し、`.content` の内側に、DropdownMenu で使用するものと同じ順序付きの
+`MenuOption::new(&menu, index)` 要素を置きます。
+`target_label` はリージョンに、`accessibility_label` はメニューに名前を付けます。スタイルと
+インタラクティブなスタイルビルダーはターゲットに適用され、メニューのサーフェスには
+アプリケーションが別途スタイルを適用します。
+
+| ターゲット上の入力 | 動作 |
+| --- | --- |
+| 左クリック | メニューを開かずにリージョンにフォーカスします |
+| 右クリック | ポインターのウィンドウ座標に開きます。別の要求があると、開いているメニューの位置が変わります |
+| Shift-F10 / Menu キー | 閉じているメニューをターゲットの下に開きます |
+| ネイティブの ShowContextMenu アクセシビリティアクション | ターゲットの下に開きます |
+| メニューのナビゲーションとアクティブ化 | DropdownMenu と同じ有効項目のカーソル、先頭文字入力、閉じた後のアクションの動作を使用します |
+| Escape | 閉じてターゲットにフォーカスを戻します |
+| Tab / Shift-Tab | Popover の通常のターゲット相対のフォーカス移動を通じて閉じます |
+
+Menu キーは、プラットフォームがそれを渡す場合に利用できます。命令的な
+`MenuState::open(window, cx)` もターゲット相対の配置を使用します。ポインターによる
+配置は既存の Popup/Positioner の測定とビューポートへの制限を使用し、
+それらのジオメトリエンジンを置き換えません。外側のクリックと親 Dialog による
+封じ込めは、同じ Popover のライフサイクルを使用します。新しいコンテキスト要求は、
+既存のサブメニューの枝を閉じ、ルートメニューの最初の有効な項目にフォーカスします。
+
+`set_disabled(true, window, cx)` はメニューを閉じ、ターゲットへの進入と
+アクティブ化をブロックします。すでにフォーカスされている無効なターゲットはそのバインディングを保つため、Tab で
+離れられます。ターゲット全体を削除する場合は、そのアプリケーションの更新の一環として、残っているコントロールにフォーカスを移動してください。
+保持されたポップアップの State は、デタッチ時に閉じられます。
+
+ネイティブのメタデータには、名前付きのターゲット、expanded/disabled の状態、Shift-F10 の
+ショートカットと ShowContextMenu アクション、および共有される Menu、MenuItem、
+MenuItemCheckBox/MenuItemRadio とサブメニューのセマンティクスが含まれます。同じコマンドツリーを
+DropdownMenu にも ContextMenu にも渡せます。ターゲット上のタッチの長押しは、セカンダリクリックと同様に
+押した位置にメニューを開き、リリースがパンもターゲットへの伝達もしないよう
+ジェスチャーを占有します。インタラクティブな子孫のターゲットは含まれません。

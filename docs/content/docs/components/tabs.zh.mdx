@@ -1,0 +1,79 @@
+---
+title: Tabs
+description: "活动面板、一个标签列表停靠点、自动或手动激活、感知方向的按键和禁用标签。"
+---
+
+<ComponentPreview name="tabs" height={360} />
+
+标签页家族由 `TabsState`、`TabList`、`Tab` 和 `TabPanel` 组成：
+
+1. 使用固定有序的 `TabItem::new(value, label)` 条目创建 `TabsState::new(items, cx)`。
+   值必须唯一。使用 `.disabled(true)` 标记不可用的条目。
+2. 第一个已启用的标签初始为选中状态。使用 `.default_value(value)` 选择
+   另一个已启用的条目；未知或已禁用的默认值属于配置错误
+   并会 panic。空的或全部被禁用的集合没有活动面板。
+3. 使用无障碍标签渲染 `TabList::new(id, &state)`，并按顺序为每个条目
+   渲染一个 `Tab::new(&state, index)`。
+4. 在列表旁边渲染对应的 `TabPanel::new(&state, index)` 元素。普通的
+   GPUI `div` 即可排布列表和面板。不需要额外的根
+   包装器，也不强加布局。
+
+每个标签提供其角色、标签、选中/禁用元数据、稳定的焦点句柄
+和激活。可视内容由应用提供。状态暴露
+`items()`、`selected_index()`、`selected_item()`、`tab_focus_handle(index)` 和
+`panel_focus_handle(index)`。观察该状态以重绘使用它的视图，并
+订阅 `TabsEvent::Change(value)` 以获知选择的变化。选择
+当前标签不会触发重复的事件。
+
+`select_value(value, window, cx)` 选择一个已启用的条目，而不移动键盘
+焦点。仅当选择发生变化时，它才返回 `true` 并触发一次 `TabsEvent::Change`；
+未知的、已禁用的和已选中的值返回 `false`，且不触发
+事件。观察该状态以进行相应的重绘。如果选择另一个
+条目会移除当前获得焦点的内容，调用方必须将焦点移到
+保留的导航条目或其他有效的目标。该方法不会选择
+该目标，也不会把普通的导航 Button 变成 Tab。
+
+TabList 的激活默认是自动的：将焦点移到某个已启用的标签也会
+选中它，包括程序化的和无障碍的焦点。配置
+`TabsState::new(items, cx).manual_activation()` 可使焦点和选择保持
+独立。在手动模式下，方向键和 Home/End 移动焦点，而当前
+面板保持挂载；点击、Enter 或 Space 会提交获得焦点的标签。每个列表
+有一个 Tab 停靠点：自动模式下是选中的标签，手动模式下是上一次获得焦点的标签
+（初始为选中的标签）。`select_value` 会保留手动模式的焦点进入位置。
+目录使用手动激活；Compact 的会话标签页仍为自动。
+
+| 输入 | 水平列表 | 垂直列表 |
+| --- | --- | --- |
+| 左 / 右 | 上一个 / 下一个已启用的标签 | 向上传播，不改变标签 |
+| 上 / 下 | 向上传播，不改变标签 | 上一个 / 下一个已启用的标签 |
+| Home / End | 第一个 / 最后一个已启用的标签 | 第一个 / 最后一个已启用的标签 |
+| Enter / Space | 激活获得焦点的标签 | 激活获得焦点的标签 |
+| Tab / Shift-Tab | 离开标签列表 | 离开标签列表 |
+
+方向键移动会在两端循环，并跳过已禁用的条目。使用 `.axis(Axis::Horizontal)` 或 `.axis(Axis::Vertical)` 设置列表的
+方向，并使用常规的 GPUI 布局方法排布它。方向不会选择视觉布局。
+
+只有活动的面板会被挂载。非活动的面板不提供布局、焦点
+停靠点或无障碍节点。请将表单数据和保留的输入实体放在
+应用的视图中，使其值在面板被移除并再次渲染后仍然保留。
+
+默认情况下，面板是没有自己 Tab 停靠点的焦点范围；Tab 可以进入其
+交互式子元素。对于需要自身接收
+焦点的面板（例如仅包含静态文本的面板），请使用 `.tab_stop(true)`。面板的无障碍
+标签来自其标签页。固定版本的 GPUI API 暴露了角色、标签和选中
+状态，但没有公开的同级节点关系 API，因此不会输出显式的原生
+标签页到面板的 controls/labelled-by 关系。原生屏幕
+阅读器的行为仍需在桌面上验证。
+
+Sidebar 配方复用来自专用 `TabsState` 的固定条目、选中值和稳定的焦点
+句柄，使用显式的 Button 激活，而不是
+TabList 的自动选择。请为此用途创建一个全新的状态：TabList
+会安装保留的焦点订阅，因此曾绑定到 TabList 的状态
+不得与 Sidebar 共享，也不得重新指向 Sidebar。调整 Settings 示例的大小
+只会重新排布其 Sidebar 和内容；它绝不会将它们换成 TabList。
+
+`Button::current(true)` 使用原生的
+`AriaCurrent::Page` 标记选中的导航 Button。其默认的 false 值会省略该属性。该方法
+不改变样式和焦点；`Button::selected(...)` 和应用的
+目的地处理程序分别控制这些方面。Sidebar 保留原生的
+Navigation/Button/Region 语义，而不是 TabList/Tab/TabPanel 角色。
