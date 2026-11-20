@@ -883,7 +883,7 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
         });
     }
 
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     cx.update(|window, cx| {
         assert!(
@@ -1002,14 +1002,15 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     });
 
     // A hidden region has no Tab stops; its application-owned values survive remounting.
+    // The Sidebar rail trigger sits between the last entry and the section content.
     cx.simulate_keystrokes("tab tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "space");
     cx.update(|_, cx| assert!(!demo.read(cx).show_cursor));
-    cx.simulate_keystrokes("shift-tab shift-tab shift-tab");
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab");
     draw(cx);
     activate_key(cx, "enter");
     cx.update(|window, _| {
@@ -1018,7 +1019,7 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("shift-tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     cx.update(|window, cx| {
         assert!(!demo.read(cx).show_cursor);
@@ -1028,10 +1029,10 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     });
 
     // The root ancestor explicitly selects Preferences and restores its Sidebar focus.
-    cx.simulate_keystrokes("shift-tab shift-tab shift-tab");
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab");
     draw(cx);
     activate_key(cx, "enter");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "enter");
     cx.simulate_keystrokes("tab");
@@ -1059,7 +1060,7 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "enter");
     cx.update(|window, cx| {
@@ -2653,7 +2654,7 @@ fn command_search_opens_a_retained_multiline_form(cx: &mut TestAppContext) {
         &[gpui::SharedString::from("edit")]
     );
 
-    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab tab");
     draw(cx);
     cx.update(|window, cx| {
         assert!(demo.read(cx).notes.focus_handle(cx).is_focused(window));
@@ -2923,7 +2924,7 @@ fn field_feedback_and_search_selection_work_inside_the_dialog(cx: &mut TestAppCo
     draw(cx);
     cx.update(|window, cx| assert!(demo.read(cx).input.focus_handle(cx).is_focused(window)));
 
-    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab tab tab");
     draw(cx);
     draw(cx); // The focused input's reveal request updates the form's scroll offset.
     cx.update(|window, cx| {
@@ -3793,7 +3794,8 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
     cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "enter");
-    cx.simulate_keystrokes("tab");
+    // The sidebar's rail trigger follows the last section entry.
+    cx.simulate_keystrokes("tab tab");
     draw(cx);
     let id = gpui::ElementId::from("preset-catalogue");
     let pagination = gpui::ElementId::from((id.clone(), "pagination"));

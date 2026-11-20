@@ -68,6 +68,7 @@ pub(crate) struct Demo {
     pub(crate) select: Entity<SelectState>,
     pub(crate) stroke: Entity<RadioGroupState>,
     pub(crate) tabs: Entity<TabsState>,
+    pub(crate) sections_rail: Entity<CollapsibleState>,
     pub(crate) help: Entity<PopoverState>,
     pub(crate) actions: Entity<MenuState>,
     pub(crate) context_actions: Entity<MenuState>,
@@ -211,6 +212,7 @@ impl Demo {
             state.set_selected_value(Some("fine"), window, cx);
             state
         });
+        let sections_rail = cx.new(|cx| CollapsibleState::new(cx).default_open(true));
         let tabs = cx.new(|cx| {
             TabsState::new(
                 [
@@ -350,6 +352,7 @@ impl Demo {
             cx.observe(&select, |_, _, cx| cx.notify()),
             cx.observe(&stroke, |_, _, cx| cx.notify()),
             cx.observe(&tabs, |_, _, cx| cx.notify()),
+            cx.observe(&sections_rail, |_, _, cx| cx.notify()),
             cx.observe(&date_picker, |_, _, cx| cx.notify()),
             cx.observe(&schedule_split, |_, _, cx| cx.notify()),
             cx.observe(&help, |_, _, cx| cx.notify()),
@@ -406,6 +409,7 @@ impl Demo {
             select,
             stroke,
             tabs,
+            sections_rail,
             help,
             actions,
             context_actions,
@@ -2038,6 +2042,7 @@ impl Render for Demo {
         let stacked_sections = window.viewport_size().width < px(640.);
         let navigation = if sidebar {
             Sidebar::new("session-sections", &self.tabs, "Session sections", palette)
+                .rail(&self.sections_rail)
                 .group("Workspace", ["preferences", "sync", "help"])
                 .group("Session", ["schedule", "presets"])
                 .flex_shrink_0()

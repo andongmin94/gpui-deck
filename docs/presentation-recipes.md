@@ -661,8 +661,20 @@ The disclosure trigger stays mounted. Closing navigation preserves the selected
 page; the application continues to own its separate Region. The catalogue's
 Project sidebar demonstrates whole and group closure, including narrow layout.
 
-The recipe adds no routing, navigation history, icon rail or separate selection
-model. Settings uses the existing Sheet's scrolling body and modal focus containment.
+`.rail(&rail_state)` instead collapses the Sidebar to an icon rail, like shadcn's
+`collapsible="icon"`. An open state shows labels; a closed state narrows the
+navigation to 3.5 rem and keeps every entry mounted as an icon-only Button with
+the same accessible name, current-page metadata and focus handle, plus a GPUI
+hover tooltip naming it. Group headings and group disclosures are hidden in the
+rail while the named Groups remain. A CollapsibleTrigger after the entries,
+named "<label> labels", toggles the state and exposes it as expanded/collapsed.
+`.icon(value, || element)` supplies a decorative icon per entry; others show
+their initial in a small frame. Prefer drawn shapes to symbol glyphs, which
+depend on installed fonts. A Sidebar uses either `.rail` or `.collapsible`, not
+both. Settings' Session sections Sidebar demonstrates the rail.
+
+The recipe adds no routing, navigation history or separate selection model.
+Settings uses the existing Sheet's scrolling body and modal focus containment.
 
 ## Typography
 

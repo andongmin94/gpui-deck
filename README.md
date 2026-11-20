@@ -103,7 +103,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Avatar** | Named circular image with explicit fallback text, using GPUI's image loader and cache | Preset artwork or initials in the existing HoverCard preview |
 | **AspectRatio** | Clipped media frame with a finite positive width/height ratio and application-owned content | A recording-frame illustration driven by the retained preset and session name |
 | **Sheet** | Four-edge modal presentation over Dialog, viewport-limited size, fixed header/footer, and one scrolling body | Session settings and catalogue help panels, using retained state |
-| **Sidebar** | Named grouped navigation, ordinary Buttons, current-page metadata, and optional whole/group Collapsible state | Grouped Settings sections and the catalogue's collapsible project navigation |
+| **Sidebar** | Named grouped navigation, ordinary Buttons, current-page metadata, optional whole/group Collapsible state, and an optional icon rail | Grouped Settings sections with an icon rail and the catalogue's collapsible project navigation |
 | **Typography** | Named headings with explicit levels, paragraphs with native inline-code text runs, and independently named code elements | Help headings, state-ownership explanations, and the example's source identifier |
 | **CodeBlock** | Read-only multiline code, an exact full-text Copy action, and bounded two-axis scrolling with keyboard access | A JSON snapshot of the retained session settings in Help |
 | **Marker** | One named date/status label between decorative separators, with wrapping text and no focus stop | The currently selected Calendar date above Schedule's notes and recording plan |

@@ -1,14 +1,17 @@
 //! Application-owned navigation composed from TabsState, Button and Collapsible.
 
 use gpui::{
-    AnyElement, App, Div, ElementId, Entity, FontWeight, InteractiveElement as _, IntoElement,
-    ParentElement as _, RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _,
-    StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, rems,
+    AnyElement, AnyView, App, AppContext as _, Context, Div, ElementId, Entity, FontWeight,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, RenderOnce, Role,
+    SharedString, Stateful, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
+    prelude::FluentBuilder as _, rems,
 };
 use gpui_design::{
     Button, Collapsible, CollapsibleContent, CollapsibleState, CollapsibleTrigger, ObservedElement,
     TestSupportExt as _,
 };
+
+use std::rc::Rc;
 
 use super::super::Palette;
 
@@ -43,7 +46,11 @@ pub(crate) struct Sidebar {
     palette: Palette,
     collapse: Option<Entity<CollapsibleState>>,
     groups: Vec<SidebarGroup>,
+    rail: Option<Entity<CollapsibleState>>,
+    icons: Vec<(SharedString, SidebarIcon)>,
 }
+
+type SidebarIcon = Rc<dyn Fn() -> AnyElement>;
 
 struct SidebarGroup {
     label: SharedString,
@@ -77,6 +84,8 @@ impl Sidebar {
             palette,
             collapse: None,
             groups: Vec::new(),
+            rail: None,
+            icons: Vec::new(),
         }
     }
 
@@ -97,6 +106,29 @@ impl Sidebar {
             values: values.into_iter().map(Into::into).collect(),
             collapse: None,
         });
+        self
+    }
+
+    /// Lets the sidebar collapse to an icon rail, like shadcn's `collapsible="icon"`.
+    /// The open state shows labels; the closed state keeps every entry mounted
+    /// as an icon-only Button with the same accessible name, current-page
+    /// metadata and focus, plus a hover tooltip naming it. A trigger after the
+    /// entries toggles the state. Use either this or [`Self::collapsible`].
+    #[allow(dead_code)] // Optional in consumers without an icon rail.
+    pub(crate) fn rail(mut self, state: &Entity<CollapsibleState>) -> Self {
+        self.rail = Some(state.clone());
+        self
+    }
+
+    /// Supplies a decorative icon for the entry with `value`, drawn before its
+    /// label and alone in the rail. Entries without one show their initial.
+    #[allow(dead_code)] // Optional in consumers without icons.
+    pub(crate) fn icon(
+        mut self,
+        value: impl Into<SharedString>,
+        icon: impl Fn() -> AnyElement + 'static,
+    ) -> Self {
+        self.icons.push((value.into(), Rc::new(icon)));
         self
     }
 
@@ -124,6 +156,10 @@ impl Styled for Sidebar {
 
 impl RenderOnce for Sidebar {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+        assert!(
+            self.rail.is_none() || self.collapse.is_none(),
+            "Use either a Sidebar rail or a whole-sidebar disclosure"
+        );
         let model = self.state.read(cx);
         let selected = model.selected_index();
         let items = model.items().to_vec();
@@ -137,6 +173,32 @@ impl RenderOnce for Sidebar {
             grouped_values.push(value.clone());
         }
 
+        let collapsed = self
+            .rail
+            .as_ref()
+            .is_some_and(|rail| !rail.read(cx).is_open());
+        let show_icons = self.rail.is_some() || !self.icons.is_empty();
+        let icon = |value: &SharedString, label: &SharedString| -> AnyElement {
+            match self
+                .icons
+                .iter()
+                .find(|(icon_value, _)| icon_value == value)
+            {
+                Some((_, build)) => build(),
+                None => div()
+                    .size(rems(1.5))
+                    .flex_shrink_0()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded(palette.radius)
+                    .border_1()
+                    .border_color(palette.border)
+                    .text_xs()
+                    .child(label.chars().next().map(String::from).unwrap_or_default())
+                    .into_any_element(),
+            }
+        };
         let button = |index: usize| {
             let item = &items[index];
             let value = item.value().clone();
@@ -162,7 +224,19 @@ impl RenderOnce for Sidebar {
                 .when(is_selected, |button| button.bg(palette.highlight))
                 .when(disabled, |button| button.opacity(0.45))
                 .focus_visible(|style| style.border_1().border_color(palette.accent))
-                .child(div().min_w_0().whitespace_normal().child(label))
+                .when(show_icons, |button| {
+                    button.items_center().gap_2().child(icon(&value, &label))
+                })
+                .when(collapsed, |button| {
+                    let tip = label.clone();
+                    button.justify_center().tooltip(move |_, cx| {
+                        let label = tip.clone();
+                        AnyView::from(cx.new(|_| RailTooltip { label, palette }))
+                    })
+                })
+                .when(!collapsed, |button| {
+                    button.child(div().min_w_0().whitespace_normal().child(label))
+                })
                 .on_click(move |_, window, cx| {
                     state.update(cx, |state, cx| {
                         state.select_value(value.as_ref(), window, cx);
@@ -186,53 +260,56 @@ impl RenderOnce for Sidebar {
                     .expect("Sidebar groups must reference existing item values");
                 button(index)
             });
-            let group_content: AnyElement = if let Some(state) = &group.collapse {
-                Collapsible::new(id, state)
-                    .w_full()
-                    .min_w_0()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(disclosure_trigger(state, group.label.clone(), palette, cx))
-                    .child(
-                        CollapsibleContent::new(state)
-                            .accessibility_label(group.label.clone())
-                            .w_full()
-                            .min_w_0()
-                            .flex()
-                            .flex_col()
-                            .gap_1()
-                            .children(buttons),
-                    )
-                    .into_any_element()
-            } else {
-                div()
-                    .id(id)
-                    .test_support()
-                    .role(Role::Group)
-                    .aria_label(group.label.clone())
-                    .w_full()
-                    .min_w_0()
-                    .flex()
-                    .flex_col()
-                    .gap_1()
-                    .child(
-                        div()
-                            .id((self.id.clone(), format!("group-{index}-heading")))
-                            .test_support()
-                            .role(Role::Heading)
-                            .aria_level(3)
-                            .aria_label(group.label.clone())
-                            .min_w_0()
-                            .px_2()
-                            .py_1()
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(palette.muted)
-                            .child(group.label.clone()),
-                    )
-                    .children(buttons)
-                    .into_any_element()
-            };
+            let group_content: AnyElement =
+                if let Some(state) = group.collapse.as_ref().filter(|_| !collapsed) {
+                    Collapsible::new(id, state)
+                        .w_full()
+                        .min_w_0()
+                        .flex()
+                        .flex_col()
+                        .gap_1()
+                        .child(disclosure_trigger(state, group.label.clone(), palette, cx))
+                        .child(
+                            CollapsibleContent::new(state)
+                                .accessibility_label(group.label.clone())
+                                .w_full()
+                                .min_w_0()
+                                .flex()
+                                .flex_col()
+                                .gap_1()
+                                .children(buttons),
+                        )
+                        .into_any_element()
+                } else {
+                    div()
+                        .id(id)
+                        .test_support()
+                        .role(Role::Group)
+                        .aria_label(group.label.clone())
+                        .w_full()
+                        .min_w_0()
+                        .flex()
+                        .flex_col()
+                        .gap_1()
+                        .when(!collapsed, |group_frame| {
+                            group_frame.child(
+                                div()
+                                    .id((self.id.clone(), format!("group-{index}-heading")))
+                                    .test_support()
+                                    .role(Role::Heading)
+                                    .aria_level(3)
+                                    .aria_label(group.label.clone())
+                                    .min_w_0()
+                                    .px_2()
+                                    .py_1()
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .text_color(palette.muted)
+                                    .child(group.label.clone()),
+                            )
+                        })
+                        .children(buttons)
+                        .into_any_element()
+                };
             content = content.child(group_content);
         }
 
@@ -256,10 +333,48 @@ impl RenderOnce for Sidebar {
             content.into_any_element()
         };
 
+        let rail_trigger = self.rail.as_ref().map(|state| {
+            CollapsibleTrigger::new(state)
+                .accessibility_label(format!("{} labels", self.label))
+                .w_full()
+                .min_w_0()
+                .justify_center()
+                .px_2()
+                .py_2()
+                .rounded(palette.radius)
+                .text_color(palette.muted)
+                .hover(|style| style.bg(palette.highlight))
+                .focus_visible(|style| style.border_1().border_color(palette.accent))
+                .child(if collapsed { "»" } else { "« Collapse" })
+        });
+
         self.base
             .role(Role::Navigation)
             .aria_label(self.label)
+            .when(collapsed, |sidebar| sidebar.w(rems(3.5)))
             .child(content)
+            .children(rail_trigger)
+    }
+}
+
+/// The rail's hover label, drawn by GPUI's tooltip layer.
+struct RailTooltip {
+    label: SharedString,
+    palette: Palette,
+}
+
+impl Render for RailTooltip {
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        div()
+            .px_2()
+            .py_1()
+            .rounded(self.palette.radius)
+            .border_1()
+            .border_color(self.palette.border)
+            .bg(self.palette.surface)
+            .text_color(self.palette.foreground)
+            .text_size(self.palette.font_size)
+            .child(self.label.clone())
     }
 }
 
@@ -289,4 +404,120 @@ fn disclosure_trigger(
         })
         .child(div().flex_1().min_w_0().whitespace_normal().child(label))
         .child(indicator)
+}
+
+#[cfg(all(test, feature = "test-support"))]
+mod tests {
+    use gpui::{Render, Subscription, TestAppContext, px};
+    use gpui_design::{Root, TabItem, TabsState, test_support};
+
+    use super::super::super::Appearance;
+    use super::*;
+
+    struct Sample {
+        tabs: Entity<TabsState>,
+        rail: Entity<CollapsibleState>,
+        _subscriptions: Vec<Subscription>,
+    }
+
+    impl Render for Sample {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            Sidebar::new(
+                "rail-sample",
+                &self.tabs,
+                "Sections",
+                Appearance::Settings.palette(),
+            )
+            .group("Workspace", ["general", "members"])
+            .rail(&self.rail)
+        }
+    }
+
+    #[gpui::test]
+    fn the_rail_keeps_named_current_entries_and_focus_while_narrow(cx: &mut TestAppContext) {
+        cx.update(gpui_design::init);
+        let (root, cx) = cx.add_window_view(|window, cx| {
+            let sample = cx.new(|cx| {
+                let tabs = cx.new(|cx| {
+                    TabsState::new(
+                        [
+                            TabItem::new("general", "General"),
+                            TabItem::new("members", "Members"),
+                        ],
+                        cx,
+                    )
+                });
+                let rail = cx.new(|cx| CollapsibleState::new(cx).default_open(true));
+                let subscriptions = vec![
+                    cx.observe(&tabs, |_, _, cx| cx.notify()),
+                    cx.observe(&rail, |_, _, cx| cx.notify()),
+                ];
+                Sample {
+                    tabs,
+                    rail,
+                    _subscriptions: subscriptions,
+                }
+            });
+            Root::new(sample, window, cx)
+        });
+        let sample = root
+            .read_with(cx, |root, _| root.view().clone())
+            .downcast::<Sample>()
+            .unwrap();
+        let entry =
+            |index: usize| ElementId::from((ElementId::from("rail-sample"), index.to_string()));
+        cx.update(|window, cx| {
+            window.activate_window();
+            window.draw(cx).clear(cx);
+            let expanded = test_support::find(window, &[], &"rail-sample".into())
+                .unwrap()
+                .bounds()
+                .size
+                .width;
+            assert!(expanded > px(100.));
+            assert!(
+                test_support::snapshots(window)
+                    .iter()
+                    .any(|node| node.role() == Some(Role::Heading))
+            );
+            let focus = sample.read(cx).tabs.read(cx).tab_focus_handle(1).clone();
+            focus.focus(window, cx);
+            let rail = sample.read(cx).rail.clone();
+            rail.update(cx, |rail, cx| rail.set_open(false, window, cx));
+        });
+        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, cx| {
+            let frame = test_support::find(window, &[], &"rail-sample".into()).unwrap();
+            assert_eq!(frame.role(), Some(Role::Navigation));
+            assert!(frame.bounds().size.width < px(80.), "the rail is narrow");
+            for (index, label) in [(0, "General"), (1, "Members")] {
+                let button = test_support::find(window, &[], &entry(index)).unwrap();
+                assert_eq!(button.role(), Some(Role::Button));
+                assert_eq!(button.label(), Some(label), "icon-only entries keep names");
+            }
+            assert!(
+                sample
+                    .read(cx)
+                    .tabs
+                    .read(cx)
+                    .tab_focus_handle(1)
+                    .is_focused(window),
+                "collapsing keeps focus on the mounted entry"
+            );
+            let group = test_support::find(window, &[], &"rail-sample".into())
+                .map(|_| {
+                    test_support::snapshots(window)
+                        .into_iter()
+                        .filter(|node| node.role() == Some(Role::Heading))
+                        .count()
+                })
+                .unwrap();
+            assert_eq!(group, 0, "group headings are hidden in the rail");
+            let trigger = test_support::snapshots(window)
+                .into_iter()
+                .find(|node| node.label() == Some("Sections labels"))
+                .unwrap();
+            assert_eq!(trigger.expanded(), Some(false));
+        });
+    }
 }
