@@ -493,6 +493,8 @@ pub struct InputBaseState<M: InputModeKind> {
     /// the previous frame's `last_layout`.
     pub(crate) prepaint_caret_geometry: Option<PrepaintCaretGeometry>,
     pub(super) last_cursor: Option<usize>,
+    /// Where the platform was last told the caret is, for its IME panel.
+    pub(super) ime_anchor: Option<(Point<Pixels>, Option<Bounds<Pixels>>)>,
     /// The input container bounds
     pub(super) input_bounds: Bounds<Pixels>,
     /// The text bounds
@@ -1073,6 +1075,7 @@ impl<M: InputModeKind> InputBaseState<M> {
             last_input_edits: Vec::new(),
             column_select_start: None,
             last_cursor: None,
+            ime_anchor: None,
             scroll_handle: ScrollHandle::new(),
             scroll_bounce: crate::ScrollBounce::enabled_by_default(),
             overscroll: Overscroll::default(),
@@ -1281,12 +1284,17 @@ impl<M: InputModeKind> InputBaseState<M> {
             return (0, 0, None);
         };
         let line_height = last_layout.line_height;
+        let target_row = self.text.offset_to_point(offset.min(self.text.len())).row;
 
         let mut y_offset = last_layout.visible_top;
         for (vi, line) in last_layout.lines.iter().enumerate() {
-            let prev_lines_offset = last_layout.visible_line_byte_offsets[vi];
-            let local_offset = offset.saturating_sub(prev_lines_offset);
-            if let Some(pos) = line.position_for_index(local_offset, last_layout, false) {
+            let buffer_line = last_layout.visible_buffer_lines[vi];
+            if buffer_line == target_row {
+                let prev_lines_offset = last_layout.visible_line_byte_offsets[vi];
+                let local_offset = offset.saturating_sub(prev_lines_offset).min(line.len());
+                let pos = line
+                    .position_for_index(local_offset, last_layout, false)
+                    .unwrap_or_else(|| point(px(0.), px(0.)));
                 let sub_line_index = (pos.y / line_height) as usize;
                 let adjusted_pos = point(pos.x + last_layout.line_number_width, pos.y + y_offset);
                 return (vi, sub_line_index, Some(adjusted_pos));
@@ -4574,6 +4582,10 @@ impl<M: InputModeKind> InputBaseState<M> {
 }
 
 impl<M: InputModeKind> EntityInputHandler for InputBaseState<M> {
+    fn accepts_text_input(&self, window: &mut Window, _cx: &mut Context<Self>) -> bool {
+        self.focus_handle.is_focused(window)
+    }
+
     fn text_for_range(
         &mut self,
         range_utf16: Range<usize>,
@@ -4582,7 +4594,13 @@ impl<M: InputModeKind> EntityInputHandler for InputBaseState<M> {
         _cx: &mut Context<Self>,
     ) -> Option<String> {
         let range = self.range_from_utf16(&range_utf16);
-        adjusted_range.replace(self.range_to_utf16(&range));
+        let range_utf16 = self.range_to_utf16(&range);
+        let utf16_len = range_utf16.len();
+        adjusted_range.replace(range_utf16);
+        if self.masked {
+            // Keep the redacted text aligned with the platform's UTF-16 range.
+            return Some(MASK_CHAR.to_string().repeat(utf16_len));
+        }
         Some(self.text.slice(range).to_string())
     }
 
@@ -4640,9 +4658,17 @@ impl<M: InputModeKind> EntityInputHandler for InputBaseState<M> {
             .map(|range| self.range_to_utf16(&range.into()))
     }
 
-    fn unmark_text(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
+    fn unmark_text(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
         self.ime_marked_range = None;
         self.undo_manager.commit_transaction();
+        // Unmarking keeps the preedit as committed text, which marked edits
+        // never reported. Android keyboards compose every word and often end
+        // with only this call (hiding the keyboard, moving the caret).
+        if self.ime_original_text.as_ref() == Some(&self.text) {
+            self.ime_original_text = None;
+        } else if self.ime_original_text.is_some() && self.emit_events {
+            self.emit_change(cx);
+        }
     }
 
     /// Replace text in range.
@@ -5060,31 +5086,37 @@ impl<M: InputModeKind> EntityInputHandler for InputBaseState<M> {
         let line_number_origin = point(line_number_width, px(0.));
         let mut y_offset = last_layout.visible_top;
 
+        let start_row = self
+            .text
+            .offset_to_point(range.start.min(self.text.len()))
+            .row;
+        let end_row = self
+            .text
+            .offset_to_point(range.end.min(self.text.len()))
+            .row;
+
         for (vi, line) in last_layout.lines.iter().enumerate() {
             if start_origin.is_some() && end_origin.is_some() {
                 break;
             }
 
+            let buffer_line = last_layout.visible_buffer_lines[vi];
             let index_offset = last_layout.visible_line_byte_offsets[vi];
 
-            if start_origin.is_none() {
-                if let Some(p) = line.position_for_index(
-                    range.start.saturating_sub(index_offset),
-                    last_layout,
-                    false,
-                ) {
-                    start_origin = Some(p + point(px(0.), y_offset));
-                }
+            if start_origin.is_none() && buffer_line == start_row {
+                let local_offset = range.start.saturating_sub(index_offset).min(line.len());
+                let p = line
+                    .position_for_index(local_offset, last_layout, false)
+                    .unwrap_or_else(|| point(px(0.), px(0.)));
+                start_origin = Some(p + point(px(0.), y_offset));
             }
 
-            if end_origin.is_none() {
-                if let Some(p) = line.position_for_index(
-                    range.end.saturating_sub(index_offset),
-                    last_layout,
-                    false,
-                ) {
-                    end_origin = Some(p + point(px(0.), y_offset));
-                }
+            if end_origin.is_none() && buffer_line == end_row {
+                let local_offset = range.end.saturating_sub(index_offset).min(line.len());
+                let p = line
+                    .position_for_index(local_offset, last_layout, false)
+                    .unwrap_or_else(|| point(px(0.), px(0.)));
+                end_origin = Some(p + point(px(0.), y_offset));
             }
 
             y_offset += line.size(line_height).height;
@@ -5098,6 +5130,9 @@ impl<M: InputModeKind> EntityInputHandler for InputBaseState<M> {
         let mut end_origin = end_origin.unwrap_or(start_origin);
         // Ensure at same line.
         end_origin.y = start_origin.y;
+        if end_origin.x <= start_origin.x {
+            end_origin.x = start_origin.x + px(1.);
+        }
 
         Some(Bounds::from_corners(
             bounds.origin + line_number_origin + start_origin,
@@ -8399,6 +8434,29 @@ mod tests {
     }
 
     #[gpui::test]
+    fn test_masked_input_redacts_ime_text(cx: &mut TestAppContext) {
+        let input_view = InputView::build(cx, |state| state.masked(true).default_value("a🦀b"));
+        let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
+        cx.update(|window, cx| {
+            input_view.input.update(cx, |state, cx| {
+                let mut adjusted = None;
+                assert_eq!(
+                    state.text_for_range(1..5, &mut adjusted, window, cx),
+                    Some("•••".into())
+                );
+                assert_eq!(adjusted, Some(1..4));
+
+                state.set_masked(false, window, cx);
+                assert_eq!(
+                    state.text_for_range(1..5, &mut adjusted, window, cx),
+                    Some("🦀b".into())
+                );
+                assert_eq!(adjusted, Some(1..4));
+            });
+        });
+    }
+
+    #[gpui::test]
     fn test_masked_input_collapses_word_boundaries(cx: &mut TestAppContext) {
         let input_view = InputView::build(cx, |state| state);
         let mut cx = VisualTestContext::from_window(input_view.window_handle.into(), cx);
@@ -9285,6 +9343,70 @@ mod tests {
         let mut text = String::new();
         replay_input_edits(&mut text, &events[0]);
         assert_eq!(text, "x");
+    }
+
+    /// A platform may end a composition with `unmark_text` alone, keeping the
+    /// preedit as committed text; that is one change, and only one.
+    #[gpui::test]
+    fn unmark_reports_the_kept_preedit_as_one_change(cx: &mut TestAppContext) {
+        let view = InputView::build(cx, |state| state.default_value(""));
+        let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
+        let input = view.input;
+        let observed = Rc::new(std::cell::RefCell::new(Vec::<InputEditsEvent>::new()));
+        let seen = observed.clone();
+        let _subscription = cx.update(|_, cx| {
+            cx.subscribe(&input, move |_, event: &InputEditsEvent, _| {
+                seen.borrow_mut().push(event.clone());
+            })
+        });
+        let step = |cx: &mut VisualTestContext,
+                    f: &dyn Fn(
+            &mut crate::input::InputState,
+            &mut Window,
+            &mut Context<crate::input::InputState>,
+        )| {
+            cx.update(|window, cx| input.update(cx, |state, cx| f(state, window, cx)));
+            observed.borrow().len()
+        };
+
+        let composed = step(&mut cx, &|state, window, cx| {
+            state.replace_and_mark_text_in_range(None, "s", None, window, cx);
+            state.replace_and_mark_text_in_range(None, "slider", None, window, cx);
+        });
+        assert_eq!(composed, 0);
+        assert_eq!(
+            step(&mut cx, &|state, window, cx| state.unmark_text(window, cx)),
+            1
+        );
+        let mut text = String::new();
+        replay_input_edits(&mut text, &observed.borrow()[0]);
+        assert_eq!(text, "slider");
+
+        // Unmarking again, or after a cancelled preedit, changes nothing.
+        let after = step(&mut cx, &|state, window, cx| {
+            state.unmark_text(window, cx);
+            state.replace_and_mark_text_in_range(None, "x", None, window, cx);
+            state.replace_and_mark_text_in_range(None, "", None, window, cx);
+            state.unmark_text(window, cx);
+        });
+        assert_eq!(after, 1);
+        input.read_with(&cx, |state, _| assert_eq!(state.value(), "slider"));
+    }
+
+    /// Text input is accepted only while focused, so a platform ends the
+    /// composition of an input that loses focus.
+    #[gpui::test]
+    fn ime_accepts_text_only_while_focused(cx: &mut TestAppContext) {
+        let view = InputView::build(cx, |state| state);
+        let mut cx = VisualTestContext::from_window(view.window_handle.into(), cx);
+        let input = view.input;
+        cx.update(|window, cx| {
+            assert!(!input.update(cx, |state, cx| state.accepts_text_input(window, cx)));
+            input.update(cx, |state, cx| state.focus(window, cx));
+            assert!(input.update(cx, |state, cx| state.accepts_text_input(window, cx)));
+            cx.focus_handle().focus(window, cx);
+            assert!(!input.update(cx, |state, cx| state.accepts_text_input(window, cx)));
+        });
     }
 
     #[gpui::test]
@@ -12695,6 +12817,49 @@ mod tests {
                     previous.origin.x
                 );
                 assert!(range_bounds.size.width >= px(0.0));
+            });
+        });
+    }
+
+    #[gpui::test]
+    fn test_ime_candidate_bounds_multiline_line_end(cx: &mut TestAppContext) {
+        let input_view =
+            InputView::build_textarea(cx, |state| state.default_value("First line\nSecond line"));
+        let mut visual = VisualTestContext::from_window(input_view.window_handle.into(), cx);
+        visual.update(|window, cx| window.draw(cx).clear(cx));
+
+        visual.update(|window, cx| {
+            input_view.input.update(cx, |state, cx| {
+                state.focus(window, cx);
+                // Position at end of first line ("First line".len() == 10)
+                state.set_cursor_to(10);
+            });
+        });
+        visual.update(|window, cx| window.draw(cx).clear(cx));
+
+        visual.update(|window, cx| {
+            input_view.input.update(cx, |state, cx| {
+                let bounds = state.text_bounds().unwrap_or_default();
+                let candidate_bounds = state.bounds_for_range(10..10, bounds, window, cx).unwrap();
+
+                // Candidate bounds for end of line 0 must be positioned at the end of line 0,
+                // and must not jump to the start of the next line (column 0).
+                let line_number_width = state
+                    .last_layout
+                    .as_ref()
+                    .map(|l| l.line_number_width)
+                    .unwrap_or_default();
+                assert!(
+                    candidate_bounds.origin.x > bounds.origin.x + line_number_width,
+                    "candidate bounds at line end must be past the line start, got {:?}",
+                    candidate_bounds.origin.x
+                );
+
+                let (line_idx, sub_line, pos) = state.line_and_position_for_offset(10);
+                assert_eq!(line_idx, 0);
+                assert_eq!(sub_line, 0);
+                assert!(pos.is_some());
+                assert!(pos.unwrap().x > line_number_width);
             });
         });
     }
