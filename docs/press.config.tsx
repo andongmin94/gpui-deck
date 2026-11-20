@@ -9,7 +9,7 @@ import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
 import { TranslationNotice } from "@/components/translation-notice";
 import { i18n, translations } from "@/lib/i18n";
-import { GIT, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const docs = defineDocs({
   dir: "content",
@@ -49,7 +49,6 @@ export default app.config({
   site: {
     name: SITE_NAME,
     baseUrl: SITE_URL,
-    git: { ...GIT, rootDir: "docs" },
   },
   head({ page }): HeadTag[] {
     if (!page) {
