@@ -79,7 +79,7 @@ export default app.config({
           url: `/${lang}`,
         },
         links: [
-          { text: ko ? "문서" : "Docs", url: `/${lang}/docs`, active: "nested-url" },
+          { text: ko ? "문서" : "Docs", url: `/${lang}/docs`, active: "url" },
           {
             text: ko ? "컴포넌트" : "Components",
             url: `/${lang}/docs/components`,
@@ -98,7 +98,9 @@ export default app.config({
           </HomeLayout>
         );
       }
-      return props.renderDefault();
+      // Open-in-AI links do not fit a component reference.
+      delete props.slots["core:view-options"];
+      return props.renderDefault({ layout: "notebook", layoutProps: { nav: { mode: "top" } } });
     },
   },
 });
