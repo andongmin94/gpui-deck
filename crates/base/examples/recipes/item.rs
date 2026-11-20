@@ -18,7 +18,7 @@ use super::super::Palette;
 /// controls keep their own accessible names and keyboard/pointer behavior.
 /// Media sits before the text and keeps its width; it carries only the
 /// semantics of what you supply, so give an informative image its own name and
-/// leave a decorative glyph as raw text. The header and footer span the full
+/// leave a decorative shape unnamed. The header and footer span the full
 /// width above and below the row. Use a container when a slot needs several
 /// elements.
 #[derive(IntoElement)]
@@ -191,7 +191,7 @@ mod tests {
                     Appearance::Compact.palette(),
                 )
                 .description("Balanced quality")
-                .media(div().size(px(32.)).child("⏺"))
+                .media(div().size(px(32.)))
                 .header("Applies to new recordings")
                 .footer("Recording date: Not scheduled")
                 .action(Button::new("sample-edit").child("Edit")),

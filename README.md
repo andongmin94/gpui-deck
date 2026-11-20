@@ -94,7 +94,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Empty** (`EmptyState`) | Named empty state with description, optional media, and an action slot | No matching commands, with Clear search returning focus to the query |
 | **ButtonGroup** | Connected horizontal/vertical buttons with an optional text slot | Previous month, month label, and next month |
 | **InputGroup** | Shared frame around an existing input, with leading/trailing addons and horizontal/vertical layout | Required name with a default-name action, multiline notes footer, and command-search prefix |
-| **Item** | Named content row with a title, description, optional media, header, footer, and trailing action | Current recording preset with a glyph, scope header, date footer and its existing preview/edit control |
+| **Item** | Named content row with a title, description, optional media, header, footer, and trailing action | Current recording preset with a record dot, scope header, date footer and its existing preview/edit control |
 | **Alert** | Inline title and description, with separate destructive styling and explicit urgency | Informational schedule notice and a missing-name warning after closing invalid settings |
 | **Pagination** | Controlled previous/next buttons, current-page text, and empty/first/last-page boundaries | Moving through the preset catalogue |
 | **DataTable** | Text filtering/sorting, pagination, page/row checkbox selection, column visibility, and stable-ID row actions | Browsing recording presets, selecting rows independently, and applying a preset |
@@ -207,7 +207,7 @@ InputGroup frames the existing editors and addons without adding another text
 input. An empty session name offers Use default, which restores `MiniCast` and
 returns focus to that input; the action is disabled for a non-editable input.
 Closing settings with a missing name shows an inline Alert on the summary.
-Item presents the current preset, a decorative glyph, a scope header and the
+Item presents the current preset, a decorative record dot, a scope header and the
 recording date footer beside its existing HoverCard/edit control.
 The Presets tab uses DataTable and Pagination to browse the same four choices as
 the Combobox. Search, column sorting, and page changes retain the current choice;

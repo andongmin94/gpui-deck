@@ -96,6 +96,8 @@ const RADIAL_WIDTH: f32 = 240.;
 const RADIAL_HEIGHT: f32 = 200.;
 /// The drawn radius as a share of the largest centered circle used for hits.
 const RADIAL_SCALE: f32 = 0.76;
+/// Radar draws smaller so spoke labels fit between its rim and the frame.
+const RADAR_SCALE: f32 = 0.64;
 
 struct PlotSeries {
     heights: Vec<f32>,
@@ -317,7 +319,12 @@ impl Plot {
 
     fn paint_radial(&self, bounds: Bounds<Pixels>, window: &mut Window) {
         let center = bounds.center();
-        let radius = f32::from(bounds.size.width.min(bounds.size.height)) / 2. * RADIAL_SCALE;
+        let scale = if self.kind == ChartKind::Radar {
+            RADAR_SCALE
+        } else {
+            RADIAL_SCALE
+        };
+        let radius = f32::from(bounds.size.width.min(bounds.size.height)) / 2. * scale;
         let direction = self.direction;
         if self.kind == ChartKind::Radar {
             let turn = |index: usize| index as f32 / self.categories as f32;
@@ -461,7 +468,7 @@ impl RenderOnce for ChartRecipe {
         if kind == ChartKind::Radar {
             // Spoke labels sit just outside the drawn radius, inside the hit circle.
             let center = point(px(RADIAL_WIDTH / 2.), px(RADIAL_HEIGHT / 2.));
-            let radius = RADIAL_WIDTH.min(RADIAL_HEIGHT) / 2. * (RADIAL_SCALE + 0.15);
+            let radius = RADIAL_WIDTH.min(RADIAL_HEIGHT) / 2. * (RADAR_SCALE + 0.18);
             plot = plot.children(categories.iter().enumerate().map(|(index, category)| {
                 let at = radial_point(center, radius, model.radar_turn(index), direction);
                 div()

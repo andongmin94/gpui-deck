@@ -168,10 +168,7 @@ The "not supplied" limits that shadcn's official examples cover are now
 implemented within explicit boundaries: typed dates accept ISO and a few English
 relative forms rather than arbitrary natural language, and layout storage stays
 with the application. Touch long press is exercised with simulated GPUI touch
-events only; it has not been tried on touch hardware. Chart and Carousel
-drawing, the Breadcrumb dropdown, the rich Tooltip and the typed-date field have
-headless and composition coverage only; their native visual appearance has not
-been observed.
+events only; it has not been tried on touch hardware.
 
 Existing tests cover the documented selection/overlay contracts, retained-value
 setters, unavailable Calendar days/RTL, table selection/visibility, Sidebar closure,
@@ -186,8 +183,18 @@ layout/body scrolling/focus return. UI Automation names were inspected, correcte
 where absent, and re-observed in Navigation/Selection. These are limited visual
 and metadata observations, not screen-reader speech verification.
 
+A later native Windows pass (one QHD monitor, assumed 100% scaling, light and
+dark presentations) observed the catalogue's line, stacked bar/area, pie,
+donut and radar charts, radar pointer inspection, the Carousel at one and two
+slides per view with Next, and the Breadcrumb ellipsis menu navigating to
+Component APIs. In `two_styles` it observed the Item media/header/footer layout,
+the rich Edit session tooltip, typed dates ("in 3 days" applied; "2026-02-30"
+showed the Field error), and the schedule divider stopping at the plan pane's
+about-96 px floor. That pass moved radar spoke labels clear of the rim and
+replaced a font-dependent record glyph in Item media with a drawn dot.
+
 Still open: actual Korean/CJK IME composition/candidates/commit/cancel, screen-reader
-speech and actions, mixed DPI, and wider desktop visual review. The automation
+speech and actions, mixed DPI, touch hardware, and the remaining desktop visual review. The automation
 tool does not support the Hangul key, so that native flow needs manual Korean
 mode selection. Headless handler tests do
 not establish native IME behavior. The overall goal remains incomplete.

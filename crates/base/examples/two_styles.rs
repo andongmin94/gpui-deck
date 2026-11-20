@@ -2329,7 +2329,8 @@ impl Render for Demo {
                         .child(
                             Item::new("recording-preset-item", "Recording preset", palette)
                                 .description(preset_label)
-                                // Raw glyph text is decorative; the title names the row.
+                                // A drawn record dot is decorative; the title names
+                                // the row. Symbol glyphs depend on installed fonts.
                                 .media(
                                     div()
                                         .size(px(32.))
@@ -2338,8 +2339,9 @@ impl Render for Demo {
                                         .justify_center()
                                         .rounded(palette.radius)
                                         .bg(palette.surface)
-                                        .text_color(palette.accent)
-                                        .child("⏺"),
+                                        .child(
+                                            div().size(px(12.)).rounded_full().bg(palette.accent),
+                                        ),
                                 )
                                 .header(
                                     div()
