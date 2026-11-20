@@ -365,7 +365,9 @@ exposed to assistive technology, and smaller editing and layout fixes; Button
 pointer styles while disabled and secondary presses; Tab into a window with
 nothing focused; the macOS wheel edge stop; and an explicit reduced-motion
 preference. Upstream changes that depend on removed modules, styling, or GPUI
-Fast were not taken.
+Fast were not taken. As upstream main does after v0.10.0 (#4015), Calendar and DatePicker use
+jiff's civil `Date` and `Weekday` instead of Chrono's, which limits Calendar
+dates to years 1 through 9998.
 
 Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gpui-design/blob/main/LICENSE-APACHE). The original
 Longbridge copyright and license notices are retained. Dependencies keep their

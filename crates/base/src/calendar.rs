@@ -1,13 +1,13 @@
 //! Single, multiple, or range selection with independent calendar keyboard focus.
 
-use chrono::{Datelike as _, Days, Months};
-pub use chrono::{NaiveDate, Weekday};
 use gpui::{
     AnyElement, App, Context, ElementId, Entity, EntityId, EventEmitter, FocusHandle,
     InteractiveElement, Interactivity, IntoElement, KeyBinding, ParentElement, RenderOnce, Role,
     SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Subscription, Window,
     actions, canvas, div, prelude::FluentBuilder as _,
 };
+use jiff::ToSpan as _;
+pub use jiff::civil::{Date, Weekday};
 
 use crate::{
     Button, ButtonStyles, Direction, TestSupportExt as _,
@@ -22,6 +22,9 @@ actions!(calendar, [PreviousYear, NextYear]);
 
 const CONTEXT: &str = "Calendar";
 const DAY_COUNT: usize = 42;
+/// The last supported year: jiff represents dates through 9999-12-31, and the
+/// six-week grid of December reaches into the next January.
+const MAX_YEAR: i16 = 9998;
 
 pub(crate) fn init(cx: &mut App) {
     cx.bind_keys([
@@ -46,17 +49,17 @@ pub(crate) fn init(cx: &mut App) {
 /// can be both endpoints. Activating a completed range starts a new one.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CalendarSelection {
-    Single(Option<NaiveDate>),
-    Multiple(Vec<NaiveDate>),
+    Single(Option<Date>),
+    Multiple(Vec<Date>),
     Range {
-        start: Option<NaiveDate>,
-        end: Option<NaiveDate>,
+        start: Option<Date>,
+        end: Option<Date>,
     },
 }
 
 impl CalendarSelection {
     /// The first selected date, or None when selection is empty.
-    pub fn first_date(&self) -> Option<NaiveDate> {
+    pub fn first_date(&self) -> Option<Date> {
         match self {
             Self::Single(date) => *date,
             Self::Multiple(dates) => dates.iter().copied().min(),
@@ -89,39 +92,39 @@ pub(crate) struct CalendarActivation {
 ///
 /// One state belongs to one mounted calendar in one window. Render all dates
 /// returned by [`Self::days`] once, in order. The supported date range is years
-/// 1 through 9999, narrowed by [`Self::bounds`] before mounting if needed.
+/// 1 through 9998, narrowed by [`Self::bounds`] before mounting if needed.
 pub struct CalendarState {
-    month: NaiveDate,
-    cursor: NaiveDate,
+    month: Date,
+    cursor: Date,
     selection: CalendarSelection,
-    minimum: NaiveDate,
-    maximum: NaiveDate,
+    minimum: Date,
+    maximum: Date,
     first_weekday: Weekday,
-    disabled_dates: Option<Box<dyn Fn(NaiveDate) -> bool>>,
+    disabled_dates: Option<Box<dyn Fn(Date) -> bool>>,
     disabled: bool,
     direction: Direction,
     focus: [FocusHandle; DAY_COUNT],
     focus_subscriptions: Vec<Subscription>,
-    reveal: Option<NaiveDate>,
+    reveal: Option<Date>,
 }
 
 impl CalendarState {
     /// Starts with `initial_date` focused in its month, in empty single-date mode.
     ///
     /// # Panics
-    /// `initial_date` must have a year in 1..=9999.
-    pub fn new(initial_date: NaiveDate, cx: &mut Context<Self>) -> Self {
+    /// `initial_date` must have a year in 1..=9998.
+    pub fn new(initial_date: Date, cx: &mut Context<Self>) -> Self {
         assert!(
-            (1..=9999).contains(&initial_date.year()),
-            "Calendar dates must be in years 1..=9999"
+            (1..=MAX_YEAR).contains(&initial_date.year()),
+            "Calendar dates must be in years 1..=9998"
         );
         Self {
-            month: initial_date.with_day(1).unwrap(),
+            month: initial_date.first_of_month(),
             cursor: initial_date,
             selection: CalendarSelection::Single(None),
-            minimum: NaiveDate::from_ymd_opt(1, 1, 1).unwrap(),
-            maximum: NaiveDate::from_ymd_opt(9999, 12, 31).unwrap(),
-            first_weekday: Weekday::Mon,
+            minimum: Date::constant(1, 1, 1),
+            maximum: Date::constant(MAX_YEAR, 12, 31),
+            first_weekday: Weekday::Monday,
             disabled_dates: None,
             disabled: false,
             direction: Direction::Ltr,
@@ -136,16 +139,16 @@ impl CalendarState {
     /// with an out-of-range endpoint is cleared.
     ///
     /// # Panics
-    /// Bounds must be ordered and lie within years 1..=9999.
-    pub fn bounds(mut self, minimum: NaiveDate, maximum: NaiveDate) -> Self {
+    /// Bounds must be ordered and lie within years 1..=9998.
+    pub fn bounds(mut self, minimum: Date, maximum: Date) -> Self {
         assert!(
-            minimum <= maximum && minimum.year() >= 1 && maximum.year() <= 9999,
-            "Calendar bounds must be ordered and within years 1..=9999"
+            minimum <= maximum && minimum.year() >= 1 && maximum.year() <= MAX_YEAR,
+            "Calendar bounds must be ordered and within years 1..=9998"
         );
         self.minimum = minimum;
         self.maximum = maximum;
         self.cursor = self.cursor.clamp(minimum, maximum);
-        self.month = self.cursor.with_day(1).unwrap();
+        self.month = self.cursor.first_of_month();
         self.selection = match self.selection {
             CalendarSelection::Single(date) => {
                 CalendarSelection::Single(date.filter(|date| (minimum..=maximum).contains(date)))
@@ -186,7 +189,7 @@ impl CalendarState {
     /// Disabled dates within the bounds retain keyboard focus so users can
     /// discover unavailable days. They cannot be activated. The predicate should
     /// return the same result for a date throughout this state's lifetime.
-    pub fn disabled_dates(mut self, predicate: impl Fn(NaiveDate) -> bool + 'static) -> Self {
+    pub fn disabled_dates(mut self, predicate: impl Fn(Date) -> bool + 'static) -> Self {
         self.disabled_dates = Some(Box::new(predicate));
         self.selection = match self.selection.clone() {
             CalendarSelection::Single(date) => {
@@ -221,12 +224,12 @@ impl CalendarState {
             .expect("Calendar default_selection must be ordered and selectable inside its bounds");
         if let Some(date) = self.selection.first_date() {
             self.cursor = date;
-            self.month = date.with_day(1).unwrap();
+            self.month = date.first_of_month();
         }
         self
     }
 
-    pub fn focused_date(&self) -> NaiveDate {
+    pub fn focused_date(&self) -> Date {
         self.cursor
     }
 
@@ -235,7 +238,7 @@ impl CalendarState {
     }
 
     /// Whether a date belongs to the current selection, including range interiors.
-    pub fn is_selected(&self, date: NaiveDate) -> bool {
+    pub fn is_selected(&self, date: Date) -> bool {
         match &self.selection {
             CalendarSelection::Single(selected) => *selected == Some(date),
             CalendarSelection::Multiple(dates) => dates.binary_search(&date).is_ok(),
@@ -248,15 +251,15 @@ impl CalendarState {
     }
 
     /// The first day of the currently visible month.
-    pub fn month(&self) -> NaiveDate {
+    pub fn month(&self) -> Date {
         self.month
     }
 
-    pub fn minimum(&self) -> NaiveDate {
+    pub fn minimum(&self) -> Date {
         self.minimum
     }
 
-    pub fn maximum(&self) -> NaiveDate {
+    pub fn maximum(&self) -> Date {
         self.maximum
     }
 
@@ -269,7 +272,7 @@ impl CalendarState {
         let mut weekday = self.first_weekday;
         std::array::from_fn(|_| {
             let current = weekday;
-            weekday = weekday.succ();
+            weekday = weekday.next();
             current
         })
     }
@@ -278,16 +281,16 @@ impl CalendarState {
         self.disabled
     }
 
-    pub fn is_date_disabled(&self, date: NaiveDate) -> bool {
+    pub fn is_date_disabled(&self, date: Date) -> bool {
         self.disabled || !self.date_is_selectable(date)
     }
 
     /// All six weeks in chronological order, starting on [`Self::first_weekday`].
     /// Adjacent dates outside configured bounds
     /// remain visible and disabled, including year 0/10000 at the outer edges.
-    pub fn days(&self) -> [NaiveDate; DAY_COUNT] {
+    pub fn days(&self) -> [Date; DAY_COUNT] {
         let first = self.grid_start();
-        std::array::from_fn(|index| first + Days::new(index as u64))
+        std::array::from_fn(|index| first + (index as i64).days())
     }
 
     /// Focus handle of the current cursor. Read it when moving focus into the
@@ -297,18 +300,18 @@ impl CalendarState {
     }
 
     pub fn can_previous_month(&self) -> bool {
-        !self.disabled && self.month() > self.minimum.with_day(1).unwrap()
+        !self.disabled && self.month() > self.minimum.first_of_month()
     }
 
     pub fn can_next_month(&self) -> bool {
-        !self.disabled && self.month() < self.maximum.with_day(1).unwrap()
+        !self.disabled && self.month() < self.maximum.first_of_month()
     }
 
     /// Displays the preceding month while retaining focus on an external
     /// navigation button. If a day owns focus, it follows the new cursor.
     pub fn previous_month(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.can_previous_month() {
-            self.display_month(self.month - Months::new(1), window, cx);
+            self.display_month(self.month - 1.month(), window, cx);
         }
     }
 
@@ -316,7 +319,7 @@ impl CalendarState {
     /// [`Self::previous_month`]. End-of-month dates clamp to the new month.
     pub fn next_month(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.can_next_month() {
-            self.display_month(self.month + Months::new(1), window, cx);
+            self.display_month(self.month + 1.month(), window, cx);
         }
     }
 
@@ -350,7 +353,7 @@ impl CalendarState {
         &self,
         selection: CalendarSelection,
     ) -> Option<CalendarSelection> {
-        let selectable = |date: &NaiveDate| self.date_is_selectable(*date);
+        let selectable = |date: &Date| self.date_is_selectable(*date);
         match selection {
             CalendarSelection::Single(date) => (!date.is_some_and(|date| !selectable(&date)))
                 .then_some(CalendarSelection::Single(date)),
@@ -385,16 +388,16 @@ impl CalendarState {
         }
     }
 
-    fn grid_start(&self) -> NaiveDate {
+    fn grid_start(&self) -> Date {
         let first = self.month();
-        first - Days::new(self.weekday_offset(first) as u64)
+        first - i64::from(self.weekday_offset(first)).days()
     }
 
-    fn weekday_offset(&self, date: NaiveDate) -> u32 {
-        (date.weekday().num_days_from_monday() + 7 - self.first_weekday.num_days_from_monday()) % 7
+    fn weekday_offset(&self, date: Date) -> i8 {
+        self.first_weekday.until(date.weekday())
     }
 
-    fn date_is_selectable(&self, date: NaiveDate) -> bool {
+    fn date_is_selectable(&self, date: Date) -> bool {
         (self.minimum..=self.maximum).contains(&date)
             && !self
                 .disabled_dates
@@ -402,8 +405,8 @@ impl CalendarState {
                 .is_some_and(|predicate| predicate(date))
     }
 
-    fn index_of(&self, date: NaiveDate) -> usize {
-        let index = (date - self.grid_start()).num_days();
+    fn index_of(&self, date: Date) -> usize {
+        let index = i64::from((date - self.grid_start()).get_days());
         assert!(
             (0..DAY_COUNT as i64).contains(&index),
             "CalendarDay date must belong to CalendarState::days()"
@@ -444,15 +447,9 @@ impl CalendarState {
             .collect();
     }
 
-    fn set_cursor(
-        &mut self,
-        date: NaiveDate,
-        focus: bool,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    fn set_cursor(&mut self, date: Date, focus: bool, window: &mut Window, cx: &mut Context<Self>) {
         let date = date.clamp(self.minimum, self.maximum);
-        let month = date.with_day(1).unwrap();
+        let month = date.first_of_month();
         let changed = self.cursor != date || self.month != month;
         self.cursor = date;
         self.month = month;
@@ -468,7 +465,7 @@ impl CalendarState {
         }
     }
 
-    fn select(&mut self, date: NaiveDate, window: &mut Window, cx: &mut Context<Self>) {
+    fn select(&mut self, date: Date, window: &mut Window, cx: &mut Context<Self>) {
         if self.is_date_disabled(date) {
             return;
         }
@@ -511,29 +508,23 @@ impl CalendarState {
     }
 
     fn move_days(&mut self, days: i64, window: &mut Window, cx: &mut Context<Self>) {
-        let date = if days < 0 {
-            self.cursor - Days::new(days.unsigned_abs())
-        } else {
-            self.cursor + Days::new(days as u64)
-        };
+        // set_cursor clamps to the bounds, which keep a step inside jiff's range.
+        let date = self.cursor + days.days();
         self.set_cursor(date, true, window, cx);
     }
 
     fn move_months(&mut self, months: i32, window: &mut Window, cx: &mut Context<Self>) {
-        let date = if months < 0 {
-            self.cursor
-                .checked_sub_months(Months::new(months.unsigned_abs()))
-        } else {
-            self.cursor.checked_add_months(Months::new(months as u32))
-        }
-        .expect("Calendar month movement stays within Chrono's supported range");
+        // A month step clamps the day to the target month's length.
+        let date = self.cursor + months.months();
         self.set_cursor(date, self.focused_index(window).is_some(), window, cx);
     }
 
-    fn display_month(&mut self, month: NaiveDate, window: &mut Window, cx: &mut Context<Self>) {
+    fn display_month(&mut self, month: Date, window: &mut Window, cx: &mut Context<Self>) {
         let date = month
-            .with_day(self.cursor.day())
-            .unwrap_or_else(|| month + Months::new(1) - Days::new(1));
+            .with()
+            .day(self.cursor.day().min(month.days_in_month()))
+            .build()
+            .expect("the day is clamped to the month's length");
         self.set_cursor(date, self.focused_index(window).is_some(), window, cx);
     }
 
@@ -716,7 +707,7 @@ impl RenderOnce for Calendar {
     }
 }
 
-fn day_id(state: EntityId, date: NaiveDate) -> ElementId {
+fn day_id(state: EntityId, date: Date) -> ElementId {
     (ElementId::from(("calendar-day", state)), date.to_string()).into()
 }
 
@@ -728,13 +719,13 @@ fn day_id(state: EntityId, date: NaiveDate) -> ElementId {
 pub struct CalendarDay {
     button: Button,
     state: Entity<CalendarState>,
-    date: NaiveDate,
+    date: Date,
     label: Option<SharedString>,
 }
 
 impl CalendarDay {
     /// `date` must belong to the enclosing calendar state's visible `days()`.
-    pub fn new(state: &Entity<CalendarState>, date: NaiveDate) -> Self {
+    pub fn new(state: &Entity<CalendarState>, date: Date) -> Self {
         Self {
             button: Button::new(day_id(state.entity_id(), date)),
             state: state.clone(),
@@ -899,7 +890,7 @@ mod tests {
                                                 })
                                                 .w(px(40.))
                                                 .h(px(24.))
-                                                .child(label.to_string())
+                                                .child(short_weekday(label))
                                         },
                                     )),
                             )
@@ -927,22 +918,35 @@ mod tests {
 
     type Changes = Rc<RefCell<Vec<CalendarSelection>>>;
 
-    fn date(year: i32, month: u32, day: u32) -> NaiveDate {
-        NaiveDate::from_ymd_opt(year, month, day).unwrap()
+    /// The application owns weekday labels; Calendar exposes only the order.
+    fn short_weekday(day: Weekday) -> &'static str {
+        match day {
+            Weekday::Monday => "Mon",
+            Weekday::Tuesday => "Tue",
+            Weekday::Wednesday => "Wed",
+            Weekday::Thursday => "Thu",
+            Weekday::Friday => "Fri",
+            Weekday::Saturday => "Sat",
+            Weekday::Sunday => "Sun",
+        }
+    }
+
+    fn date(year: i16, month: i8, day: i8) -> Date {
+        Date::new(year, month, day).unwrap()
     }
 
     fn harness(
         cx: &mut TestAppContext,
-        initial: NaiveDate,
-        bounds: Option<(NaiveDate, NaiveDate)>,
+        initial: Date,
+        bounds: Option<(Date, Date)>,
     ) -> (&mut VisualTestContext, Entity<Harness>, Changes) {
         configured_harness(cx, initial, bounds, |state| state)
     }
 
     fn configured_harness(
         cx: &mut TestAppContext,
-        initial: NaiveDate,
-        bounds: Option<(NaiveDate, NaiveDate)>,
+        initial: Date,
+        bounds: Option<(Date, Date)>,
         configure: impl FnOnce(CalendarState) -> CalendarState + 'static,
     ) -> (&mut VisualTestContext, Entity<Harness>, Changes) {
         cx.update(crate::init);
@@ -1010,13 +1014,13 @@ mod tests {
     fn assert_cursor(
         cx: &mut VisualTestContext,
         view: &Entity<Harness>,
-        expected: NaiveDate,
-        selected: Option<NaiveDate>,
+        expected: Date,
+        selected: Option<Date>,
     ) {
         cx.update(|window, cx| {
             let state = view.read(cx).state.read(cx);
             assert_eq!(state.focused_date(), expected);
-            assert_eq!(state.month(), expected.with_day(1).unwrap());
+            assert_eq!(state.month(), expected.first_of_month());
             assert_eq!(state.selection(), &CalendarSelection::Single(selected));
             assert!(state.focus_handle().is_focused(window));
         });
@@ -1362,24 +1366,26 @@ mod tests {
         let initial = date(2026, 11, 11);
         let (cx, view, changes) = configured_harness(cx, initial, None, |state| {
             state
-                .week_starts_on(Weekday::Sun)
-                .disabled_dates(|date| matches!(date.weekday(), Weekday::Sat | Weekday::Sun))
+                .week_starts_on(Weekday::Sunday)
+                .disabled_dates(|date| {
+                    matches!(date.weekday(), Weekday::Saturday | Weekday::Sunday)
+                })
         });
         cx.update(|_, cx| {
             let state = view.read(cx).state.read(cx);
-            assert_eq!(state.first_weekday(), Weekday::Sun);
+            assert_eq!(state.first_weekday(), Weekday::Sunday);
             assert_eq!(state.days()[0], date(2026, 11, 1));
             assert_eq!(state.days()[41], date(2026, 12, 12));
             assert_eq!(
                 state.weekdays(),
                 [
-                    Weekday::Sun,
-                    Weekday::Mon,
-                    Weekday::Tue,
-                    Weekday::Wed,
-                    Weekday::Thu,
-                    Weekday::Fri,
-                    Weekday::Sat
+                    Weekday::Sunday,
+                    Weekday::Monday,
+                    Weekday::Tuesday,
+                    Weekday::Wednesday,
+                    Weekday::Thursday,
+                    Weekday::Friday,
+                    Weekday::Saturday
                 ]
             );
         });
@@ -1480,6 +1486,32 @@ mod tests {
                 });
                 assert_eq!(state.read(cx).selection(), &expected);
             }
+        });
+    }
+
+    #[gpui::test]
+    fn grids_at_the_supported_range_edges_stay_within_jiff_dates(cx: &mut TestAppContext) {
+        cx.update(|cx| {
+            let last = cx.new(|cx| CalendarState::new(date(MAX_YEAR, 12, 31), cx));
+            let days = last.read(cx).days();
+            assert_eq!(last.read(cx).maximum(), date(MAX_YEAR, 12, 31));
+            assert_eq!(days[DAY_COUNT - 1].year(), MAX_YEAR + 1);
+            assert!(days.contains(&date(MAX_YEAR, 12, 31)));
+
+            // 0001-01-01 is a Monday, so a Sunday-first grid starts in year 0.
+            let first =
+                cx.new(|cx| CalendarState::new(date(1, 1, 1), cx).week_starts_on(Weekday::Sunday));
+            let days = first.read(cx).days();
+            assert_eq!(days[0].year(), 0);
+            assert!(days.contains(&date(1, 1, 1)));
+        });
+    }
+
+    #[gpui::test]
+    #[should_panic(expected = "Calendar dates must be in years 1..=9998")]
+    fn dates_past_the_supported_range_are_rejected(cx: &mut TestAppContext) {
+        cx.update(|cx| {
+            cx.new(|cx| CalendarState::new(date(MAX_YEAR + 1, 1, 1), cx));
         });
     }
 

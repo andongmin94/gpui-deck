@@ -6,28 +6,28 @@ description: "단일/다중/범위 날짜 선택, 분리된 포커스, 날짜 �
 <ComponentPreview name="calendar" height={360} />
 
 `CalendarState`는 `CalendarSelection`, 포커스된 날짜, 보이는 월을 유지합니다.
-`NaiveDate`는 Chrono에서 다시 내보낸 것이며, 두 번째 날짜 모델이나 시간대 변환은
+`Date`는 jiff의 달력 날짜(`jiff::civil::Date`)를 다시 내보낸 것이며, 두 번째 날짜 모델이나 시간대 변환은
 도입하지 않습니다. 상태는 한 번만 생성합니다.
 
 ```rust
 let calendar = cx.new(|cx| {
-    let initial = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+    let initial = Date::new(2026, 11, 9).unwrap();
     CalendarState::new(initial, cx)
         .bounds(
-            NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
+            Date::new(2026, 1, 1).unwrap(),
+            Date::new(2027, 12, 31).unwrap(),
         )
         .default_selection(CalendarSelection::Single(Some(initial)))
 });
 ```
 
 `default_selection`이 없으면 선택은 `CalendarSelection::Single(None)`으로 시작합니다.
-기본 범위는 1–9999년이며, `bounds`는 마운트 전에 선택 가능한 포함 범위를 좁힙니다.
+기본 범위는 1–9998년이며(9998년 12월의 6주 그리드도 jiff 범위 안에 들어옵니다), `bounds`는 마운트 전에 선택 가능한 포함 범위를 좁힙니다.
 그리드는 `days()`를 통해 완전한 6주를 노출하며, 기본적으로 월요일부터 시작합니다.
 인접한 달의 날짜도 계속 보이고, 설정된 범위를 벗어난 날짜는 비활성화됩니다.
 
 마운트 전에 `.week_starts_on(Weekday::Sun)`을 쓰면 그리드와 Home/End 경계가 바뀝니다.
-헤더 순서를 맞추려면 `weekdays()`를 사용합니다. `Weekday`는 `NaiveDate`와 함께
+헤더 순서를 맞추려면 `weekdays()`를 사용합니다. `Weekday`는 `Date`와 함께
 다시 내보내집니다. `.disabled_dates(|date| ...)`는 주말이나 예약된 날짜 같은
 애플리케이션 규칙을 제공합니다. 이 규칙은 기존 단일/다중 값을 걸러 내고, 사용할 수 없는
 끝점을 가진 범위는 지웁니다. 기본값과 프로그래밍 방식 설정자는 사용할 수 없는
@@ -78,8 +78,8 @@ Calendar는 `DirectionProvider`를 상속하거나 `.direction(Direction::Rtl)`�
 계산합니다. 레이블과 텍스트 서식은 애플리케이션이 소유하며, Selection 카탈로그가
 이 레이아웃을 보여 줍니다.
 
-`CalendarSelection`은 `Multiple(Vec<NaiveDate>)`와
-`Range { start: Option<NaiveDate>, end: Option<NaiveDate> }`도 지원합니다. 빈 범위는
+`CalendarSelection`은 `Multiple(Vec<Date>)`와
+`Range { start: Option<Date>, end: Option<Date> }`도 지원합니다. 빈 범위는
 `.default_selection(CalendarSelection::Range { start: None, end: None })`으로 설정합니다.
 첫 번째 활성화는 시작을 고르고, 두 번째 활성화는 역순이나 같은 날 선택을 포함해
 순서가 정렬된 포함 끝점을 완성합니다. 완성된 범위를 다시 활성화하면 새 부분 범위가

@@ -33,7 +33,7 @@ Label 使用目标已有的 FocusHandle 实现点击后聚焦；
 固定版本的 GPUI API 没有在同级元素之间提供原生的 labelled-by 关系。
 Tooltip 复用 Button 和 GPUI 原生的提示层，同时保留悬停/焦点时的可见性。
 HoverCard 把 Button 与 Popup 定位以及保留的悬停/焦点生命周期结合起来，且不会从触发器夺走焦点。
-Calendar 组合 Button 用于日期激活，并使用已锁定的 Chrono 日期类型进行公历运算。
+Calendar 组合 Button 用于日期激活，并使用 jiff 的民用日期类型进行公历运算。
 DatePicker 把该 Calendar 与 Popover 的焦点和关闭生命周期协调起来；
 它没有重复的日期值或弹出引擎。Resizable 使用 GPUI 的 flex 布局和原生拖动，实现保留状态的多面板分组。
 Table 使用共享的 GPUI 列轨道和原生表格语义。ScrollArea 把 GPUI 的 ScrollHandle 视口

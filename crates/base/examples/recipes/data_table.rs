@@ -9,8 +9,8 @@ use gpui::{
     prelude::FluentBuilder as _, px,
 };
 use gpui_design::{
-    Button, Checkbox, CheckboxState, DropdownMenu, Field, Input, InputBase, InputState, MenuEvent,
-    MenuItem, MenuOption, MenuState, NaiveDate, ScrollArea, ScrollbarAxis, Table, TableCaption,
+    Button, Checkbox, CheckboxState, Date, DropdownMenu, Field, Input, InputBase, InputState,
+    MenuEvent, MenuItem, MenuOption, MenuState, ScrollArea, ScrollbarAxis, Table, TableCaption,
     TableCell, TableColumn, TableRow,
 };
 
@@ -45,7 +45,7 @@ impl DataTableColumn {
 enum SortKey {
     Text(String),
     Number(f64),
-    Date(NaiveDate),
+    Date(Date),
 }
 
 impl SortKey {
@@ -94,7 +94,7 @@ impl DataTableCell {
     }
 
     /// A calendar date shown as formatted text, such as `Dec 10, 2026`.
-    pub(crate) fn date(text: impl Into<SharedString>, value: NaiveDate) -> Self {
+    pub(crate) fn date(text: impl Into<SharedString>, value: Date) -> Self {
         Self {
             text: text.into(),
             key: SortKey::Date(value),
@@ -921,7 +921,7 @@ mod tests {
     fn numbers_and_dates_sort_by_value_not_display_text(cx: &mut TestAppContext) {
         let window = cx.add_empty_window();
         window.update(|window, cx| {
-            let date = |day| NaiveDate::from_ymd_opt(2026, 12, day).unwrap();
+            let date = |day| Date::new(2026, 12, day).unwrap();
             let table = cx.new(|cx| {
                 DataTableState::new(
                     [

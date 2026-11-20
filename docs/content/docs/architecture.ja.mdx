@@ -20,7 +20,7 @@ description: "レンダリングランタイム、ヘッドレスな動作、ア
 上に挙げたコントロールは動作レイヤーに属します。複合コントロールはそのレイヤーを再利用します。Toggle と Collapsible のトリガーは Button を合成し、ToggleGroup は Toggle を合成し、AlertDialog は Dialog を合成します。DropdownMenu と ContextMenu は MenuState、MenuItem、MenuOption、MenuEvent を共有します。それらに共通するメニューの動作は Popover を合成し、異なるのはトリガーのインタラクションと要求される配置だけです。
 `MenuOption::checked(bool)`、`check_state(CheckboxState)`、`radio_checked(bool)` は、アプリケーションが所有する状態をネイティブのメニューセマンティクスに投影します。`MenuSubmenu` はリーフの起動をルートの MenuState 経由でルーティングし、別の選択ストアは追加しません。
 Command はクエリに Input を再利用し、Dialog 内にホストできます。Combobox は Command のフィルタリング、結果カーソル、スクロール、起動を再利用し、単一または複数の確定値と、Popup が配置するサジェスト表示面を備えます。Textarea は既存の複数行編集状態を描画します。Field は関連するテキストを、そのネイティブ入力のセマンティクスに投影します。Label はクリックでフォーカスするために対象の既存の FocusHandle を使用します。固定された GPUI API は、兄弟要素間のネイティブな labelled-by 関係を公開していません。Tooltip は Button と GPUI のネイティブなツールチップレイヤーを再利用しつつ、ホバーとフォーカスによる可視性を保持します。HoverCard は Button と Popup の配置、および保持されるホバー/フォーカスのライフサイクルを組み合わせ、トリガーからフォーカスを奪いません。
-Calendar は日の起動に Button を合成し、グレゴリオ暦の計算にはすでにロックされている Chrono の日付型を使用します。DatePicker はその Calendar を Popover のフォーカスと解除のライフサイクルと連携させ、重複する日付値やポップアップエンジンは持ちません。Resizable は GPUI の flex レイアウトとネイティブのドラッグを使い、保持される複数パネルのグループを実現します。
+Calendar は日の起動に Button を合成し、グレゴリオ暦の計算にはjiff の暦日付型を使用します。DatePicker はその Calendar を Popover のフォーカスと解除のライフサイクルと連携させ、重複する日付値やポップアップエンジンは持ちません。Resizable は GPUI の flex レイアウトとネイティブのドラッグを使い、保持される複数パネルのグループを実現します。
 Table は共有される GPUI の列トラックとネイティブのテーブルセマンティクスを使用します。ScrollArea は GPUI の ScrollHandle ビューポートを、保持される Scrollbar の実装と合成し、別のスクロールエンジンは持ちません。
 Breadcrumb はネイティブのナビゲーション/リスト構造と現在のページのメタデータを提供します。コンシューマーは通常の Button を組み合わせ、その遷移先のコールバックを所有します。
 外観はアプリケーションに属します。ローカルの `gpui-design-cli` は、選択したプレゼンテーションレシピとその依存関係を、コンシューマーが所有するモジュールにコピーします。リモートレジストリや、別途公開されるスタイル付きコンポーネントパッケージは提供されません。

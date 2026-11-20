@@ -172,24 +172,24 @@ impl EventEmitter<DatePickerEvent> for DatePickerState {}
 /// `today`. Returns `None` for anything else, including impossible dates. Pass a
 /// result to [`DatePickerState::set_selection`], which still applies the
 /// Calendar's bounds and disabled-date predicate.
-pub fn parse_date_text(text: &str, today: chrono::NaiveDate) -> Option<chrono::NaiveDate> {
+pub fn parse_date_text(text: &str, today: crate::Date) -> Option<crate::Date> {
     let text = text.trim().to_lowercase();
     let words: Vec<&str> = text.split_whitespace().collect();
-    let offset = |count: &str, unit: &str| -> Option<chrono::Days> {
-        let count: u64 = count.parse().ok()?;
+    let offset = |count: &str, unit: &str| -> Option<jiff::Span> {
+        let count: i64 = count.parse().ok()?;
         let days = match unit {
             "day" | "days" => count,
             "week" | "weeks" => count.checked_mul(7)?,
             _ => return None,
         };
-        Some(chrono::Days::new(days))
+        jiff::Span::new().try_days(days).ok()
     };
     match words.as_slice() {
         ["today"] => Some(today),
-        ["tomorrow"] => today.checked_add_days(chrono::Days::new(1)),
-        ["yesterday"] => today.checked_sub_days(chrono::Days::new(1)),
-        ["in", count, unit] => today.checked_add_days(offset(count, unit)?),
-        [count, unit, "ago"] => today.checked_sub_days(offset(count, unit)?),
+        ["tomorrow"] => today.tomorrow().ok(),
+        ["yesterday"] => today.yesterday().ok(),
+        ["in", count, unit] => today.checked_add(offset(count, unit)?).ok(),
+        [count, unit, "ago"] => today.checked_sub(offset(count, unit)?).ok(),
         [date] => {
             let parts: Vec<&str> = date.split(['-', '/', '.']).collect();
             let [year, month, day] = parts.as_slice() else {
@@ -203,11 +203,7 @@ pub fn parse_date_text(text: &str, today: chrono::NaiveDate) -> Option<chrono::N
             {
                 return None;
             }
-            chrono::NaiveDate::from_ymd_opt(
-                year.parse().ok()?,
-                month.parse().ok()?,
-                day.parse().ok()?,
-            )
+            crate::Date::new(year.parse().ok()?, month.parse().ok()?, day.parse().ok()?).ok()
         }
         _ => None,
     }
@@ -299,7 +295,6 @@ impl RenderOnce for DatePicker {
 mod tests {
     use std::{cell::RefCell, rc::Rc};
 
-    use chrono::Datelike as _;
     use gpui::{
         InteractiveElement as _, KeyDownEvent, KeyUpEvent, Keystroke, Modifiers,
         ParentElement as _, Render, Role, StatefulInteractiveElement as _, TestAppContext,
@@ -307,7 +302,7 @@ mod tests {
     };
 
     use super::*;
-    use crate::{Calendar, CalendarDay, NaiveDate, Root};
+    use crate::{Calendar, CalendarDay, Date, Root};
 
     struct Harness {
         calendar: Entity<CalendarState>,
@@ -397,8 +392,8 @@ mod tests {
         }
     }
 
-    fn date(year: i32, month: u32, day: u32) -> NaiveDate {
-        NaiveDate::from_ymd_opt(year, month, day).unwrap()
+    fn date(year: i16, month: i8, day: i8) -> Date {
+        Date::new(year, month, day).unwrap()
     }
 
     fn harness(cx: &mut TestAppContext) -> (&mut VisualTestContext, Entity<Harness>) {
@@ -483,13 +478,13 @@ mod tests {
         settle(cx);
     }
 
-    fn assert_open_at(cx: &mut VisualTestContext, view: &Entity<Harness>, date: NaiveDate) {
+    fn assert_open_at(cx: &mut VisualTestContext, view: &Entity<Harness>, date: Date) {
         cx.update(|window, cx| {
             let view = view.read(cx);
             assert!(view.picker.read(cx).is_open(cx));
             let calendar = view.calendar.read(cx);
             assert_eq!(calendar.focused_date(), date);
-            assert_eq!(calendar.month(), date.with_day(1).unwrap());
+            assert_eq!(calendar.month(), date.first_of_month());
             assert!(calendar.focus_handle().is_focused(window));
         });
     }
@@ -826,8 +821,8 @@ mod tests {
 
     #[test]
     fn typed_dates_accept_iso_and_relative_english_forms() {
-        let today = NaiveDate::from_ymd_opt(2026, 11, 20).unwrap();
-        let date = |y, m, d| NaiveDate::from_ymd_opt(y, m, d);
+        let today = Date::constant(2026, 11, 20);
+        let date = |y, m, d| Date::new(y, m, d).ok();
         for (text, expected) in [
             ("2026-12-01", date(2026, 12, 1)),
             (" 2026/1/5 ", date(2026, 1, 5)),
