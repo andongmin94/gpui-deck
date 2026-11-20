@@ -1,7 +1,7 @@
 export const appName = 'GPUI Design';
 export const docsRoute = '/docs';
-/** GitHub Pages serves the site under the repository name. */
-export const basePath = '/gpui-design';
+/** The site is served from the root of its own domain. */
+export const basePath = '';
 
 export const gitConfig = {
   user: 'andongmin94',

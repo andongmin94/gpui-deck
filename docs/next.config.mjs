@@ -5,7 +5,6 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   output: 'export',
-  basePath: '/gpui-design',
   trailingSlash: true,
   images: { unoptimized: true },
   reactStrictMode: true,
