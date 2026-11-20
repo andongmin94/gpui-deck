@@ -393,9 +393,34 @@ popup and updates Calendar without emitting Change. Invalid values leave the
 picker unchanged. Applications can use this same setter for preset Buttons; the
 Selection catalogue supplies a complete range preset.
 
+### Typed dates
+
+`parse_date_text(text, today)` reads one typed date for an ordinary Input beside
+the picker. It accepts `YYYY-MM-DD` with `-`, `/` or `.` separators and the
+case-insensitive English forms `today`, `tomorrow`, `yesterday`, `in N days|weeks`
+and `N days|weeks ago`, singular units included. The library has no clock, so the
+application passes `today`. Impossible dates and other text return `None`.
+Apply a result with `set_selection`, which still enforces the Calendar's bounds
+and disabled dates:
+
+```rust,ignore
+let date = parse_date_text(&input.read(cx).value(), today);
+let applied = date.is_some_and(|date| {
+    picker.update(cx, |picker, cx| {
+        picker.set_selection(CalendarSelection::Single(Some(date)), window, cx)
+    })
+});
+```
+
+The Schedule example adds a "Type a date" Field after the picker. Enter applies
+the text relative to the example's fixed date, rewrites it as ISO text, and an
+unreadable or unavailable date shows a Field error until the next edit. The
+picker and field stay separate Tab stops.
+
 The picker supports single, multiple and range dates with an application-formatted
-Button trigger. It does not parse text, fetch presets, or add
-locale/timezone rules beyond the Calendar contract.
+Button trigger. It does not fetch presets, parse other languages or free-form
+phrases such as "next Friday", or add locale/timezone rules beyond the Calendar
+contract.
 
 ## Checkbox and Switch
 

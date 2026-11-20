@@ -3258,6 +3258,59 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
             Some("Selected date · 2026-12-10")
         );
     });
+    // The typed-date field follows the picker. An impossible date reports an
+    // error without changing the selection; a relative date applies through
+    // the same picker setter and is rewritten as ISO text.
+    cx.simulate_keystrokes("tab");
+    draw(cx);
+    cx.simulate_input("2026-02-30");
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|window, cx| {
+        let demo = demo.read(cx);
+        assert!(demo.typed_date.focus_handle(cx).is_focused(window));
+        assert!(demo.typed_date_invalid);
+        assert_eq!(
+            demo.calendar.read(cx).selection().first_date(),
+            NaiveDate::from_ymd_opt(2026, 12, 10)
+        );
+    });
+    for _ in 0.."2026-02-30".len() {
+        cx.simulate_keystrokes("backspace");
+    }
+    cx.update(|_, cx| {
+        assert!(
+            !demo.read(cx).typed_date_invalid,
+            "editing clears the error"
+        )
+    });
+    cx.simulate_input("in 5 weeks");
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|_, cx| {
+        let demo = demo.read(cx);
+        assert!(!demo.typed_date_invalid);
+        assert_eq!(demo.typed_date.read(cx).value().as_ref(), "2026-12-14");
+        assert_eq!(
+            demo.calendar.read(cx).selection().first_date(),
+            NaiveDate::from_ymd_opt(2026, 12, 14)
+        );
+    });
+    cx.simulate_input("x");
+    for _ in 0.."2026-12-14x".len() {
+        cx.simulate_keystrokes("backspace");
+    }
+    cx.simulate_input("in 31 days");
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|_, cx| {
+        let demo = demo.read(cx);
+        assert!(!demo.typed_date_invalid);
+        assert_eq!(
+            demo.calendar.read(cx).selection().first_date(),
+            NaiveDate::from_ymd_opt(2026, 12, 10)
+        );
+    });
     cx.simulate_keystrokes("tab");
     draw(cx);
     cx.simulate_input("Prepare the workshop demo.");
@@ -3457,7 +3510,8 @@ fn schedule_marker_tracks_selection_at_narrow_widths_without_adding_focus(cx: &m
                 assert_eq!(demo.fields_scroll.offset().x, px(0.));
             });
         }
-        cx.simulate_keystrokes("tab");
+        // The typed-date field sits between the picker and the notes.
+        cx.simulate_keystrokes("tab tab");
         draw(cx);
         cx.update(|window, cx| assert!(demo.read(cx).notes.focus_handle(cx).is_focused(window)));
     }

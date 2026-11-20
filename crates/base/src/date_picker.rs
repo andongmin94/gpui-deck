@@ -163,6 +163,56 @@ impl DatePickerState {
 
 impl EventEmitter<DatePickerEvent> for DatePickerState {}
 
+/// Reads one typed date for a text field beside a picker.
+///
+/// Accepts `YYYY-MM-DD` with `-`, `/` or `.` separators, and these
+/// case-insensitive English forms relative to `today`: `today`, `tomorrow`,
+/// `yesterday`, `in N days` / `in N weeks`, and `N days ago` / `N weeks ago`
+/// (singular units too). The library has no clock, so the application supplies
+/// `today`. Returns `None` for anything else, including impossible dates. Pass a
+/// result to [`DatePickerState::set_selection`], which still applies the
+/// Calendar's bounds and disabled-date predicate.
+pub fn parse_date_text(text: &str, today: chrono::NaiveDate) -> Option<chrono::NaiveDate> {
+    let text = text.trim().to_lowercase();
+    let words: Vec<&str> = text.split_whitespace().collect();
+    let offset = |count: &str, unit: &str| -> Option<chrono::Days> {
+        let count: u64 = count.parse().ok()?;
+        let days = match unit {
+            "day" | "days" => count,
+            "week" | "weeks" => count.checked_mul(7)?,
+            _ => return None,
+        };
+        Some(chrono::Days::new(days))
+    };
+    match words.as_slice() {
+        ["today"] => Some(today),
+        ["tomorrow"] => today.checked_add_days(chrono::Days::new(1)),
+        ["yesterday"] => today.checked_sub_days(chrono::Days::new(1)),
+        ["in", count, unit] => today.checked_add_days(offset(count, unit)?),
+        [count, unit, "ago"] => today.checked_sub_days(offset(count, unit)?),
+        [date] => {
+            let parts: Vec<&str> = date.split(['-', '/', '.']).collect();
+            let [year, month, day] = parts.as_slice() else {
+                return None;
+            };
+            if year.len() != 4
+                || month.is_empty()
+                || month.len() > 2
+                || day.is_empty()
+                || day.len() > 2
+            {
+                return None;
+            }
+            chrono::NaiveDate::from_ymd_opt(
+                year.parse().ok()?,
+                month.parse().ok()?,
+                day.parse().ok()?,
+            )
+        }
+        _ => None,
+    }
+}
+
 /// An unstyled Button trigger and a date-selection popup.
 ///
 /// The application supplies formatted trigger text, the popup surface, month
@@ -772,5 +822,30 @@ mod tests {
                 [CalendarSelection::Single(Some(date(2024, 2, 2)))]
             );
         });
+    }
+
+    #[test]
+    fn typed_dates_accept_iso_and_relative_english_forms() {
+        let today = NaiveDate::from_ymd_opt(2026, 11, 20).unwrap();
+        let date = |y, m, d| NaiveDate::from_ymd_opt(y, m, d);
+        for (text, expected) in [
+            ("2026-12-01", date(2026, 12, 1)),
+            (" 2026/1/5 ", date(2026, 1, 5)),
+            ("2026.02.28", date(2026, 2, 28)),
+            ("Today", Some(today)),
+            ("tomorrow", date(2026, 11, 21)),
+            ("yesterday", date(2026, 11, 19)),
+            ("in 2 days", date(2026, 11, 22)),
+            ("In 1 week", date(2026, 11, 27)),
+            ("3 days ago", date(2026, 11, 17)),
+            ("2 weeks ago", date(2026, 11, 6)),
+            ("2026-02-30", None),
+            ("26-02-03", None),
+            ("in two days", None),
+            ("next friday", None),
+            ("", None),
+        ] {
+            assert_eq!(parse_date_text(text, today), expected, "{text:?}");
+        }
     }
 }

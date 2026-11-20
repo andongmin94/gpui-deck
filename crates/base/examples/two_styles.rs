@@ -26,6 +26,7 @@ use gpui_design::{
     TestSupportExt as _, TestTextExt as _, Textarea, TextareaState, Toggle, ToggleGroup,
     ToggleGroupState, ToggleItem, ToggleOption, Tooltip, TooltipState,
     input::{InputAccessibility, InputEditorStyle, InputEvent, InputState},
+    parse_date_text,
 };
 
 #[path = "recipes/mod.rs"]
@@ -57,6 +58,8 @@ pub(crate) struct Demo {
     pub(crate) settings_trace: Entity<CollapsibleState>,
     pub(crate) calendar: Entity<CalendarState>,
     pub(crate) date_picker: Entity<DatePickerState>,
+    pub(crate) typed_date: Entity<InputState>,
+    pub(crate) typed_date_invalid: bool,
     pub(crate) schedule_split: Entity<ResizableState>,
     pub(crate) schedule_scroll: ScrollHandle,
     pub(crate) commands: Entity<CommandState>,
@@ -231,6 +234,15 @@ impl Demo {
                 .default_selection(CalendarSelection::Single(Some(initial)))
         });
         let date_picker = cx.new(|cx| DatePickerState::new(&calendar, window, cx));
+        let typed_date = cx.new(|cx| {
+            let mut state = InputState::new(window, cx).placeholder("2026-11-20 or in 3 days");
+            state.set_editor_style(Self::input_style(palette));
+            state.set_accessibility(
+                InputAccessibility::new(Some(Role::TextInput))
+                    .with_placeholder(Some("2026-11-20 or in 3 days".into())),
+            );
+            state
+        });
         let schedule_split = cx.new(|cx| {
             ResizableState::new(
                 Axis::Vertical,
@@ -294,6 +306,41 @@ impl Demo {
                     cx.notify();
                 }
             }),
+            cx.observe(&typed_date, |_, _, cx| cx.notify()),
+            cx.subscribe_in(&typed_date, window, |this, input, event, window, cx| {
+                match event {
+                    InputEvent::PressEnter {
+                        secondary: false,
+                        shift: false,
+                    } => {
+                        // The example treats its initial Calendar date as today.
+                        let today = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+                        let date = parse_date_text(&input.read(cx).value(), today);
+                        let applied = date.is_some_and(|date| {
+                            this.calendar.read(cx).selection().first_date() == Some(date)
+                                || this.date_picker.update(cx, |picker, cx| {
+                                    picker.set_selection(
+                                        CalendarSelection::Single(Some(date)),
+                                        window,
+                                        cx,
+                                    )
+                                })
+                        });
+                        this.typed_date_invalid = !applied;
+                        if let (true, Some(date)) = (applied, date) {
+                            input.update(cx, |input, cx| {
+                                input.set_value(date.format("%Y-%m-%d").to_string(), window, cx)
+                            });
+                        }
+                        cx.notify();
+                    }
+                    InputEvent::Change if this.typed_date_invalid => {
+                        this.typed_date_invalid = false;
+                        cx.notify();
+                    }
+                    _ => {}
+                }
+            }),
             cx.observe(&preset, |_, _, cx| cx.notify()),
             cx.observe(&preset_table, |_, _, cx| cx.notify()),
             cx.observe(&edit_hint, |_, _, cx| cx.notify()),
@@ -349,6 +396,8 @@ impl Demo {
             settings_trace,
             calendar,
             date_picker,
+            typed_date,
+            typed_date_invalid: false,
             schedule_split,
             schedule_scroll: ScrollHandle::new(),
             commands,
@@ -624,6 +673,41 @@ impl Demo {
                 )
             })
             .content(self.calendar_content(palette, window, cx));
+        let typed_focused = self.typed_date.focus_handle(cx).is_focused(window);
+        let typed_date = Field::new("typed-date-field", &self.typed_date, "Type a date")
+            .description("YYYY-MM-DD, today, tomorrow, in 3 days or 2 weeks ago. Enter applies it.")
+            .error(
+                self.typed_date_invalid
+                    .then(|| "Enter an available date in 2026–2027, such as 2026-11-20.".into()),
+            )
+            .styles(|styles| {
+                styles
+                    .description(|style| style.text_sm().text_color(palette.muted))
+                    .error(|style| style.text_sm().text_color(palette.error))
+            })
+            .flex()
+            .flex_col()
+            .gap_1()
+            .child(
+                InputBase::new("typed-date")
+                    .role(None::<Role>)
+                    .semantic_owner::<Input>(self.typed_date.entity_id())
+                    .focused(typed_focused)
+                    .h(palette.control_height)
+                    .w_full()
+                    .px_3()
+                    .border_1()
+                    .border_color(if self.typed_date_invalid {
+                        palette.error
+                    } else if typed_focused {
+                        palette.accent
+                    } else {
+                        palette.border
+                    })
+                    .rounded(palette.radius)
+                    .bg(palette.field)
+                    .child(Input::new(&self.typed_date)),
+            );
         let notes = Field::new("schedule-notes-field", &self.notes, "Session notes")
             .description("The same notes are available in Preferences.")
             .styles(|styles| styles.description(|style| style.text_sm().text_color(palette.muted)))
@@ -712,6 +796,7 @@ impl Demo {
                 palette,
             ))
             .child(picker)
+            .child(typed_date)
             .child(Marker::new("schedule-marker", marker_label, palette))
             .child(
                 Resizable::new("schedule-panes", &self.schedule_split)

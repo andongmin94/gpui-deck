@@ -101,7 +101,7 @@ pub use command::{
 };
 pub use component_traits::Selectable;
 pub use context_menu::ContextMenu;
-pub use date_picker::{DatePicker, DatePickerEvent, DatePickerState};
+pub use date_picker::{DatePicker, DatePickerEvent, DatePickerState, parse_date_text};
 pub use dialog::{
     Dialog, DialogBackdrop, DialogChangeReason, DialogClose, DialogDescription, DialogEvent,
     DialogPopup, DialogState, DialogTitle,

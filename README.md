@@ -35,7 +35,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Select** | Fixed single selection, buffered typeahead, Home/End and arrow navigation, disabled options, commit, and focus | Trigger, popup content, and option rendering |
 | **Combobox** | Editable single/multiple selection, grouped search results, replaceable options, keyboard/pointer commit, and draft cancellation | Query frame, suggestion surface, result rows, selected chips, and empty state |
 | **Calendar** | Single/multiple/range date selection, separate focus, date-disabled rules, configurable week start, bounded navigation and RTL | Month controls, weekday/date labels, grid layout, and day styling |
-| **DatePicker** | Calendar selection inside Popover, selected-date or retained-cursor initial focus, single/complete-range closing, dismissal, and disabled state | Formatted trigger, calendar/month controls, presets, and popup surface |
+| **DatePicker** | Calendar selection inside Popover, selected-date or retained-cursor initial focus, single/complete-range closing, dismissal, disabled state, and typed ISO/relative date parsing | Formatted trigger, calendar/month controls, presets, and popup surface |
 | **Slider** | One or more ordered numeric values, bounded steps, per-thumb focus and accessibility, keyboard/pointer adjustment, disabled state, vertical and RTL geometry | Track, fill, thumbs, sizing, and state styling |
 | **Progress** | Controlled percentage or indeterminate progress, accessible name and numeric range | Track, fill, label, and any animation |
 | **Breadcrumb** | Named navigation, ordered path items, and native current-page metadata | Path labels, ancestor actions, collapsed DropdownMenu items, separators, layout, and styling |
