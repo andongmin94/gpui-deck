@@ -43,10 +43,10 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Accordion** | Single or multiple open sections, header navigation, disabled items, and focused-panel closure | Header, indicator, panel contents, and layout |
 | **Collapsible** | One disclosure, active-only content, disabled trigger, and focus on content closure | Trigger content, indicator, region contents, and layout |
 | **Tooltip** | Plain-text native description with optional noninteractive rich content on Button hover/focus, delayed hover, Escape dismissal, and native tooltip positioning | Button styling, tooltip surface styling and rich content |
-| **HoverCard** | Delayed rich preview on hover, trigger-to-card pointer travel, focus preview without moving focus, and dismissal | Button action, preview content, surface, and placement |
+| **HoverCard** | Delayed rich preview on hover, touch long-press preview, trigger-to-card pointer travel, focus preview without moving focus, and dismissal | Button action, preview content, surface, and placement |
 | **Popover** | Non-modal open/close state, corner or collision-aware side/alignment placement, focus, outside dismissal, and Escape | Trigger, popup contents, and surface styling |
 | **DropdownMenu** | Plain, checked/mixed/radio and nested submenu semantics, navigation, leaf dispatch, dismissal, and focus | Trigger, menu surface, command rendering, and controlled checked values |
-| **ContextMenu** | Secondary-click or keyboard opening, pointer placement, and the shared menu tree's commands, navigation, dismissal, and focus | Focusable target, menu surface, command rendering, and controlled checked values |
+| **ContextMenu** | Secondary-click, touch long-press or keyboard opening, pointer placement, and the shared menu tree's commands, navigation, dismissal, and focus | Focusable target, menu surface, command rendering, and controlled checked values |
 | **Command** | Ranked fuzzy text search, enabled-result navigation, pointer/Enter action dispatch, and highlighted-result scrolling | Query frame, result rows, empty state, and optional Dialog composition |
 | **Dialog** | Open/close state, native modal metadata, background input isolation, initial focus, dismissal, and focus restoration | Backdrop, popup, title, description, and close control |
 | **AlertDialog** | Dialog's modal lifecycle with alert semantics and blocked backdrop dismissal | Decision text, cancellation control, and explicit application confirmation |

@@ -510,8 +510,10 @@ that application update. Retained popup state is dismissed on detachment.
 Native metadata includes a named target, expanded/disabled state, the Shift-F10
 shortcut and ShowContextMenu action, plus the shared Menu, MenuItem, and
 MenuItemCheckBox/MenuItemRadio and submenu semantics. The same command tree can
-be supplied to DropdownMenu or ContextMenu. Interactive descendant targets and
-touch long-press are not included.
+be supplied to DropdownMenu or ContextMenu. A touch long press on the target
+opens the menu at the press position, like a secondary click, and claims the
+gesture so the release neither pans nor reaches the target. Interactive
+descendant targets are not included.
 
 ## Command
 
@@ -666,7 +668,9 @@ visible preview is a supplementary Tooltip surface with no Tab stop; it never
 opens a focus trap. `accessibility_label` names that surface. Keep essential
 information available in the Button's accessible description or its ordinary
 destination, rather than only in a pointer preview. Interactive content belongs
-in Popover. Touch long-press and a global hover provider are not supplied.
+in Popover. Touch has no hover: a long press on the trigger opens the preview at
+once without activating the Button, and the next press anywhere dismisses it. A
+global hover provider is not supplied.
 
 The example previews the current recording preset, recording date, and notes
 status. Clicking or pressing Enter on that same Button opens the settings Dialog,
