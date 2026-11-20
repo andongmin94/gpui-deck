@@ -1,6 +1,6 @@
 # Navigation and overlays
 
-The [two-style example](../crates/base/examples/two_styles.rs) combines the same
+The [two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) combines the same
 settings behavior with compact dark and spacious light presentation. Its
 Session actions menu and the summary's ContextMenu can open Dialog, toggle
 application values, or request a preview reset through AlertDialog. HoverCard

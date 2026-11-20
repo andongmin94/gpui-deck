@@ -1,8 +1,8 @@
 # Presentation recipes
 
 These 23 catalogue recipes are reusable application source, used by the native
-[two-style example](../crates/base/examples/two_styles.rs) and
-[catalogue example](../crates/base/examples/catalogue.rs). Chart also has a
+[two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) and
+[catalogue example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/catalogue.rs). Chart also has a
 supporting presentation recipe for its public behavior family. They compose GPUI
 layout with the existing controls and keep colors, spacing, and sizing in the
 consumer's `Palette` or application-supplied `Styled` values.
@@ -43,12 +43,12 @@ application.
 To copy manually:
 
 1. Copy the desired files from
-   [`crates/base/examples/recipes`](../crates/base/examples/recipes) into an
+   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes) into an
    application module, preserving the repository's license terms.
 2. Declare the copied modules and re-export the types, following the small
-   [`mod.rs`](../crates/base/examples/recipes/mod.rs). Copy only the modules needed
+   [`mod.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/mod.rs). Copy only the modules needed
    by the application and list only those modules.
-3. Copy [`presentation.rs`](../crates/base/examples/presentation.rs) beside the
+3. Copy [`presentation.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/presentation.rs) beside the
    application's `recipes` directory. It contains the actual `Palette` and both
    appearances used by the tested example, without the Demo or its behavior.
    Declare it and expose its tokens in the recipes' parent module:
@@ -82,7 +82,7 @@ alongside the desired recipe:
 
 ## Card
 
-[`card.rs`](../crates/base/examples/recipes/card.rs) supplies a named region with a
+[`card.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/card.rs) supplies a named region with a
 level-two heading. The description accepts text; the header action, content,
 and footer each accept one element, so the application can compose several
 children in a `div()`.
@@ -102,7 +102,7 @@ change the copied source to fit different heading levels or header/footer layout
 
 ## Badge
 
-[`badge.rs`](../crates/base/examples/recipes/badge.rs) is a static named label.
+[`badge.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/badge.rs) is a static named label.
 The default appearance is secondary; `.accent(true)` uses the palette's accent
 colors. The example displays actual cursor and toolbar settings with these two
 appearances.
@@ -117,7 +117,7 @@ an existing Button or Toggle with application styling.
 
 ## Kbd
 
-[`kbd.rs`](../crates/base/examples/recipes/kbd.rs) supplies static individual
+[`kbd.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/kbd.rs) supplies static individual
 keycaps and combinations of keys. Each Kbd uses its visible text as the default
 native Label name. Give symbolic keys a readable name explicitly:
 
@@ -149,7 +149,7 @@ these keycaps does not add keyboard commands or another focus target.
 
 ## Empty
 
-[`empty.rs`](../crates/base/examples/recipes/empty.rs) exports `EmptyState` to
+[`empty.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/empty.rs) exports `EmptyState` to
 avoid confusion with GPUI's `Empty` element. It supplies a named group, level-two
 heading, description, and optional media/action slots.
 
@@ -168,7 +168,7 @@ command is dispatched. `Styled` can override the outer frame.
 
 ## Button Group
 
-[`button_group.rs`](../crates/base/examples/recipes/button_group.rs) gives related
+[`button_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/button_group.rs) gives related
 Buttons one frame and decorative separators. It accepts existing `Button`
 instances, applies connected styling, and preserves their identity, actions,
 disabled state, and individual Tab stops.
@@ -190,7 +190,7 @@ control for multiple pressed values with roving focus.
 
 ## Input Group
 
-[`input_group.rs`](../crates/base/examples/recipes/input_group.rs) supplies one
+[`input_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/input_group.rs) supplies one
 frame around an existing control and optional leading/trailing elements. The
 constructor takes the control itself, so its native input renderer, value,
 selection, and input interface stay with the existing editor.
@@ -233,7 +233,7 @@ permissions from its child elements. `Styled` can override the frame.
 
 ## Item
 
-[`item.rs`](../crates/base/examples/recipes/item.rs) groups a title, optional
+[`item.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/item.rs) groups a title, optional
 description, leading media, full-width header and footer, and an optional
 trailing action.
 
@@ -264,7 +264,7 @@ the current recipe's scope. `Styled` can change the frame and spacing.
 
 ## Alert
 
-[`alert.rs`](../crates/base/examples/recipes/alert.rs) presents an inline title and
+[`alert.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/alert.rs) presents an inline title and
 description. Ordinary content uses the native `Note` role; `.urgent(true)` selects
 the native `Alert` role. `.destructive(true)` changes colors independently of that
 urgency decision.
@@ -293,7 +293,7 @@ current inline recipe has no action or media slot; `Styled` controls its frame.
 
 ## Pagination
 
-[`pagination.rs`](../crates/base/examples/recipes/pagination.rs) composes ordinary
+[`pagination.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/pagination.rs) composes ordinary
 Buttons into named native navigation. The application supplies the zero-based
 page index, page count, and callback.
 
@@ -318,7 +318,7 @@ owns no retained page or data; routing and fetching belong to the application.
 
 ## Data Table
 
-[`data_table.rs`](../crates/base/examples/recipes/data_table.rs) provides a working
+[`data_table.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/data_table.rs) provides a working
 client-side table composition. It uses the existing native Input/Field,
 Table, ScrollArea, Checkbox, DropdownMenu, and Button, plus the InputGroup, EmptyState, and Pagination
 recipes. Columns and immutable rows belong to the consuming application.
@@ -405,7 +405,7 @@ Adapt the copied source when an application needs different data operations.
 
 ## Spinner
 
-[`spinner.rs`](../crates/base/examples/recipes/spinner.rs) adds a rotating arc to
+[`spinner.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/spinner.rs) adds a rotating arc to
 the existing indeterminate Progress. Supply the operation's accessible name:
 
 ```rust,ignore
@@ -438,7 +438,7 @@ controlled preview; the recipe does not start a recording or a background task.
 
 ## Skeleton
 
-[`skeleton.rs`](../crates/base/examples/recipes/skeleton.rs) is a static decorative
+[`skeleton.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/skeleton.rs) is a static decorative
 placeholder. The application supplies its dimensions and decides when to replace
 it with ready content:
 
@@ -462,7 +462,7 @@ available and removes it when known progress is restored.
 
 ## Avatar
 
-[`avatar.rs`](../crates/base/examples/recipes/avatar.rs) presents a circular image
+[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs) presents a circular image
 with explicit alternative text and application-supplied fallback text:
 
 ```rust,ignore
@@ -486,7 +486,7 @@ colors and circular clipping. `Styled` can change its size and colors; keep widt
 and height equal for a circle. Images use GPUI's cover fit. Status badges, avatar
 groups, and interactive actions remain application compositions.
 
-The example embeds [`preset-avatar.svg`](../crates/base/examples/assets/preset-avatar.svg)
+The example embeds [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)
 for the Balanced preset. Other presets use explicit text such as `PR` and `HQ`,
 and an empty selection uses `?`, with an accessible name derived from the current
 preset label. The source is selected while rendering the existing HoverCard from
@@ -504,7 +504,7 @@ focus stop. The preset preview shows five people with three visible.
 
 ## Aspect Ratio
 
-[`aspect_ratio.rs`](../crates/base/examples/recipes/aspect_ratio.rs) provides a
+[`aspect_ratio.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/aspect_ratio.rs) provides a
 clipped media frame using GPUI's existing aspect-ratio layout:
 
 ```rust,ignore
@@ -538,7 +538,7 @@ does not add controls to HoverCard's noninteractive content.
 
 ## Sheet
 
-[`sheet.rs`](../crates/base/examples/recipes/sheet.rs) presents existing Dialog
+[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs) presents existing Dialog
 content at a chosen window edge, defaulting to a full-height right panel:
 
 ```rust,ignore
@@ -606,7 +606,7 @@ against the window as well; those surfaces do not inherit the Sheet's width cap.
 
 ## Sidebar
 
-[`sidebar.rs`](../crates/base/examples/recipes/sidebar.rs) composes named
+[`sidebar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sidebar.rs) composes named
 navigation from ordinary Buttons and the fixed items and selection of a retained
 `TabsState`:
 
@@ -675,7 +675,7 @@ navigation to 3.5 rem and keeps every entry mounted as an icon-only Button with
 the same accessible name, current-page metadata and focus handle, plus a GPUI
 hover tooltip naming it. Group headings and group disclosures are hidden in the
 rail while the named Groups remain. A CollapsibleTrigger after the entries,
-named "<label> labels", toggles the state and exposes it as expanded/collapsed.
+named `"<label> labels"`, toggles the state and exposes it as expanded/collapsed.
 `.icon(value, || element)` supplies a decorative icon per entry; others show
 their initial in a small frame. Prefer drawn shapes to symbol glyphs, which
 depend on installed fonts. A Sidebar uses either `.rail` or `.collapsible`, not
@@ -686,7 +686,7 @@ Settings uses the existing Sheet's scrolling body and modal focus containment.
 
 ## Typography
 
-[`typography.rs`](../crates/base/examples/recipes/typography.rs) supplies `Heading`,
+[`typography.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/typography.rs) supplies `Heading`,
 `Paragraph`, and `InlineCode` as one presentation recipe. GPUI owns text shaping,
 layout, and painting. The application supplies the content, outline levels, font
 choice, available width, and surrounding spacing.
@@ -753,7 +753,7 @@ remain outside its scope. It introduces no retained state or second text rendere
 
 ## Code Block
 
-[`code_block.rs`](../crates/base/examples/recipes/code_block.rs) composes read-only
+[`code_block.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/code_block.rs) composes read-only
 multiline code with the existing Button, GPUI clipboard, and ScrollArea:
 
 ```rust,ignore
@@ -807,7 +807,7 @@ prose and short inline code; CodeBlock owns the bounded multiline presentation.
 
 ## Marker
 
-[`marker.rs`](../crates/base/examples/recipes/marker.rs) places a static label
+[`marker.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/marker.rs) places a static label
 between two existing decorative Separators. Supply the text appropriate to the
 application's date or status boundary:
 
@@ -839,7 +839,7 @@ start a recording or maintain a second selected date.
 
 ## Message
 
-[`message.rs`](../crates/base/examples/recipes/message.rs) presents one read-only
+[`message.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/message.rs) presents one read-only
 message with application-supplied author, time metadata, and body text. It composes
 existing GPUI layout and Typography's Paragraph; optional actions are supplied
 controls with their own behavior:
@@ -896,7 +896,7 @@ streaming renderer, or timeline state.
 
 ## Attachment
 
-[`attachment.rs`](../crates/base/examples/recipes/attachment.rs) presents a file's
+[`attachment.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/attachment.rs) presents a file's
 name, media type, and size as application-supplied text, with an optional existing
 action. It describes metadata; the content itself remains with the application.
 
@@ -950,7 +950,7 @@ state, transport, or storage mechanism.
 
 ## Trace
 
-[`trace.rs`](../crates/base/examples/recipes/trace.rs) presents a summary that
+[`trace.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/trace.rs) presents a summary that
 expands into named read-only details and an optional application action. It
 composes existing Collapsible parts, Button behavior, and Typography's Paragraph.
 

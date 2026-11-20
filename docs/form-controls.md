@@ -1,8 +1,8 @@
 # Form controls
 
-The [native settings example](../crates/base/examples/two_styles.rs) is a complete
+The [native settings example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) is a complete
 consumer of the public API. Run it in either appearance using the commands in the
-[README](../README.md#run-the-example). It combines Button, Input, Select,
+[README](https://github.com/andongmin94/gpui-design#run-the-example). It combines Button, Input, Select,
 Textarea, Field, Label, Combobox, Calendar, DatePicker, Checkbox, Switch, RadioGroup, Slider, Progress, Toggle, and ToggleGroup
 with the navigation and overlay controls,
 without putting appearance in the library. The [navigation and overlay guide](navigation-overlays.md)
