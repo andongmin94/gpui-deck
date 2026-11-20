@@ -42,7 +42,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Tabs** | Active panel, one tab-list stop, automatic or manual activation, orientation-aware keys, and disabled tabs | Tab-list layout, tab styling, and panel contents |
 | **Accordion** | Single or multiple open sections, header navigation, disabled items, and focused-panel closure | Header, indicator, panel contents, and layout |
 | **Collapsible** | One disclosure, active-only content, disabled trigger, and focus on content closure | Trigger content, indicator, region contents, and layout |
-| **Tooltip** | Plain text description on Button hover/focus, delayed hover, Escape dismissal, and native tooltip positioning | Button and tooltip text-surface styling |
+| **Tooltip** | Plain-text native description with optional noninteractive rich content on Button hover/focus, delayed hover, Escape dismissal, and native tooltip positioning | Button styling, tooltip surface styling and rich content |
 | **HoverCard** | Delayed rich preview on hover, trigger-to-card pointer travel, focus preview without moving focus, and dismissal | Button action, preview content, surface, and placement |
 | **Popover** | Non-modal open/close state, corner or collision-aware side/alignment placement, focus, outside dismissal, and Escape | Trigger, popup contents, and surface styling |
 | **DropdownMenu** | Plain, checked/mixed/radio and nested submenu semantics, navigation, leaf dispatch, dismissal, and focus | Trigger, menu surface, command rendering, and controlled checked values |
@@ -220,7 +220,7 @@ committed preset. The session-name Field connects its visible label, help text,
 and application-supplied required/error state to the native input. Standalone
 Labels focus the Drawing tool Select and Preview percentage Slider without
 opening a popup or changing a value. The application supplies each target's
-accessible name and mirrors its disabled state on the Label. A text Tooltip
+accessible name and mirrors its disabled state on the Label. A rich Tooltip
 on the existing Edit button explains what the settings screen changes.
 Schedule uses a DatePicker composed from Calendar and Popover, and a Table
 reflecting the retained session name, date, and recording preset. Marker reads the

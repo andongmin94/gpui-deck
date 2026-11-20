@@ -577,7 +577,7 @@ Retain `TooltipState::new(&trigger_focus, window, cx)` alongside the existing
 Button focus handle. Render `Tooltip::new(id, &state, description)` and configure
 the Button through `.trigger(|button| ...)`. This preserves the application's
 activation handler and focus identity. Ordinary Styled methods on Tooltip
-configure the noninteractive text surface; the trigger builder owns button
+configure the noninteractive surface; the trigger builder owns button
 appearance. No additional init call or keybinding is needed.
 
 Keyboard focus shows the text immediately; pointer hover waits 500 ms. Leaving
@@ -593,10 +593,19 @@ window-edge clamping, and drawing; this component adds the focus/hover lifecycle
 Its mounted Escape subscription belongs to that window and does not issue a
 global clear operation that could dismiss another tooltip.
 
-The current API supports plain text attached to a Button. Rich interactive
-content, touch long-press behavior, and a configurable provider are not part of
-this contract. The example wraps its existing Edit session button, so the same
-button opens the settings Dialog and remains its return-focus target.
+`.content(|window, cx| ...)` replaces the visible text with noninteractive rich
+content, such as a heading and muted detail line or a label with a keycap. The
+builder runs whenever the visible surface renders. The plain-text description
+remains the trigger's native description and the surface's Tooltip name, so
+keep it an equivalent summary of what the rich content shows. Rich content adds
+no Tab stop. Do not place focusable or clickable controls in it: the tooltip
+closes when the pointer leaves the trigger. Interactive previews belong in
+HoverCard or Popover.
+
+Interactive tooltip content, touch long-press behavior, and a configurable
+provider are not part of this contract. The example wraps its existing Edit
+session button with a rich heading and detail line, so the same button opens the
+settings Dialog and remains its return-focus target.
 
 ## HoverCard
 

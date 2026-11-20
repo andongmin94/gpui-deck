@@ -77,7 +77,7 @@ in the [form guide](form-controls.md),
 | Toast | Available | Retained notification lifetime and explicit/timeout dismissal; hover, contained focus and inactive windows pause remaining time. Showing never takes focus; explicit focused dismissal restores prior focus. ToasterState stacks application-owned values with a visible limit, waiting older entries, in-place replacement, dismiss-all and explicit focus entry. Applications own message, actions, placement and type styling. |
 | Toggle | Available | Controlled pressed state composed from Button's activation and focus behavior. |
 | Toggle Group | Available | Fixed items with multiple or optional single selection and roving focus; moving focus does not change the pressed values. |
-| Tooltip | Available | Plain text descriptions for a Button, delayed pointer hover, immediate keyboard focus, Escape dismissal, and native GPUI tooltip positioning. Rich content and touch long-press behavior are not included. |
+| Tooltip | Available | Plain-text native description for a Button with optional noninteractive rich visible content, delayed pointer hover, immediate keyboard focus, Escape dismissal, and native GPUI tooltip positioning. Interactive tooltip content and touch long-press behavior are not included; interactive previews belong in HoverCard or Popover. |
 
 ## Presentation and composition recipes
 

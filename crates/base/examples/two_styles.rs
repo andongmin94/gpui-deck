@@ -2302,6 +2302,25 @@ impl Render for Demo {
                             .rounded(palette.radius)
                             .bg(palette.surface)
                             .text_color(palette.foreground)
+                            // Rich visible content; the description above stays
+                            // the trigger's native text equivalent.
+                            .content(move |_, _| {
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap_1()
+                                    .child(
+                                        div()
+                                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                                            .child("Edit session"),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_sm()
+                                            .text_color(palette.muted)
+                                            .child("Name · Recording preset · Notes"),
+                                    )
+                            })
                             .trigger(|button| {
                                 Self::button(
                                     palette,
