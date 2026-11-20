@@ -20,7 +20,7 @@ test("a component page embeds its live preview", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Button");
   await expect(page.locator('iframe[title="button preview"]')).toHaveAttribute(
     "src",
-    /\/preview\/\?c=button&theme=(light|dark)$/,
+    /\/preview\?c=button&theme=(light|dark)$/,
   );
 });
 
