@@ -33,10 +33,10 @@ use gpui_design::{
 #[path = "recipes/mod.rs"]
 mod recipes;
 use recipes::{
-    Alert, AspectRatio, Attachment, Avatar, Badge, ButtonGroup, Card, CodeBlock, DataTable,
-    DataTableCell, DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading, InlineCode,
-    InputGroup, Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, SheetSide, Sidebar,
-    Skeleton, Spinner, Trace,
+    Alert, AspectRatio, Attachment, Avatar, AvatarGroup, Badge, ButtonGroup, Card, CodeBlock,
+    DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading,
+    InlineCode, InputGroup, Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, SheetSide,
+    Sidebar, Skeleton, Spinner, Trace,
 };
 
 #[path = "presentation.rs"]
@@ -985,6 +985,16 @@ impl Demo {
                     )
                     .child(frame_preview)
                     .child(div().text_sm().child(preset_description))
+                    .child(
+                        // Hidden people stay named by the "+N" chip.
+                        AvatarGroup::new("preset-people", "People using this preset", palette)
+                            .avatar(Avatar::new("person-ana", "Ana Kim", "AK", palette))
+                            .avatar(Avatar::new("person-bo", "Bo Park", "BP", palette))
+                            .avatar(Avatar::new("person-cy", "Cy Lee", "CL", palette))
+                            .avatar(Avatar::new("person-di", "Di Cho", "DC", palette))
+                            .avatar(Avatar::new("person-eu", "Eun Seo", "ES", palette))
+                            .max_visible(3),
+                    )
                     .child(div().text_sm().text_color(palette.muted).child(format!(
                         "Recording date: {}",
                         self.calendar

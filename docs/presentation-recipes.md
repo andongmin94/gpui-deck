@@ -494,6 +494,14 @@ the retained Combobox state; there is no second selected-preset value. This
 bundled artwork requires no network request. Applications supply their own assets
 when copying the recipe.
 
+
+`AvatarGroup::new(id, "Team members", palette)` stacks `.avatar(...)` items like
+shadcn's avatar group. Each visible avatar sits in a surface-colored ring and
+overlaps the previous one. `.max_visible(n)` shows the first `n` and adds a
+"+N" chip whose Label name lists the hidden people ("2 more: Cy Lee, Di Cho"),
+so nobody is lost to assistive technology. The frame is a named Group with no
+focus stop. The preset preview shows five people with three visible.
+
 ## Aspect Ratio
 
 [`aspect_ratio.rs`](../crates/base/examples/recipes/aspect_ratio.rs) provides a

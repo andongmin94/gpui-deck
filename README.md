@@ -100,7 +100,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **DataTable** | Text filtering/sorting, pagination, page/row checkbox selection, column visibility, and stable-ID row actions | Browsing recording presets, selecting rows independently, and applying a preset |
 | **Spinner** | Named indeterminate Progress with a rotating arc that respects GPUI's reduced-motion setting | The unknown-progress preview |
 | **Skeleton** | Static decorative placeholder with application-controlled size and shape | The preview's unavailable percentage display |
-| **Avatar** | Named circular image with explicit fallback text, using GPUI's image loader and cache | Preset artwork or initials in the existing HoverCard preview |
+| **Avatar** | Named circular image with explicit fallback text, using GPUI's image loader and cache, plus an overlapping AvatarGroup with a named "+N" overflow | Preset artwork or initials and a people group in the existing HoverCard preview |
 | **AspectRatio** | Clipped media frame with a finite positive width/height ratio and application-owned content | A recording-frame illustration driven by the retained preset and session name |
 | **Sheet** | Four-edge modal presentation over Dialog, viewport-limited size, fixed header/footer, and one scrolling body | Session settings and catalogue help panels, using retained state |
 | **Sidebar** | Named grouped navigation, ordinary Buttons, current-page metadata, optional whole/group Collapsible state, and an optional icon rail | Grouped Settings sections with an icon rail and the catalogue's collapsible project navigation |

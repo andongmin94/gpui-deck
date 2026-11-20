@@ -4,7 +4,7 @@ use gpui::{
     AnyElement, App, Div, ElementId, FontWeight, ImageSource, InteractiveElement as _, IntoElement,
     ObjectFit, ParentElement as _, RenderOnce, Role, SharedString, Stateful,
     StatefulInteractiveElement as _, StyleRefinement, Styled, StyledImage as _, Window, div, img,
-    rems,
+    prelude::FluentBuilder as _, rems,
 };
 use gpui_design::{ObservedElement, TestSupportExt as _, TestTextExt as _};
 
@@ -106,6 +106,108 @@ impl RenderOnce for Avatar {
             .role(Role::Image)
             .aria_label(self.label)
             .child(content)
+    }
+}
+
+/// Overlapping avatars for a set of people, like shadcn's avatar group.
+///
+/// Shows at most `max_visible` avatars, each ringed in the surface color and
+/// overlapping the previous one, then a "+N" chip for the rest. The frame is a
+/// named Group; the chip is a Label naming the hidden people, so every person
+/// stays available to assistive technology. Nothing in the group takes focus.
+#[derive(IntoElement)]
+pub(crate) struct AvatarGroup {
+    base: ObservedElement<Stateful<Div>>,
+    id: ElementId,
+    label: SharedString,
+    avatars: Vec<Avatar>,
+    max_visible: usize,
+    palette: Palette,
+}
+
+impl AvatarGroup {
+    pub(crate) fn new(
+        id: impl Into<ElementId>,
+        label: impl Into<SharedString>,
+        palette: Palette,
+    ) -> Self {
+        let id = id.into();
+        Self {
+            base: div().id(id.clone()).test_support().flex().items_center(),
+            id,
+            label: label.into(),
+            avatars: Vec::new(),
+            max_visible: usize::MAX,
+            palette,
+        }
+    }
+
+    pub(crate) fn avatar(mut self, avatar: Avatar) -> Self {
+        self.avatars.push(avatar);
+        self
+    }
+
+    /// Shows at most `count` avatars before the "+N" chip.
+    pub(crate) fn max_visible(mut self, count: usize) -> Self {
+        self.max_visible = count;
+        self
+    }
+}
+
+impl Styled for AvatarGroup {
+    fn style(&mut self) -> &mut StyleRefinement {
+        self.base.style()
+    }
+}
+
+impl RenderOnce for AvatarGroup {
+    fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
+        let palette = self.palette;
+        let ring = |element: Div| {
+            element
+                .border_2()
+                .border_color(palette.surface)
+                .rounded_full()
+        };
+        let mut avatars = self.avatars;
+        let hidden: Vec<SharedString> = avatars
+            .split_off(self.max_visible.min(avatars.len()))
+            .into_iter()
+            .map(|avatar| avatar.label)
+            .collect();
+        let overlap = rems(-0.6);
+        let mut group = self.base.role(Role::Group).aria_label(self.label);
+        for (index, avatar) in avatars.into_iter().enumerate() {
+            group = group.child(
+                ring(div())
+                    .when(index > 0, |frame| frame.ml(overlap))
+                    .child(avatar),
+            );
+        }
+        if !hidden.is_empty() {
+            let count = hidden.len();
+            let name = format!("{count} more: {}", hidden.join(", "));
+            group = group.child(
+                ring(div()).ml(overlap).child(
+                    div()
+                        .id((self.id, "more"))
+                        .test_support()
+                        .role(Role::Label)
+                        .aria_label(name)
+                        .size(rems(2.5))
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .rounded_full()
+                        .bg(palette.field)
+                        .text_color(palette.muted)
+                        .text_size(palette.font_size)
+                        .font_weight(FontWeight::SEMIBOLD)
+                        .child(format!("+{count}")),
+                ),
+            );
+        }
+        group
     }
 }
 
@@ -228,5 +330,51 @@ mod tests {
             cx.notify();
         });
         draw(cx, "cleared source", true, false);
+    }
+
+    struct GroupSample;
+
+    impl Render for GroupSample {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            let palette = Appearance::Compact.palette();
+            AvatarGroup::new("team", "Team members", palette)
+                .avatar(Avatar::new("ana", "Ana Kim", "AK", palette))
+                .avatar(Avatar::new("bo", "Bo Park", "BP", palette))
+                .avatar(Avatar::new("cy", "Cy Lee", "CL", palette))
+                .avatar(Avatar::new("di", "Di Cho", "DC", palette))
+                .max_visible(2)
+        }
+    }
+
+    #[gpui::test]
+    fn groups_overlap_visible_avatars_and_name_the_hidden_people(cx: &mut TestAppContext) {
+        cx.update(gpui_design::init);
+        let (_, cx) = cx.add_window_view(|window, cx| {
+            let sample = cx.new(|_| GroupSample);
+            Root::new(sample, window, cx)
+        });
+        cx.update(|window, cx| window.draw(cx).clear(cx));
+        cx.update(|window, _| {
+            let group = test_support::find(window, &[], &"team".into()).unwrap();
+            assert_eq!(group.role(), Some(Role::Group));
+            assert_eq!(group.label(), Some("Team members"));
+            let ana = test_support::find(window, &[], &"ana".into()).unwrap();
+            let bo = test_support::find(window, &[], &"bo".into()).unwrap();
+            assert_eq!(bo.label(), Some("Bo Park"));
+            assert!(bo.bounds().left() < ana.bounds().right(), "avatars overlap");
+            for hidden in ["cy", "di"] {
+                assert!(test_support::find(window, &[], &hidden.into()).is_none());
+            }
+            let more =
+                test_support::find(window, &[], &(ElementId::from("team"), "more").into()).unwrap();
+            assert_eq!(more.role(), Some(Role::Label));
+            assert_eq!(more.label(), Some("2 more: Cy Lee, Di Cho"));
+            assert!(
+                test_support::snapshots(window)
+                    .iter()
+                    .all(|node| node.focused().is_none()),
+                "the group adds no focus stops"
+            );
+        });
     }
 }

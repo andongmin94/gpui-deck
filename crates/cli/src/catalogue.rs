@@ -29,7 +29,7 @@ pub(crate) const RECIPES: &[Recipe] = &[
     recipe!(
         "avatar",
         avatar,
-        [Avatar],
+        [Avatar, AvatarGroup],
         [],
         (
             "assets/preset-avatar.svg",

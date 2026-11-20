@@ -28,7 +28,7 @@ mod typography;
 pub(crate) use alert::Alert;
 pub(crate) use aspect_ratio::AspectRatio;
 pub(crate) use attachment::Attachment;
-pub(crate) use avatar::Avatar;
+pub(crate) use avatar::{Avatar, AvatarGroup};
 pub(crate) use badge::Badge;
 pub(crate) use button_group::ButtonGroup;
 pub(crate) use card::Card;
