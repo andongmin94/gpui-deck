@@ -45,7 +45,7 @@ in the [form guide](form-controls.md),
 | --- | --- | --- |
 | Accordion | Available | Fixed items, single/multiple open sections, independent header navigation, and active-only panels. |
 | Alert Dialog | Available | `AlertDialog` reuses Dialog state and focus; backdrop dismissal is blocked and confirmation belongs to the application. |
-| Breadcrumb | Available | Named native Navigation, List, and ListItem structure with `aria_current(Page)` on the current item. The application supplies its path, ancestor Buttons, navigation callbacks, separators, and styling; no routing or focus controller. |
+| Breadcrumb | Available | Named native Navigation, List, and ListItem structure with `aria_current(Page)` on the current item. Collapsed ancestors and per-crumb dropdowns compose an ordinary DropdownMenu inside an item, as in the catalogue's `Home › … › page` path. The application supplies its path, ancestor Buttons, navigation callbacks, separators, collapse policy and styling; no routing, width measurement or focus controller. |
 | Button | Available | Native pointer/keyboard activation, disabled state, focus, accessible naming, and explicit current-page metadata independent of selected styling; content and styles belong to the application. |
 | Checkbox | Available | Controlled checked/unchecked/mixed state; the application supplies its indicator and label presentation. |
 | Collapsible | Available | One retained disclosure, Button trigger, active-only content, and focus handling when content closes. |

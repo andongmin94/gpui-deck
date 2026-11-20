@@ -4257,6 +4257,48 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
         );
     });
 
+    // The breadcrumb ellipsis is an ordinary DropdownMenu inside a list item;
+    // a hidden ancestor navigates and returns focus to the ellipsis.
+    let current_page = |cx: &mut VisualTestContext| {
+        cx.update(|_, cx| view.read(cx).navigation.read(cx).page.to_string())
+    };
+    assert_eq!(current_page(cx), "overview");
+    let more = cx.update(|window, _| {
+        test_support::find(window, &[], &"page-crumb-more".into())
+            .unwrap()
+            .bounds()
+    });
+    cx.simulate_click(more.center(), gpui::Modifiers::default());
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(test_support::snapshots(window).iter().any(|node| {
+            node.role() == Some(Role::Menu) && node.label() == Some("Hidden locations")
+        }));
+    });
+    cx.simulate_keystrokes("c");
+    activate_key(cx, "enter");
+    cx.run_until_parked();
+    draw(cx);
+    assert_eq!(current_page(cx), "api");
+    cx.update(|window, _| {
+        assert!(
+            !test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::Menu))
+        );
+        let more = test_support::find(window, &[], &"page-crumb-more".into()).unwrap();
+        assert_eq!(more.focused(), Some(true));
+        assert_eq!(more.expanded(), Some(false));
+    });
+    let home = cx.update(|window, _| {
+        test_support::find(window, &[], &"page-crumb-home-button".into())
+            .unwrap()
+            .bounds()
+    });
+    cx.simulate_click(home.center(), gpui::Modifiers::default());
+    draw(cx);
+    assert_eq!(current_page(cx), "overview");
+
     // Exercise the actual nested Sidebar consumer once. Collapsing navigation
     // unmounts its entries while the application's selected page stays mounted.
     let (project, sidebar, tools) = cx.update(|window, cx| {

@@ -38,7 +38,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **DatePicker** | Calendar selection inside Popover, selected-date or retained-cursor initial focus, single/complete-range closing, dismissal, and disabled state | Formatted trigger, calendar/month controls, presets, and popup surface |
 | **Slider** | One or more ordered numeric values, bounded steps, per-thumb focus and accessibility, keyboard/pointer adjustment, disabled state, vertical and RTL geometry | Track, fill, thumbs, sizing, and state styling |
 | **Progress** | Controlled percentage or indeterminate progress, accessible name and numeric range | Track, fill, label, and any animation |
-| **Breadcrumb** | Named navigation, ordered path items, and native current-page metadata | Path labels, ancestor actions, separators, layout, and styling |
+| **Breadcrumb** | Named navigation, ordered path items, and native current-page metadata | Path labels, ancestor actions, collapsed DropdownMenu items, separators, layout, and styling |
 | **Tabs** | Active panel, one tab-list stop, automatic or manual activation, orientation-aware keys, and disabled tabs | Tab-list layout, tab styling, and panel contents |
 | **Accordion** | Single or multiple open sections, header navigation, disabled items, and focused-panel closure | Header, indicator, panel contents, and layout |
 | **Collapsible** | One disclosure, active-only content, disabled trigger, and focus on content closure | Trigger content, indicator, region contents, and layout |
@@ -239,7 +239,7 @@ scheduling an actual recording. Its date bounds are 2026–2027.
 
 The separate [catalogue example](crates/base/examples/catalogue.rs) connects the
 remaining families into five retained views. Navigation demonstrates coordinated
-menus, destination links and collapsible grouped project navigation; Forms and feedback runs numeric code entry through
+menus, destination links, a collapsed breadcrumb with a dropdown of hidden ancestors and collapsible grouped project navigation; Forms and feedback runs numeric code entry through
 a confirmation Drawer into a stacked, pausing Toast, plus help Sheets at all four edges; Media and data supplies RTL-aware
 Carousel slides (one or two per view) and inspectable line/bar/area, stacked, pie/donut and radar charts with an exact data table;
 Conversation combines incoming/outgoing bubbles, anchored history/streaming,

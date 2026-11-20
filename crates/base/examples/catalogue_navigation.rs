@@ -10,12 +10,13 @@ use gpui::{
     Styled as _, Subscription, Window, div, prelude::FluentBuilder as _, px, rgb,
 };
 use gpui_design::{
-    Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionState, Align, Button,
-    CheckboxState, CollapsibleState, Direction, DirectionProvider, MenuEvent, MenuItem, MenuOption,
-    MenuState, MenuSubmenu, Menubar, MenubarItem, MenubarMenu, MenubarState, NavigationMenu,
-    NavigationMenuEntry, NavigationMenuEvent, NavigationMenuItem, NavigationMenuLink,
-    NavigationMenuState, Placement, Popover, PopoverState, TabItem, TabsState, TestSupportExt as _,
-    ToggleGroup, ToggleGroupState, ToggleItem, ToggleOption,
+    Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionState, Align, Breadcrumb,
+    BreadcrumbItem, BreadcrumbList, Button, CheckboxState, CollapsibleState, Direction,
+    DirectionProvider, DropdownMenu, MenuEvent, MenuItem, MenuOption, MenuState, MenuSubmenu,
+    Menubar, MenubarItem, MenubarMenu, MenubarState, NavigationMenu, NavigationMenuEntry,
+    NavigationMenuEvent, NavigationMenuItem, NavigationMenuLink, NavigationMenuState, Placement,
+    Popover, PopoverState, TabItem, TabsState, TestSupportExt as _, ToggleGroup, ToggleGroupState,
+    ToggleItem, ToggleOption,
 };
 
 pub(crate) struct NavigationCatalogue {
@@ -24,6 +25,7 @@ pub(crate) struct NavigationCatalogue {
     file: Entity<MenuState>,
     view: Entity<MenuState>,
     export: Entity<MenuState>,
+    path_menu: Entity<MenuState>,
     alignment: Entity<ToggleGroupState>,
     help: Entity<AccordionState>,
     quick_help: Entity<PopoverState>,
@@ -31,7 +33,7 @@ pub(crate) struct NavigationCatalogue {
     guide_focus: FocusHandle,
     reference_focus: FocusHandle,
     direction: Direction,
-    page: SharedString,
+    pub(crate) page: SharedString,
     last_command: SharedString,
     show_grid: bool,
     selection: CheckboxState,
@@ -137,7 +139,23 @@ impl NavigationCatalogue {
         });
         let sidebar = cx.new(|cx| CollapsibleState::new(cx).default_open(true));
         let tools = cx.new(|cx| CollapsibleState::new(cx).default_open(true));
+        // Ancestors hidden behind the breadcrumb ellipsis; values are local pages.
+        let path_menu = cx.new(|cx| {
+            MenuState::new(
+                [
+                    MenuItem::new("getting-started", "Documentation"),
+                    MenuItem::new("api", "Components"),
+                ],
+                cx,
+            )
+        });
         let mut subscriptions = vec![
+            cx.observe(&path_menu, |_, _, cx| cx.notify()),
+            cx.subscribe(&path_menu, |this: &mut Self, _, event, cx| {
+                let MenuEvent::Action(value) = event;
+                this.page = value.clone();
+                cx.notify();
+            }),
             cx.observe(&sections, |_, _, cx| cx.notify()),
             cx.observe(&sidebar, |_, _, cx| cx.notify()),
             cx.observe(&tools, |_, _, cx| cx.notify()),
@@ -177,6 +195,7 @@ impl NavigationCatalogue {
             file,
             view,
             export,
+            path_menu,
             alignment,
             help,
             quick_help,
@@ -459,6 +478,70 @@ impl Render for NavigationCatalogue {
                 "This local page changes when a navigation link is activated. Command menus above control independent document preferences."
             }
         };
+        let page_title = match self.page.as_ref() {
+            "getting-started" => "Getting started",
+            "composition" => "Composing controls",
+            "api" => "Component APIs",
+            "keyboard" => "Keyboard navigation",
+            "community" => "Community",
+            _ => "Overview",
+        };
+        let path_open = self.path_menu.read(cx).is_open(cx);
+        let breadcrumb =
+            Breadcrumb::new("page-breadcrumb")
+                .accessibility_label("Page location")
+                .child(
+                    self.direction
+                        .row(BreadcrumbList::new("page-breadcrumb-list"))
+                        .flex_wrap()
+                        .items_center()
+                        .gap_1()
+                        .child(
+                            BreadcrumbItem::new("page-crumb-home").child(trigger(
+                                Button::new("page-crumb-home-button")
+                                    .accessibility_label("Home")
+                                    .on_click(cx.listener(|this, _, _, cx| {
+                                        this.page = "overview".into();
+                                        cx.notify();
+                                    })),
+                                "Home",
+                                false,
+                            )),
+                        )
+                        .child(if self.direction.is_rtl() {
+                            "‹"
+                        } else {
+                            "›"
+                        })
+                        .child(
+                            BreadcrumbItem::new("page-crumb-hidden").child(
+                                DropdownMenu::new("page-crumb-more", &self.path_menu)
+                                    .accessibility_label("Hidden locations")
+                                    .offset(px(4.))
+                                    .trigger(|button| {
+                                        trigger(
+                                            button.accessibility_label("Show hidden locations"),
+                                            "…",
+                                            path_open,
+                                        )
+                                    })
+                                    .content(panel().children((0..2).map(|index| {
+                                        self.menu_option(&self.path_menu, index, cx)
+                                    }))),
+                            ),
+                        )
+                        .child(if self.direction.is_rtl() {
+                            "‹"
+                        } else {
+                            "›"
+                        })
+                        .child(
+                            BreadcrumbItem::new("page-crumb-current")
+                                .current(true)
+                                .px_3()
+                                .child(gpui::text!(id = "page-crumb-current-text", page_title)),
+                        ),
+                );
         let help = self.help.read(cx);
         let section = self.sections.read(cx);
         let selected_section = section.selected_index().unwrap_or(0);
@@ -543,6 +626,7 @@ impl Render for NavigationCatalogue {
                     self.last_command, if self.show_grid { "shown" } else { "hidden" }, self.selection, self.theme)))
                 .child(div().h(px(1.)).bg(rgb(0x334155)))
                 .child(navigation)
+                .child(breadcrumb)
                 .child(Popover::new("navigation-keyboard-reference", &self.quick_help)
                     .accessibility_label("Navigation keyboard reference")
                     .side(Placement::Right)

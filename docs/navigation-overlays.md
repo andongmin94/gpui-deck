@@ -77,6 +77,23 @@ supplied children. The native property is AccessKit's `AriaCurrent::Page` on the
 ListItem itself. That contract does not establish how a particular desktop
 screen reader announces the path.
 
+### Collapsed paths and dropdown items
+
+A collapsed path keeps its hidden ancestors reachable through an ordinary
+[`DropdownMenu`](#dropdownmenu) inside one `BreadcrumbItem`; the family adds no
+ellipsis element or second menu model. Name the trigger Button for its purpose,
+such as "Show hidden locations", and use the `…` glyph only as its visible
+content. Each hidden ancestor is a `MenuItem` whose value the application maps to
+a destination when the menu reports `MenuEvent::Action`. The menu supplies one Tab
+stop, Down/Enter opening, arrow and single-character navigation, and returns
+focus to the trigger after activation. The same composition gives any crumb a
+dropdown of sibling locations.
+
+The catalogue's Navigation view renders `Home › … › <current page>`. Its ellipsis
+lists Documentation and Components; choosing one changes the local page and the
+current final item, and Home returns to Overview. Decide how many ancestors to
+collapse in application layout; the family does not measure path width.
+
 ## Direction
 
 Wrap a subtree with `DirectionProvider::new(Direction::Rtl)` or `Direction::Ltr`.
