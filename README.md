@@ -290,7 +290,7 @@ tests. Cloudflare Workers Builds deploys `main` to the site from `docs/` with
 `npm run build` and `npm run deploy:cloudflare`. Pages are MDX files in
 `docs/content/docs`, with translations beside them as `name.ko.mdx`,
 `name.ja.mdx` and `name.zh.mdx`; English is the source, so update the
-translations with it (an untranslated page shows the English text with a notice). Preview the site locally with `npm ci`,
+translations with it (an untranslated page shows the English text). Preview the site locally with `npm ci`,
 `npm run preview:build` and `npm run dev` in `docs/`; the preview build needs
 the `wasm32-unknown-unknown` target and `wasm-bindgen-cli` 0.2.127, which it
 installs itself on Linux when they are missing.

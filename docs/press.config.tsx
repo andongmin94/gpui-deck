@@ -7,7 +7,6 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
-import { TranslationNotice } from "@/components/translation-notice";
 import { i18n, translations } from "@/lib/i18n";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -25,24 +24,6 @@ const docs = defineDocs({
 const app = createPress(docs.toFumadocsSource(), { i18n, mode: "force-static" }).plugins(
   oramaSearchPlugin(),
   sitemapPlugin(),
-  {
-    name: "translation-notice",
-    slots({ lang, page }) {
-      if (!page || lang === i18n.defaultLanguage || page.slugs.length === 0) return;
-      return [
-        {
-          name: "translation-notice",
-          region: "body-wrapper",
-          component: TranslationNotice,
-          props: {
-            lang,
-            original: page.url.replace(`/${lang}/`, `/${i18n.defaultLanguage}/`),
-            translated: page.locale === lang,
-          },
-        },
-      ];
-    },
-  },
 );
 
 export default app.config({
