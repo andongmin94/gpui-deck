@@ -1,0 +1,9 @@
+{
+  "name": "gpui-design",
+  "compatibility_date": "2026-11-20",
+  "assets": {
+    "directory": "./dist/public",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+  },
+}
