@@ -3,9 +3,10 @@ import { oramaSearchPlugin } from "fumapress/plugins/orama-search";
 import { sitemapPlugin } from "fumapress/plugins/sitemap";
 import { metaSchema, pageSchema } from "fumapress/schema";
 import { defineDocs } from "fumadocs-mdx/macro";
-import { HomeLayout } from "fumadocs-ui/layouts/home";
+import { findNeighbour } from "fumadocs-core/page-tree";
 
 import { Home } from "@/components/home";
+import { DocsShell } from "@/components/shell/docs-shell";
 import { TranslationNotice } from "@/components/translation-notice";
 import { i18n, translations } from "@/lib/i18n";
 import { GIT, SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
@@ -65,40 +66,23 @@ export default app.config({
   },
   ui: {
     translations,
-    layoutProps({ lang }) {
-      const ko = lang === "ko";
-      return {
-        i18n: true,
-        nav: {
-          title: (
-            <span className="inline-flex items-center gap-2 font-semibold">
-              <span className="size-5 rounded-md bg-fd-foreground" aria-hidden />
-              {SITE_NAME}
-            </span>
-          ),
-          url: `/${lang}`,
-        },
-        links: [
-          { text: ko ? "문서" : "Docs", url: `/${lang}/docs`, active: "nested-url" },
-          {
-            text: ko ? "컴포넌트" : "Components",
-            url: `/${lang}/docs/components`,
-            active: "nested-url",
-          },
-        ],
-        githubUrl: `https://github.com/${GIT.user}/${GIT.repo}`,
-      };
-    },
     renderPage(props) {
-      if (props.page.slugs.length === 0) {
-        const { tree: _tree, ...layoutProps } = props.layoutProps;
-        return (
-          <HomeLayout {...layoutProps}>
-            <Home lang={props.lang} />
-          </HomeLayout>
-        );
-      }
-      return props.renderDefault();
+      if (props.page.slugs.length === 0) return <Home lang={props.lang} />;
+      const { tree } = props.layoutProps;
+      const { previous, next } = findNeighbour(tree, props.page.url);
+      return (
+        <DocsShell
+          lang={props.lang}
+          tree={tree}
+          title={props.page.data.title}
+          description={props.page.data.description}
+          toc={props.toc}
+          previous={previous && { name: previous.name, url: previous.url }}
+          next={next && { name: next.name, url: next.url }}
+        >
+          {props.body}
+        </DocsShell>
+      );
     },
   },
 });

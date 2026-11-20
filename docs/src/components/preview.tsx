@@ -66,7 +66,7 @@ export function ComponentPreview({
             <iframe
               key={theme}
               title={`${name} preview`}
-              src={`/preview/?c=${encodeURIComponent(name)}&theme=${theme}`}
+              src={`/preview?c=${encodeURIComponent(name)}&theme=${theme}`}
               loading="lazy"
               className="block w-full"
               style={{ height }}

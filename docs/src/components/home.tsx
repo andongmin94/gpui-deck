@@ -1,6 +1,10 @@
 import { Link } from "fumapress/client";
 
+import { ArrowRight } from "lucide-react";
+
 import { ComponentPreview } from "./preview";
+import { SiteFooter } from "./shell/footer";
+import { SiteHeader } from "./shell/header";
 
 const copy = {
   en: {
@@ -50,41 +54,51 @@ const copy = {
 export function Home({ lang }: { lang: string }) {
   const t = copy[lang === "ko" ? "ko" : "en"];
   return (
-    <main className="container mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-16 md:py-24">
-      <section className="flex flex-col items-center text-center">
-        <span className="mb-6 rounded-full border px-3 py-1 text-xs font-medium text-fd-muted-foreground">
-          {t.badge}
-        </span>
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight md:text-6xl">{t.title}</h1>
-        <p className="mt-6 max-w-2xl text-balance text-base text-fd-muted-foreground md:text-lg">
-          {t.lead}
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          <Link
-            href={`/${lang}/docs`}
-            className="rounded-md bg-fd-primary px-5 py-2.5 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90"
-          >
-            {t.start}
-          </Link>
+    <div className="flex min-h-svh flex-col">
+      <SiteHeader lang={lang} />
+      <main id="main-content" className="flex-1">
+        <section className="mx-auto flex max-w-3xl flex-col items-center gap-2 px-4 pt-16 pb-10 text-center md:pt-20">
           <Link
             href={`/${lang}/docs/components`}
-            className="rounded-md border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-fd-accent"
+            className="mb-2 inline-flex items-center gap-1 rounded-full bg-fd-secondary px-3 py-1 text-xs font-medium transition-colors hover:bg-fd-accent"
           >
-            {t.browse}
+            {t.badge}
+            <ArrowRight className="size-3" />
           </Link>
-        </div>
-      </section>
-      <section className="mx-auto mt-16 w-full max-w-4xl">
-        <ComponentPreview name="showcase" height={420} />
-      </section>
-      <section className="mt-16 grid gap-4 md:grid-cols-3">
-        {t.features.map(([title, body]) => (
-          <div key={title} className="rounded-lg border p-6">
-            <h2 className="font-semibold">{title}</h2>
-            <p className="mt-2 text-sm text-fd-muted-foreground">{body}</p>
+          <h1 className="text-4xl leading-tight font-semibold tracking-tight text-balance md:text-5xl lg:leading-[1.1]">
+            {t.title}
+          </h1>
+          <p className="max-w-2xl text-base text-balance text-fd-foreground/80 sm:text-lg">
+            {t.lead}
+          </p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Link
+              href={`/${lang}/docs`}
+              className="inline-flex h-9 items-center rounded-full bg-fd-primary px-4 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-90"
+            >
+              {t.start}
+            </Link>
+            <Link
+              href={`/${lang}/docs/components`}
+              className="inline-flex h-9 items-center rounded-full px-4 text-sm font-medium transition-colors hover:bg-fd-accent"
+            >
+              {t.browse}
+            </Link>
           </div>
-        ))}
-      </section>
-    </main>
+        </section>
+        <section className="mx-auto w-full max-w-5xl px-4">
+          <ComponentPreview name="showcase" height={460} />
+        </section>
+        <section className="mx-auto grid w-full max-w-5xl gap-4 px-4 pt-6 pb-16 md:grid-cols-3">
+          {t.features.map(([title, body]) => (
+            <div key={title} className="rounded-xl border p-6">
+              <h2 className="font-semibold">{title}</h2>
+              <p className="mt-2 text-sm text-fd-muted-foreground">{body}</p>
+            </div>
+          ))}
+        </section>
+      </main>
+      <SiteFooter lang={lang} />
+    </div>
   );
 }

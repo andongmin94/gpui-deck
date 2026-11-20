@@ -9,6 +9,23 @@
     "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
+/* shadcn/ui neutral backgrounds, matching the GPUI preview theme */
+:root {
+  --color-fd-background: #ffffff;
+}
+
+.dark {
+  --color-fd-background: #0a0a0a;
+}
+
 html {
   scrollbar-gutter: stable;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
