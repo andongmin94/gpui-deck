@@ -1,25 +1,27 @@
 //! Application-owned text-table operations over shared native controls.
 
-use std::{cmp::Reverse, rc::Rc};
+use std::{cmp::Ordering, collections::HashSet, rc::Rc};
 
 use gpui::{
     App, AppContext as _, Context, Div, ElementId, Entity, Focusable as _, InteractiveElement as _,
     IntoElement, ParentElement as _, Pixels, RenderOnce, Role, ScrollHandle, SharedString,
-    Stateful, StyleRefinement, Styled, Subscription, Window, div, point,
+    Stateful, StyleRefinement, Styled, Subscription, Window, accesskit::SortDirection, div, point,
     prelude::FluentBuilder as _, px,
 };
 use gpui_design::{
-    Button, Field, Input, InputBase, InputState, ScrollArea, ScrollbarAxis, Table, TableCaption,
+    Button, Checkbox, CheckboxState, DropdownMenu, Field, Input, InputBase, InputState, MenuEvent,
+    MenuItem, MenuOption, MenuState, NaiveDate, ScrollArea, ScrollbarAxis, Table, TableCaption,
     TableCell, TableColumn, TableRow,
 };
 
 use super::super::Palette;
 use super::{EmptyState, InputGroup, Pagination};
 
-/// One fixed-width text column. Values are sorted as case-insensitive text.
+/// One fixed-width column. Cells sort by their [`DataTableCell`] keys.
 pub(crate) struct DataTableColumn {
     label: SharedString,
     width: Pixels,
+    align_end: bool,
 }
 
 impl DataTableColumn {
@@ -28,25 +30,124 @@ impl DataTableColumn {
         Self {
             label: label.into(),
             width,
+            align_end: false,
+        }
+    }
+
+    /// Aligns heading and values to the end edge, as for numeric amounts.
+    pub(crate) fn align_end(mut self) -> Self {
+        self.align_end = true;
+        self
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+enum SortKey {
+    Text(String),
+    Number(f64),
+    Date(NaiveDate),
+}
+
+impl SortKey {
+    fn rank(&self) -> u8 {
+        match self {
+            Self::Number(_) => 0,
+            Self::Date(_) => 1,
+            Self::Text(_) => 2,
+        }
+    }
+
+    fn compare(&self, other: &Self) -> Ordering {
+        match (self, other) {
+            (Self::Number(a), Self::Number(b)) => a.total_cmp(b),
+            (Self::Date(a), Self::Date(b)) => a.cmp(b),
+            (Self::Text(a), Self::Text(b)) => a.cmp(b),
+            _ => self.rank().cmp(&other.rank()),
         }
     }
 }
 
-/// An immutable row with a stable application ID and one text value per column.
+/// Displayed text and the value it sorts by. Text sorts case-insensitively;
+/// numbers and dates sort by value whatever their displayed format.
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct DataTableCell {
+    text: SharedString,
+    key: SortKey,
+}
+
+impl DataTableCell {
+    pub(crate) fn text(text: impl Into<SharedString>) -> Self {
+        let text = text.into();
+        Self {
+            key: SortKey::Text(text.to_lowercase()),
+            text,
+        }
+    }
+
+    /// A finite number shown as formatted text, such as `$1,250.00`.
+    pub(crate) fn number(text: impl Into<SharedString>, value: f64) -> Self {
+        assert!(value.is_finite(), "a sortable number must be finite");
+        Self {
+            text: text.into(),
+            key: SortKey::Number(value),
+        }
+    }
+
+    /// A calendar date shown as formatted text, such as `Dec 10, 2026`.
+    pub(crate) fn date(text: impl Into<SharedString>, value: NaiveDate) -> Self {
+        Self {
+            text: text.into(),
+            key: SortKey::Date(value),
+        }
+    }
+}
+
+impl From<&str> for DataTableCell {
+    fn from(text: &str) -> Self {
+        Self::text(text.to_string())
+    }
+}
+
+impl From<String> for DataTableCell {
+    fn from(text: String) -> Self {
+        Self::text(text)
+    }
+}
+
+impl From<SharedString> for DataTableCell {
+    fn from(text: SharedString) -> Self {
+        Self::text(text)
+    }
+}
+
+fn align(cell: TableCell, end: bool) -> TableCell {
+    if end { cell.flex().justify_end() } else { cell }
+}
+
+/// An immutable row with a stable application ID and one cell per column.
 pub(crate) struct DataTableRow {
     id: SharedString,
     cells: Vec<SharedString>,
+    keys: Vec<SortKey>,
     disabled: bool,
 }
 
 impl DataTableRow {
     pub(crate) fn new(
         id: impl Into<SharedString>,
-        cells: impl IntoIterator<Item = impl Into<SharedString>>,
+        cells: impl IntoIterator<Item = impl Into<DataTableCell>>,
     ) -> Self {
+        let (cells, keys) = cells
+            .into_iter()
+            .map(|cell| {
+                let cell = cell.into();
+                (cell.text, cell.key)
+            })
+            .unzip();
         Self {
             id: id.into(),
-            cells: cells.into_iter().map(Into::into).collect(),
+            cells,
+            keys,
             disabled: false,
         }
     }
@@ -65,13 +166,16 @@ impl DataTableRow {
     }
 }
 
-/// Retained client-side filtering, one-column text sorting, and pagination.
+/// Retained client-side filtering, one-column sorting, and pagination.
 ///
 /// The native InputState is the query's source of truth. Matching indices are
 /// derived only when query text or sort order changes. Each whitespace-separated
 /// query term must occur somewhere in the row, ignoring case. Sorting preserves
 /// source order for equal keys. Rows stay immutable and selection belongs to the
-/// consuming application. Observe this entity when rendering it from a parent.
+/// consuming application. Checkbox selection is independent of the current row
+/// action and survives filtering, sorting, and paging by stable row ID. The
+/// header checkbox changes only enabled rows on the displayed page. Observe
+/// this entity when rendering it from a parent.
 pub(crate) struct DataTableState {
     columns: Vec<DataTableColumn>,
     rows: Vec<DataTableRow>,
@@ -83,8 +187,12 @@ pub(crate) struct DataTableState {
     descending: bool,
     page: usize,
     page_size: usize,
+    selected: HashSet<SharedString>,
+    visible_columns: Vec<bool>,
+    columns_menu: Entity<MenuState>,
     scroll: ScrollHandle,
     _input_observation: Subscription,
+    _menu_subscriptions: Vec<Subscription>,
 }
 
 impl DataTableState {
@@ -116,8 +224,26 @@ impl DataTableState {
             // Input focus and editing presentation also affect the frame.
             cx.notify();
         });
+        let columns_menu = cx.new(|cx| {
+            MenuState::new(
+                columns
+                    .iter()
+                    .enumerate()
+                    .map(|(index, column)| MenuItem::new(index.to_string(), column.label.clone())),
+                cx,
+            )
+        });
+        let menu_subscriptions = vec![
+            cx.observe(&columns_menu, |_, _, cx| cx.notify()),
+            cx.subscribe(&columns_menu, |state, _, event, cx| {
+                let MenuEvent::Action(value) = event;
+                let index: usize = value.parse().expect("column menu uses column indices");
+                state.set_column_visible(index, !state.visible_columns[index], cx);
+            }),
+        ];
         Self {
             filtered: (0..rows.len()).collect(),
+            visible_columns: vec![true; columns.len()],
             columns,
             rows,
             input,
@@ -126,8 +252,11 @@ impl DataTableState {
             descending: false,
             page: 0,
             page_size,
+            selected: HashSet::new(),
+            columns_menu,
             scroll: ScrollHandle::new(),
             _input_observation: input_observation,
+            _menu_subscriptions: menu_subscriptions,
         }
     }
 
@@ -153,6 +282,67 @@ impl DataTableState {
             .skip(self.page * self.page_size)
             .take(self.page_size)
             .map(|&index| &self.rows[index])
+    }
+
+    pub(crate) fn is_row_selected(&self, id: &SharedString) -> bool {
+        self.selected.contains(id)
+    }
+
+    pub(crate) fn filtered_selected_count(&self) -> usize {
+        self.filtered
+            .iter()
+            .filter(|&&index| self.selected.contains(self.rows[index].id()))
+            .count()
+    }
+
+    pub(crate) fn is_column_visible(&self, column: usize) -> bool {
+        self.visible_columns[column]
+    }
+
+    fn page_selection(&self) -> CheckboxState {
+        let mut enabled = 0;
+        let mut selected = 0;
+        for row in self.visible_rows().filter(|row| !row.disabled) {
+            enabled += 1;
+            selected += usize::from(self.is_row_selected(row.id()));
+        }
+        match (selected, enabled) {
+            (0, _) => CheckboxState::Unchecked,
+            (selected, enabled) if selected == enabled => CheckboxState::Checked,
+            _ => CheckboxState::Indeterminate,
+        }
+    }
+
+    fn set_row_selected(&mut self, id: SharedString, selected: bool, cx: &mut Context<Self>) {
+        if !self.rows.iter().any(|row| row.id == id && !row.disabled) {
+            return;
+        }
+        let changed = if selected {
+            self.selected.insert(id)
+        } else {
+            self.selected.remove(&id)
+        };
+        if changed {
+            cx.notify();
+        }
+    }
+
+    fn set_page_selected(&mut self, selected: bool, cx: &mut Context<Self>) {
+        let ids: Vec<_> = self
+            .visible_rows()
+            .filter(|row| !row.disabled)
+            .map(|row| row.id().clone())
+            .collect();
+        for id in ids {
+            self.set_row_selected(id, selected, cx);
+        }
+    }
+
+    fn set_column_visible(&mut self, column: usize, visible: bool, cx: &mut Context<Self>) {
+        if self.visible_columns[column] != visible {
+            self.visible_columns[column] = visible;
+            cx.notify();
+        }
     }
 
     pub(crate) fn set_page(&mut self, page: usize, cx: &mut Context<Self>) {
@@ -197,14 +387,13 @@ impl DataTableState {
             })
             .collect();
         if let Some(column) = self.sort_column {
-            if self.descending {
-                self.filtered.sort_by_cached_key(|&index| {
-                    Reverse(self.rows[index].cells[column].to_lowercase())
-                });
-            } else {
-                self.filtered
-                    .sort_by_cached_key(|&index| self.rows[index].cells[column].to_lowercase());
-            }
+            let rows = &self.rows;
+            let descending = self.descending;
+            // Stable in both directions, so equal keys keep source order.
+            self.filtered.sort_by(|&a, &b| {
+                let order = rows[a].keys[column].compare(&rows[b].keys[column]);
+                if descending { order.reverse() } else { order }
+            });
         }
         self.page = 0;
         self.reset_vertical_scroll();
@@ -238,8 +427,9 @@ type RowAction = Rc<dyn Fn(SharedString, &mut Window, &mut App)>;
 ///
 /// This composes Field/Input, Table, ScrollArea, EmptyState, and Pagination.
 /// Header and row buttons keep ordinary Tab order; there is no grid focus or
-/// row-selection controller. Native table indices describe the displayed page.
-/// Sorting direction is exposed by the header button's accessible name.
+/// arrow-key navigation. Checkbox selection and column visibility compose native
+/// controls. Native table indices describe the displayed page. Column headers
+/// expose the active sort direction; row actions retain a separate current row.
 #[derive(IntoElement)]
 pub(crate) struct DataTable {
     id: ElementId,
@@ -313,6 +503,27 @@ impl DataTable {
             .focus_visible(|style| style.border_color(palette.accent))
             .styles(|styles| styles.disabled(|style| style.opacity(0.45)))
     }
+
+    fn checkbox(palette: Palette, checkbox: Checkbox, state: CheckboxState) -> Checkbox {
+        checkbox
+            .state(state)
+            .size(px(24.))
+            .flex()
+            .items_center()
+            .justify_center()
+            .border_1()
+            .border_color(palette.border)
+            .rounded(palette.radius)
+            .bg(palette.field)
+            .text_color(palette.foreground)
+            .focus_visible(|style| style.border_color(palette.accent))
+            .styles(|styles| styles.disabled(|style| style.opacity(0.45)))
+            .child(match state {
+                CheckboxState::Unchecked => "",
+                CheckboxState::Checked => "✓",
+                CheckboxState::Indeterminate => "−",
+            })
+    }
 }
 
 impl Styled for DataTable {
@@ -337,6 +548,8 @@ impl RenderOnce for DataTable {
             query,
             format!("Filter {}", self.label),
         )
+        .w_full()
+        .min_w_0()
         .flex()
         .flex_col()
         .gap_1()
@@ -345,8 +558,69 @@ impl RenderOnce for DataTable {
                 .focused(query.focus_handle(cx).is_focused(window)),
         );
 
-        let mut header = TableRow::new((self.id.clone(), "header")).bg(palette.highlight);
-        for (index, column) in state.columns.iter().enumerate() {
+        let columns_menu = DropdownMenu::new((self.id.clone(), "columns"), &state.columns_menu)
+            .accessibility_label(format!("{} visible columns", self.label))
+            .trigger(|button| {
+                Self::button(palette, button)
+                    .accessibility_label("Choose visible columns")
+                    .child("Columns")
+            })
+            .content(
+                div()
+                    .w(px(200.))
+                    .p_1()
+                    .flex()
+                    .flex_col()
+                    .bg(palette.surface)
+                    .border_1()
+                    .border_color(palette.border)
+                    .rounded(palette.radius)
+                    .children(state.columns.iter().enumerate().map(|(index, column)| {
+                        let visible = state.is_column_visible(index);
+                        MenuOption::new(&state.columns_menu, index)
+                            .checked(visible)
+                            .px_2()
+                            .py_1()
+                            .text_color(palette.foreground)
+                            .when(
+                                state.columns_menu.read(cx).highlighted_index() == Some(index),
+                                |option| option.bg(palette.highlight),
+                            )
+                            .child(format!(
+                                "{} {}",
+                                if visible { "✓" } else { " " },
+                                column.label
+                            ))
+                    })),
+            );
+        let page_selection = state.page_selection();
+        let page_owner = self.state.clone();
+        let mut header = TableRow::new((self.id.clone(), "header"))
+            .bg(palette.highlight)
+            .cell(
+                TableCell::new((self.id.clone(), "select-heading"))
+                    .p_1()
+                    .accessibility_label("Selection")
+                    .child(Self::checkbox(
+                        palette,
+                        Checkbox::new((self.id.clone(), "select-page"))
+                            .accessibility_label("Select all enabled rows on this page")
+                            .disabled(!state.visible_rows().any(|row| !row.disabled))
+                            .on_change(move |value, _, _, cx| {
+                                page_owner.update(cx, |state, cx| {
+                                    state.set_page_selected(value == CheckboxState::Checked, cx)
+                                })
+                            }),
+                        page_selection,
+                    )),
+            );
+        let visible_columns: Vec<_> = state
+            .columns
+            .iter()
+            .enumerate()
+            .filter(|&(index, _)| state.is_column_visible(index))
+            .collect();
+        for &(index, column) in &visible_columns {
             let (current, next, marker) = if state.sort_column != Some(index) {
                 ("not sorted", "ascending", "↕")
             } else if state.descending {
@@ -356,21 +630,31 @@ impl RenderOnce for DataTable {
             };
             let owner = self.state.clone();
             header = header.cell(
-                TableCell::new((self.id.clone(), format!("heading-{index}")))
-                    .accessibility_label(column.label.clone())
-                    .p_1()
-                    .child(Self::button(
-                        palette,
-                        Button::new((self.id.clone(), format!("sort-{index}")))
-                            .accessibility_label(format!(
-                                "{}, {}; sort {}",
-                                column.label, current, next
-                            ))
-                            .on_click(move |_, _, cx| {
-                                owner.update(cx, |state, cx| state.sort_by_column(index, cx))
-                            })
-                            .child(format!("{} {marker}", column.label)),
-                    )),
+                align(
+                    TableCell::new((self.id.clone(), format!("heading-{index}")))
+                        .accessibility_label(column.label.clone())
+                        .sort_direction((state.sort_column == Some(index)).then_some(
+                            if state.descending {
+                                SortDirection::Descending
+                            } else {
+                                SortDirection::Ascending
+                            },
+                        ))
+                        .p_1(),
+                    column.align_end,
+                )
+                .child(Self::button(
+                    palette,
+                    Button::new((self.id.clone(), format!("sort-{index}")))
+                        .accessibility_label(format!(
+                            "{}, {}; sort {}",
+                            column.label, current, next
+                        ))
+                        .on_click(move |_, _, cx| {
+                            owner.update(cx, |state, cx| state.sort_by_column(index, cx))
+                        })
+                        .child(format!("{} {marker}", column.label)),
+                )),
             );
         }
         header = header.cell(
@@ -380,15 +664,16 @@ impl RenderOnce for DataTable {
                 .child("Action"),
         );
 
-        let columns = state
-            .columns
-            .iter()
-            .map(|column| TableColumn::fixed(column.width))
+        let columns = std::iter::once(TableColumn::fixed(px(40.)))
+            .chain(
+                visible_columns
+                    .iter()
+                    .map(|(_, column)| TableColumn::fixed(column.width)),
+            )
             .chain(std::iter::once(TableColumn::fixed(px(130.))));
-        let width = state
-            .columns
+        let width = visible_columns
             .iter()
-            .fold(px(130.), |width, column| width + column.width);
+            .fold(px(170.), |width, (_, column)| width + column.width);
         let mut table = Table::new((self.id.clone(), "table"), columns)
             .accessibility_label(self.label.clone())
             .w(width)
@@ -396,19 +681,52 @@ impl RenderOnce for DataTable {
         for row in state.visible_rows() {
             let row_id: ElementId = (self.id.clone(), format!("row-{}", row.id())).into();
             let current = self.selected.as_ref() == Some(row.id());
+            let selected = state.is_row_selected(row.id());
+            let row_selection = if selected {
+                CheckboxState::Checked
+            } else {
+                CheckboxState::Unchecked
+            };
+            let selection_owner = self.state.clone();
+            let selected_id = row.id().clone();
             let mut rendered = TableRow::new(row_id.clone())
+                .selected(selected)
                 .border_b_1()
-                .border_color(palette.border);
-            if current {
+                .border_color(palette.border)
+                .cell(
+                    TableCell::new((row_id.clone(), "selection-cell"))
+                        .p_1()
+                        .child(Self::checkbox(
+                            palette,
+                            Checkbox::new((row_id.clone(), "select"))
+                                .accessibility_label(format!("Select {}", row.cells()[0]))
+                                .disabled(row.disabled)
+                                .on_change(move |value, _, _, cx| {
+                                    selection_owner.update(cx, |state, cx| {
+                                        state.set_row_selected(
+                                            selected_id.clone(),
+                                            value == CheckboxState::Checked,
+                                            cx,
+                                        )
+                                    })
+                                }),
+                            row_selection,
+                        )),
+                );
+            if current || selected {
                 rendered = rendered.bg(palette.highlight);
             }
-            for (index, cell) in row.cells().iter().enumerate() {
+            for (visible_index, &(index, column)) in visible_columns.iter().enumerate() {
+                let cell = &row.cells()[index];
                 rendered = rendered.cell(
-                    TableCell::new((row_id.clone(), format!("column-{index}")))
-                        .row_header(index == 0)
-                        .accessibility_label(cell.clone())
-                        .p_2()
-                        .child(cell.clone()),
+                    align(
+                        TableCell::new((row_id.clone(), format!("column-{index}")))
+                            .row_header(visible_index == 0)
+                            .accessibility_label(cell.clone())
+                            .p_2(),
+                        column.align_end,
+                    )
+                    .child(cell.clone()),
                 );
             }
             let value = row.id().clone();
@@ -460,6 +778,7 @@ impl RenderOnce for DataTable {
         let pagination = self.state.clone();
         self.base
             .child(filter)
+            .child(columns_menu)
             .when(!empty, |base| base.child(viewport))
             .when(empty, |base| {
                 base.child(
@@ -480,6 +799,11 @@ impl RenderOnce for DataTable {
                     )),
                 )
             })
+            .child(div().text_sm().text_color(palette.muted).child(format!(
+                "{} of {} matching rows selected",
+                state.filtered_selected_count(),
+                state.filtered_count(),
+            )))
             .child(
                 Pagination::new(
                     (self.id, "pagination"),
@@ -492,5 +816,172 @@ impl RenderOnce for DataTable {
                     pagination.update(cx, |state, cx| state.set_page(page, cx))
                 }),
             )
+    }
+}
+
+#[cfg(all(test, feature = "test-support"))]
+mod tests {
+    use gpui::TestAppContext;
+
+    use super::*;
+
+    fn sample(window: &mut Window, cx: &mut App) -> Entity<DataTableState> {
+        cx.new(|cx| {
+            DataTableState::new(
+                [
+                    DataTableColumn::new("Name", px(100.)),
+                    DataTableColumn::new("Status", px(100.)),
+                ],
+                [
+                    DataTableRow::new("a", ["Alpha", "Ready"]),
+                    DataTableRow::new("b", ["Beta", "Paused"]).disabled(true),
+                    DataTableRow::new("c", ["Charlie", "Ready"]),
+                    DataTableRow::new("d", ["Delta", "Ready"]),
+                    DataTableRow::new("e", ["Echo", "Paused"]),
+                ],
+                3,
+                window,
+                cx,
+            )
+        })
+    }
+
+    #[gpui::test]
+    fn checkbox_selection_is_page_scoped_and_retains_stable_ids(cx: &mut TestAppContext) {
+        let window = cx.add_empty_window();
+        window.update(|window, cx| {
+            let table = sample(window, cx);
+            table.update(cx, |table, cx| {
+                table.set_row_selected("a".into(), true, cx);
+                table.set_row_selected("b".into(), true, cx);
+                assert!(!table.is_row_selected(&"b".into()));
+                assert_eq!(table.page_selection(), CheckboxState::Indeterminate);
+                table.set_page_selected(true, cx);
+                assert_eq!(table.page_selection(), CheckboxState::Checked);
+                assert_eq!(table.filtered_selected_count(), 2);
+
+                table.set_page(1, cx);
+                assert_eq!(table.page_selection(), CheckboxState::Unchecked);
+                table.set_page_selected(true, cx);
+                assert_eq!(table.filtered_selected_count(), 4);
+                table.set_page(0, cx);
+                table.set_page_selected(false, cx);
+                assert_eq!(table.filtered_selected_count(), 2);
+                assert!(table.is_row_selected(&"d".into()));
+                assert!(table.is_row_selected(&"e".into()));
+
+                table.sort_by_column(0, cx);
+                table.sort_by_column(0, cx);
+                assert_eq!(table.visible_rows().next().unwrap().id().as_ref(), "e");
+                assert_eq!(table.page_selection(), CheckboxState::Indeterminate);
+                table
+                    .input
+                    .update(cx, |input, cx| input.set_value("Paused", window, cx));
+                table.sync_query(cx);
+                assert_eq!(table.filtered_count(), 2);
+                assert_eq!(table.filtered_selected_count(), 1);
+                table.set_page_selected(false, cx);
+                assert!(!table.is_row_selected(&"e".into()));
+                assert!(table.is_row_selected(&"d".into()));
+                table.clear_filter(window, cx);
+                assert_eq!(table.filtered_selected_count(), 1);
+            });
+        });
+    }
+
+    #[gpui::test]
+    fn hiding_columns_preserves_filter_sort_and_selection(cx: &mut TestAppContext) {
+        let window = cx.add_empty_window();
+        window.update(|window, cx| {
+            let table = sample(window, cx);
+            table.update(cx, |table, cx| {
+                table.set_row_selected("c".into(), true, cx);
+                table.sort_by_column(0, cx);
+                table.set_page(1, cx);
+                table.set_column_visible(0, false, cx);
+                table.set_column_visible(1, false, cx);
+                assert!(!table.is_column_visible(0));
+                assert!(!table.is_column_visible(1));
+                assert_eq!(table.page_index(), 1);
+                table
+                    .input
+                    .update(cx, |input, cx| input.set_value("Charlie Ready", window, cx));
+                table.sync_query(cx);
+                assert_eq!(table.filtered_count(), 1);
+                assert_eq!(table.filtered_selected_count(), 1);
+                assert_eq!(table.sort_column, Some(0));
+                table.set_column_visible(0, true, cx);
+                assert!(table.is_column_visible(0));
+                assert_eq!(table.visible_rows().next().unwrap().id().as_ref(), "c");
+            });
+        });
+    }
+
+    #[gpui::test]
+    fn numbers_and_dates_sort_by_value_not_display_text(cx: &mut TestAppContext) {
+        let window = cx.add_empty_window();
+        window.update(|window, cx| {
+            let date = |day| NaiveDate::from_ymd_opt(2026, 12, day).unwrap();
+            let table = cx.new(|cx| {
+                DataTableState::new(
+                    [
+                        DataTableColumn::new("Name", px(100.)),
+                        DataTableColumn::new("Amount", px(100.)).align_end(),
+                        DataTableColumn::new("Due", px(100.)),
+                    ],
+                    [
+                        DataTableRow::new(
+                            "a",
+                            [
+                                DataTableCell::text("Alpha"),
+                                DataTableCell::number("$900.00", 900.),
+                                DataTableCell::date("Dec 9, 2026", date(9)),
+                            ],
+                        ),
+                        DataTableRow::new(
+                            "b",
+                            [
+                                DataTableCell::text("Beta"),
+                                DataTableCell::number("$1,250.00", 1250.),
+                                DataTableCell::date("Dec 10, 2026", date(10)),
+                            ],
+                        ),
+                        DataTableRow::new(
+                            "c",
+                            [
+                                DataTableCell::text("Charlie"),
+                                DataTableCell::number("-$5.00", -5.),
+                                DataTableCell::date("Dec 1, 2026", date(1)),
+                            ],
+                        ),
+                    ],
+                    5,
+                    window,
+                    cx,
+                )
+            });
+            table.update(cx, |table, cx| {
+                let order = |table: &DataTableState| {
+                    table
+                        .visible_rows()
+                        .map(|row| row.id().to_string())
+                        .collect::<Vec<_>>()
+                };
+                // Text order would put "$1,250.00" first and "-$5.00" last.
+                table.sort_by_column(1, cx);
+                assert_eq!(order(table), ["c", "a", "b"]);
+                table.sort_by_column(1, cx);
+                assert_eq!(order(table), ["b", "a", "c"]);
+                // Text order would put "Dec 10" before "Dec 9".
+                table.sort_by_column(2, cx);
+                assert_eq!(order(table), ["c", "a", "b"]);
+                // Filtering still searches the displayed text.
+                table
+                    .input
+                    .update(cx, |input, cx| input.set_value("1,250", window, cx));
+                table.sync_query(cx);
+                assert_eq!(order(table), ["b"]);
+            });
+        });
     }
 }

@@ -77,6 +77,23 @@ supplied children. The native property is AccessKit's `AriaCurrent::Page` on the
 ListItem itself. That contract does not establish how a particular desktop
 screen reader announces the path.
 
+### Collapsed paths and dropdown items
+
+A collapsed path keeps its hidden ancestors reachable through an ordinary
+[`DropdownMenu`](#dropdownmenu) inside one `BreadcrumbItem`; the family adds no
+ellipsis element or second menu model. Name the trigger Button for its purpose,
+such as "Show hidden locations", and use the `…` glyph only as its visible
+content. Each hidden ancestor is a `MenuItem` whose value the application maps to
+a destination when the menu reports `MenuEvent::Action`. The menu supplies one Tab
+stop, Down/Enter opening, arrow and single-character navigation, and returns
+focus to the trigger after activation. The same composition gives any crumb a
+dropdown of sibling locations.
+
+The catalogue's Navigation view renders `Home › … › <current page>`. Its ellipsis
+lists Documentation and Components; choosing one changes the local page and the
+current final item, and Home returns to Overview. Decide how many ancestors to
+collapse in application layout; the family does not measure path width.
+
 ## Direction
 
 Wrap a subtree with `DirectionProvider::new(Direction::Rtl)` or `Direction::Ltr`.
@@ -123,9 +140,14 @@ item removes the currently focused content, the caller must move focus to a
 retained navigation entry or another valid target. This method does not choose
 that target or turn an ordinary navigation Button into a Tab.
 
-TabList activation is automatic: moving focus to an enabled tab also selects it.
-This includes pointer, keyboard, and programmatic focus. Each list has one Tab
-stop, at its selected tab.
+TabList activation is automatic by default: moving focus to an enabled tab also
+selects it, including programmatic and accessibility focus. Configure
+`TabsState::new(items, cx).manual_activation()` to keep focus and selection
+independent. In manual mode arrows and Home/End move focus while the current
+panel stays mounted; click, Enter, or Space commits the focused tab. Each list
+has one Tab stop: the selected tab in automatic mode, or the last focused tab
+(initially selected) in manual mode. `select_value` preserves manual focus entry.
+The catalogue uses manual activation; Compact's session tabs remain automatic.
 
 | Input | Horizontal list | Vertical list |
 | --- | --- | --- |
@@ -168,8 +190,11 @@ Navigation/Button/Region semantics rather than the TabList/Tab/TabPanel roles.
 
 `AccordionState` owns a fixed, ordered collection of `AccordionItem::new(value,
 label)` entries. Values must be unique. The initial state is fully collapsed;
-`.default_open(value)` opens one enabled entry. An unknown or disabled default is
-a configuration error and panics. Mark unavailable entries with `.disabled(true)`.
+`.default_open([value])` opens an enabled entry. Use
+`.multiple(true).default_open(["general", "details"])` to allow several open
+panels. Defaults must identify enabled items; more than one distinct default in
+single-open mode is a configuration error and panics. Mark unavailable entries
+with `.disabled(true)`.
 
 Render `Accordion::new(id, &state)` around the headers and panels, then pair each
 `AccordionHeader::new(&state, index)` with its `AccordionPanel::new(&state, index)`
@@ -179,11 +204,11 @@ a focus scope and keyboard handling, without choosing a layout or appearance.
 The header contains a native heading and a button. Its children and styles apply
 to the button; use `.heading_level(level)` to change the heading level from 3.
 Place only non-interactive content inside the header. The application draws the
-indicator and may use `open_index()` to distinguish open and closed headers.
+indicator and uses `is_open(index)` to distinguish open and closed headers.
 
 | Input on a header | Behavior |
 | --- | --- |
-| Click / Enter / Space | Open this panel, closing the previous one; collapse if already open |
+| Click / Enter / Space | Toggle this panel; single-open mode also closes the previous panel |
 | Up / Down | Focus the previous / next enabled header, wrapping at either end |
 | Home / End | Focus the first / last enabled header |
 | Tab / Shift-Tab | Follow normal document order through enabled headers and open content |
@@ -193,11 +218,14 @@ stop. Navigation actions only apply when a header itself has focus, so an Input
 inside a panel retains its own Home/End and arrow behavior. Disabled headers do
 not activate or participate in keyboard focus traversal.
 
-State methods include `items`, `open_index`, `open_item`, `trigger_focus_handle`,
+State methods include `items`, `is_open`, `open_values`, `trigger_focus_handle`,
 `panel_focus_handle`, `toggle(index, window, cx)`, and `close(window, cx)`. Subscribe
-to `AccordionEvent::Change(Some(value))` when a section opens and `Change(None)`
-when all sections close. A no-op does not emit another event. Observe the state
-to redraw the consumer.
+to `AccordionEvent::Change(values)` for the open values in original item order;
+an empty vector means all panels are closed. `close` closes every open panel. A
+no-op does not emit another event. Observe the state to redraw the consumer.
+The catalogue's Navigation help mounts two independent answers with
+`.multiple(true)`, so opening the command explanation preserves the alignment
+answer. The session Help keeps the default single-open contract.
 
 Closing a panel removes its layout, focus stops, and accessibility nodes. Keep
 form values and child entities in the application view if they must survive
@@ -260,8 +288,13 @@ Build `Popover::new(id, &state)` with:
   appearance using the existing Button API.
 - `.accessibility_label(...)` to name the popup's non-modal dialog surface.
 - `.content(...)` for application-owned popup contents and surface styling.
-- `.anchor(...)` and `.offset(...)` when the existing Popup geometry needs a
-  different attachment point or gap.
+- `.anchor(...)` for corner anchoring and `.offset(...)` for the trigger gap.
+- `.side(Placement::Right).align(Align::Start)` for a side-positioned popup with
+  collision flipping. Calling `.align(...)` alone chooses Bottom; its default
+  side alignment is Center. Top/Bottom Start/End follows the scoped logical
+  direction. The positioner tracks the trigger's current frame and clamps to
+  the viewport. Explicit corner anchors and context-menu pointer coordinates
+  retain their separate placement contracts.
 
 The library owns the trigger's activation, focus, disabled state, and expanded
 metadata. The supplied `id` identifies that trigger. Its button builder should
@@ -477,12 +510,14 @@ that application update. Retained popup state is dismissed on detachment.
 Native metadata includes a named target, expanded/disabled state, the Shift-F10
 shortcut and ShowContextMenu action, plus the shared Menu, MenuItem, and
 MenuItemCheckBox/MenuItemRadio and submenu semantics. The same command tree can
-be supplied to DropdownMenu or ContextMenu. Interactive descendant targets and
-touch long-press are not included.
+be supplied to DropdownMenu or ContextMenu. A touch long press on the target
+opens the menu at the press position, like a secondary click, and claims the
+gesture so the release neither pans nor reaches the target. Interactive
+descendant targets are not included.
 
 ## Command
 
-Create `CommandState::new(items, window, cx)` from fixed, ordered
+Create `CommandState::new(items, window, cx)` from ordered
 `SearchItem::new(value, label)` entries with unique values. Optional `.keywords`
 add search aliases; `.disabled(true)` makes an action unavailable. Observe the
 state for result rendering and subscribe to `CommandEvent::Action(value)` to
@@ -490,19 +525,29 @@ handle execution in the application.
 
 `Command::new(id, &state)` hosts `CommandInput::new(id, &state)` and
 `CommandList::new(id, &state)`. Give the query and list accessible labels, and
-render `CommandOption::new(&state, index)` as direct list children for
-`visible_indices()`, in that order. Read `items()` for labels and
+render `CommandOption::new(&state, index)` for `visible_indices()`, in that order.
+For `.group(label)` items, wrap matching options in named `CommandGroup` parts;
+`visible_groups()` and `visible_group_indices(Some(label))` expose the filtered
+collection. Keep each group contiguous in the source; empty groups disappear.
+Group headings have no focus stop and do not affect keyboard navigation. Read `items()` for labels and
 `highlighted_index()` for application-owned active-row styling. The list uses
 the existing GPUI ScrollHandle; give it a height or maximum height so the active
 result can scroll into view. Render an application-owned empty message when no
 items match.
 
 The existing InputState is the query's source of truth, exposed through `input()`.
-`set_query(text, window, cx)` updates it programmatically. Each whitespace-separated
-query term must appear, ignoring case, in the item's value, label, or keywords.
-Matching retains item order and includes disabled matches for display. A changed
+`set_query(text, window, cx)` updates it programmatically. The characters of each
+whitespace-separated query term must appear in order, ignoring case, in the item's
+value, label, or keywords, so `pnt` finds "Show pointer". Results rank a match at
+a word start above any other substring and those above looser in-order letters,
+summed over the terms. Groups stay contiguous, ordered by their best result;
+equal scores and an empty query keep source order.
+Matching includes disabled results for display. A changed
 query highlights its first enabled result; empty or all-disabled results have no
-active command. There is no asynchronous source, fuzzy ranking, or grouped list.
+active command. `set_items(items, window, cx)` replaces the collection while
+preserving the native query and focus; it retains an enabled matching highlight
+by value or picks the first enabled result. Applications own fetching and request
+ordering. A network controller is not provided.
 
 | Input | Behavior |
 | --- | --- |
@@ -538,7 +583,7 @@ Retain `TooltipState::new(&trigger_focus, window, cx)` alongside the existing
 Button focus handle. Render `Tooltip::new(id, &state, description)` and configure
 the Button through `.trigger(|button| ...)`. This preserves the application's
 activation handler and focus identity. Ordinary Styled methods on Tooltip
-configure the noninteractive text surface; the trigger builder owns button
+configure the noninteractive surface; the trigger builder owns button
 appearance. No additional init call or keybinding is needed.
 
 Keyboard focus shows the text immediately; pointer hover waits 500 ms. Leaving
@@ -554,10 +599,19 @@ window-edge clamping, and drawing; this component adds the focus/hover lifecycle
 Its mounted Escape subscription belongs to that window and does not issue a
 global clear operation that could dismiss another tooltip.
 
-The current API supports plain text attached to a Button. Rich interactive
-content, touch long-press behavior, and a configurable provider are not part of
-this contract. The example wraps its existing Edit session button, so the same
-button opens the settings Dialog and remains its return-focus target.
+`.content(|window, cx| ...)` replaces the visible text with noninteractive rich
+content, such as a heading and muted detail line or a label with a keycap. The
+builder runs whenever the visible surface renders. The plain-text description
+remains the trigger's native description and the surface's Tooltip name, so
+keep it an equivalent summary of what the rich content shows. Rich content adds
+no Tab stop. Do not place focusable or clickable controls in it: the tooltip
+closes when the pointer leaves the trigger. Interactive previews belong in
+HoverCard or Popover.
+
+Interactive tooltip content, touch long-press behavior, and a configurable
+provider are not part of this contract. The example wraps its existing Edit
+session button with a rich heading and detail line, so the same button opens the
+settings Dialog and remains its return-focus target.
 
 ## HoverCard
 
@@ -614,7 +668,9 @@ visible preview is a supplementary Tooltip surface with no Tab stop; it never
 opens a focus trap. `accessibility_label` names that surface. Keep essential
 information available in the Button's accessible description or its ordinary
 destination, rather than only in a pointer preview. Interactive content belongs
-in Popover. Touch long-press and a global hover provider are not supplied.
+in Popover. Touch has no hover: a long press on the trigger opens the preview at
+once without activating the Button, and the next press anywhere dismisses it. A
+global hover provider is not supplied.
 
 The example previews the current recording preset, recording date, and notes
 status. Clicking or pressing Enter on that same Button opens the settings Dialog,
@@ -631,6 +687,18 @@ static separator; Resizable pane-divider interaction is not implied.
 Use ordinary GPUI styles for its dimensions and color, such as
 `.h(px(1.)).w_full().bg(border)` for a horizontal line. Axis does not impose a
 visual layout. Separators have no children or Tab stop.
+
+## Dialog
+
+`Dialog::new(&state)` is modal: it exposes native modal metadata and blocks
+background pointer/wheel input even without a decorative backdrop. The
+application supplies the accessible name, popup and visual backdrop. Keep it
+mounted under Root so Tab and Shift-Tab remain in the active dialog.
+
+The existing state owns opening, initial focus, Escape and return focus. Backdrop
+press dismissal is provided when a backdrop is supplied and enabled; omitting
+that visual element still keeps background controls inert. Popover is non-modal
+and does not set the modal flag. AlertDialog, Drawer and Sheet reuse Dialog.
 
 ## AlertDialog
 
@@ -678,7 +746,7 @@ with no inertial physics or snap-point configuration.
 nonzero `.with_duration(...)` before mounting if needed. Keep the matching
 `Toast::new(id, &state)` in the view even while closed. Set its accessible message,
 body and ordinary action Buttons; `ToastClose` provides the dismiss action.
-Applications own stacking and content, rather than a second queue service.
+Use one ToastState for a single notification slot, or ToasterState for a stack.
 
 `show` starts or replaces the message without taking focus. The mounted countdown
 pauses on hover, contained focus and window inactivity, then resumes from its
@@ -690,6 +758,46 @@ closes it without restoring captured focus; the application must move focus to a
 surviving control when removing focused content. Native live metadata is
 polite by default and assertive for `.urgent(true)`; actual screen-reader delivery
 must still be checked on each platform.
+
+### Toaster
+
+`ToasterState<T>` keeps a stack of notifications whose values `T` belong to the
+application, each backed by its own ToastState:
+
+```rust
+let toasts = cx.new(|_| ToasterState::<SharedString>::new());
+
+// Anywhere with a window:
+let key = toasts.update(cx, |toasts, cx| toasts.push("Uploading…".into(), window, cx));
+// Later, update the same notification in place and restart its lifetime.
+toasts.update(cx, |toasts, cx| toasts.replace(key, "Upload complete".into(), window, cx));
+
+Toaster::new("notifications", &toasts, |key, message, state| {
+    Toast::new(key, state)
+        .accessibility_label(message.clone())
+        .child(message.clone())
+        .child(ToastClose::new((ElementId::from(key), "close"), state))
+})
+.absolute()
+.bottom_4()
+.right_4()
+.gap_2()
+```
+
+`push` shows a notification without taking focus and returns its `ToastKey`,
+which also converts into an ElementId. Only the newest `visible_limit` entries
+(three by default) are mounted, newest first; older entries wait without spending
+time and appear as newer ones close. `with_duration` sets the lifetime for later
+pushes. Every mounted toast keeps the pause, Escape and focus-restoration
+contract above, and is removed from the stack when it closes for any reason.
+`replace` updates a still-open entry and restarts its lifetime, returning false
+when it already closed. `dismiss(key)` and `dismiss_all` close entries;
+`len`, `is_empty` and `visible` expose the stack.
+
+`focus_latest` moves focus into the newest notification. Bind it to an
+application shortcut, such as Alt+T, rather than calling it when showing.
+Toaster renders a named Group (`Notifications` by default) and leaves placement,
+spacing and appearance to the application.
 
 ## Validation
 

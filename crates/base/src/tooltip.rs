@@ -1,9 +1,9 @@
-//! Noninteractive text tooltips using GPUI's native tooltip layer.
+//! Noninteractive text or rich tooltips using GPUI's native tooltip layer.
 
 use std::{cell::Cell, rc::Rc, time::Duration};
 
 use gpui::{
-    AnyTooltip, App, AppContext as _, Context, ElementId, Entity, FocusHandle,
+    AnyElement, AnyTooltip, App, AppContext as _, Context, ElementId, Entity, FocusHandle,
     InteractiveElement as _, IntoElement, MouseButton, ParentElement as _, Render, RenderOnce,
     Role, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled, Subscription,
     Task, Window, canvas, div, point, px,
@@ -123,21 +123,27 @@ impl TooltipState {
     }
 }
 
+type TooltipContent = Rc<dyn Fn(&mut Window, &mut App) -> AnyElement>;
+
 struct TooltipSurface {
     id: ElementId,
     description: SharedString,
+    content: Option<TooltipContent>,
     style: StyleRefinement,
 }
 
 impl Render for TooltipSurface {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        div()
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let surface = div()
             .id(self.id.clone())
             .test_support()
             .role(Role::Tooltip)
             .aria_label(self.description.clone())
-            .refine_style(&self.style)
-            .child(self.description.clone())
+            .refine_style(&self.style);
+        match &self.content {
+            Some(content) => surface.child(content(window, cx)),
+            None => surface.child(self.description.clone()),
+        }
     }
 }
 
@@ -157,12 +163,15 @@ struct TooltipMount {
 /// The description is always exposed through the trigger's native accessibility
 /// description; the visible surface has [`Role::Tooltip`] and no focus stop.
 /// GPUI's native tooltip layer owns placement, viewport clamping, and drawing
-/// above other content. Rich or interactive popup content belongs in Popover.
+/// above other content. [`content`](Self::content) replaces the visible text
+/// with noninteractive rich content; interactive popup content belongs in
+/// Popover or HoverCard.
 #[derive(IntoElement)]
 pub struct Tooltip {
     id: ElementId,
     state: Entity<TooltipState>,
     description: SharedString,
+    content: Option<TooltipContent>,
     trigger: Button,
     style: StyleRefinement,
 }
@@ -179,12 +188,29 @@ impl Tooltip {
             id,
             state: state.clone(),
             description: description.into(),
+            content: None,
             style: StyleRefinement::default(),
         }
     }
 
     pub fn trigger(mut self, build: impl FnOnce(Button) -> Button) -> Self {
         self.trigger = build(self.trigger);
+        self
+    }
+
+    /// Draws `build`'s noninteractive content instead of the description text,
+    /// for example a label with a shortcut keycap. The builder runs each time
+    /// the visible tooltip renders. The plain-text description remains the
+    /// trigger's native description and the tooltip's name, so keep it an
+    /// equivalent summary. Supply no focusable or clickable controls: the
+    /// tooltip closes when the pointer leaves the trigger.
+    pub fn content<E: IntoElement>(
+        mut self,
+        build: impl Fn(&mut Window, &mut App) -> E + 'static,
+    ) -> Self {
+        self.content = Some(Rc::new(move |window, cx| {
+            build(window, cx).into_any_element()
+        }));
         self
     }
 }
@@ -214,6 +240,7 @@ impl RenderOnce for Tooltip {
                     let surface = cx.new(|_| TooltipSurface {
                         id: surface_id,
                         description: self.description.clone(),
+                        content: self.content.clone(),
                         style: self.style.clone(),
                     });
                     let escape = cx.intercept_keystrokes(move |event, window, cx| {
@@ -262,6 +289,7 @@ impl RenderOnce for Tooltip {
         let surface = mount.read(cx).surface.clone();
         surface.update(cx, |surface, _| {
             surface.description = self.description.clone();
+            surface.content = self.content;
             surface.style = self.style;
         });
         let visible = mount.read(cx).visible.clone();
@@ -336,6 +364,7 @@ mod tests {
         activations: Rc<Cell<usize>>,
         escapes: Rc<Cell<usize>>,
         show_tooltip: bool,
+        rich: bool,
         _observation: Subscription,
     }
 
@@ -365,6 +394,13 @@ mod tests {
                                     .accessibility_label("Edit settings")
                                     .child("Edit settings")
                                     .on_click(move |_, _, _| activations.set(activations.get() + 1))
+                            })
+                            .when(self.rich, |tooltip| {
+                                tooltip.content(|_, _| {
+                                    div().flex().gap(px(8.)).child("Change settings").child(
+                                        div().id("tooltip-shortcut").test_support().child("Ctrl+,"),
+                                    )
+                                })
                             }),
                     )
                 })
@@ -401,6 +437,7 @@ mod tests {
                     activations: Rc::default(),
                     escapes: Rc::default(),
                     show_tooltip: true,
+                    rich: false,
                     _observation: observation,
                 }
             });
@@ -501,6 +538,45 @@ mod tests {
             let view = view.read(cx);
             assert!(!view.tooltip.read(cx).is_open());
             assert_eq!(view.escapes.get(), 1);
+        });
+    }
+
+    #[cfg(feature = "test-support")]
+    #[gpui::test]
+    fn rich_content_is_drawn_while_the_description_stays_the_native_text(cx: &mut TestAppContext) {
+        let (cx, view) = harness(cx);
+        view.update(cx, |view, cx| {
+            view.rich = true;
+            cx.notify();
+        });
+        settle(cx);
+        cx.simulate_keystrokes("shift-tab");
+        settle(cx);
+        cx.update(|window, cx| {
+            let view = view.read(cx);
+            assert!(view.trigger.is_focused(window));
+            assert!(view.tooltip.read(cx).is_open());
+            let trigger =
+                crate::test_support::find(window, &[], &"tooltip-trigger".into()).unwrap();
+            assert_eq!(trigger.description(), Some(DESCRIPTION));
+            let surface = crate::test_support::snapshots(window)
+                .into_iter()
+                .find(|item| item.role() == Some(Role::Tooltip))
+                .unwrap();
+            assert_eq!(surface.label(), Some(DESCRIPTION));
+            let shortcut =
+                crate::test_support::find(window, &[], &"tooltip-shortcut".into()).unwrap();
+            assert!(shortcut.visible());
+            assert_eq!(shortcut.focused(), None, "rich content adds no focus stop");
+            assert!(shortcut.bounds().left() >= surface.bounds().left());
+            assert!(shortcut.bounds().right() <= surface.bounds().right() + px(1.));
+        });
+        cx.simulate_keystrokes("tab");
+        settle(cx);
+        cx.update(|window, cx| {
+            let view = view.read(cx);
+            assert!(view.after.is_focused(window), "Tab skips the rich content");
+            assert!(!view.tooltip.read(cx).is_open());
         });
     }
 

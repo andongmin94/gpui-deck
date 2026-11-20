@@ -5,116 +5,43 @@ use std::sync::Arc;
 
 use chrono::Datelike as _;
 use gpui::{
-    AppContext as _, Axis, Context, Entity, FocusHandle, Focusable as _, FontWeight, Hsla, Image,
-    ImageFormat, InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Rems, Render,
-    Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription,
-    Window, div, prelude::FluentBuilder as _, px, relative, rems, rgb,
+    AppContext as _, Axis, Context, Entity, FocusHandle, Focusable as _, FontWeight, Image,
+    ImageFormat, InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, Role,
+    ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription, Window,
+    div, prelude::FluentBuilder as _, px, relative, rems,
 };
 use gpui_design::{
     Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionState, AlertDialog,
-    Breadcrumb, BreadcrumbItem, BreadcrumbList, Button, Calendar, CalendarDay, CalendarState,
-    Checkbox, CheckboxState, Collapsible, CollapsibleContent, CollapsibleState, CollapsibleTrigger,
-    Combobox, ComboboxList, ComboboxOption, ComboboxState, Command, CommandEvent, CommandInput,
-    CommandList, CommandOption, CommandState, ContextMenu, DatePicker, DatePickerState, Dialog,
-    DialogBackdrop, DialogClose, DialogDescription, DialogPopup, DialogState, DialogTitle,
-    DropdownMenu, Field, HoverCard, HoverCardState, Input, InputBase, Label, MenuEvent, MenuItem,
-    MenuOption, MenuState, NaiveDate, Popover, PopoverState, Progress, RadioGroup, RadioGroupState,
-    RadioItem, RadioOption, Resizable, ResizableState, ScrollArea, ScrollbarAxis, ScrollbarMode,
+    Breadcrumb, BreadcrumbItem, BreadcrumbList, Button, Calendar, CalendarDay, CalendarSelection,
+    CalendarState, Checkbox, CheckboxState, Collapsible, CollapsibleContent, CollapsibleState,
+    CollapsibleTrigger, Combobox, ComboboxList, ComboboxOption, ComboboxState, Command,
+    CommandEvent, CommandInput, CommandList, CommandOption, CommandState, ContextMenu,
+    ControlField, DatePicker, DatePickerState, Dialog, DialogBackdrop, DialogClose,
+    DialogDescription, DialogPopup, DialogState, DialogTitle, DropdownMenu, Field, HoverCard,
+    HoverCardState, Input, InputBase, Label, MenuEvent, MenuItem, MenuOption, MenuState, NaiveDate,
+    Popover, PopoverState, Progress, RadioGroup, RadioGroupState, RadioItem, RadioOption,
+    Resizable, ResizablePanel, ResizableState, ScrollArea, ScrollbarAxis, ScrollbarMode,
     SearchItem, Select, SelectItem, SelectOption, SelectState, Separator, Slider, SliderState,
-    Switch, Tab, TabItem, TabList, TabPanel, Table, TableCaption, TableCell, TableColumn, TableRow,
-    TabsState, TestSupportExt as _, TestTextExt as _, Textarea, TextareaState, Toggle, ToggleGroup,
-    ToggleGroupState, ToggleItem, ToggleOption, Tooltip, TooltipState,
+    SliderThumb, Switch, Tab, TabItem, TabList, TabPanel, Table, TableCaption, TableCell,
+    TableColumn, TableRow, TabsState, TestSupportExt as _, TestTextExt as _, Textarea,
+    TextareaState, Toggle, ToggleGroup, ToggleGroupState, ToggleItem, ToggleOption, Tooltip,
+    TooltipState,
     input::{InputAccessibility, InputEditorStyle, InputEvent, InputState},
+    parse_date_text,
 };
 
 #[path = "recipes/mod.rs"]
 mod recipes;
 use recipes::{
-    Alert, AspectRatio, Attachment, Avatar, Badge, ButtonGroup, Card, CodeBlock, DataTable,
-    DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading, InlineCode, InputGroup,
-    Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, Sidebar, Skeleton, Spinner, Trace,
+    Alert, AspectRatio, Attachment, Avatar, AvatarGroup, Badge, ButtonGroup, Card, CodeBlock,
+    DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading,
+    InlineCode, InputGroup, Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, SheetSide,
+    Sidebar, Skeleton, Spinner, Trace,
 };
 
-#[derive(Clone, Copy, Debug)]
-pub(crate) enum Appearance {
-    Compact,
-    Settings,
-}
-
-// These tokens belong to this consumer, not the primitive library.
-#[derive(Clone, Copy)]
-pub(crate) struct Palette {
-    canvas: Hsla,
-    surface: Hsla,
-    field: Hsla,
-    foreground: Hsla,
-    muted: Hsla,
-    border: Hsla,
-    accent: Hsla,
-    accent_foreground: Hsla,
-    highlight: Hsla,
-    error: Hsla,
-    padding: Rems,
-    gap: Rems,
-    control_height: Rems,
-    font_size: Rems,
-    code_font_family: &'static str,
-    radius: Pixels,
-    dialog_width: Rems,
-}
-
-impl Appearance {
-    fn palette(self) -> Palette {
-        // The consumer chooses the code font for its supported desktop targets.
-        let code_font_family = if cfg!(target_os = "macos") {
-            "Menlo"
-        } else if cfg!(target_os = "windows") {
-            "Consolas"
-        } else {
-            "DejaVu Sans Mono"
-        };
-        match self {
-            Self::Compact => Palette {
-                canvas: rgb(0x10141c).into(),
-                surface: rgb(0x1a2130).into(),
-                field: rgb(0x121a28).into(),
-                foreground: rgb(0xf1f5f9).into(),
-                muted: rgb(0xa9b6c8).into(),
-                border: rgb(0x445269).into(),
-                accent: rgb(0x93c5fd).into(),
-                accent_foreground: rgb(0x10223d).into(),
-                highlight: rgb(0x2b4160).into(),
-                error: rgb(0xfca5a5).into(),
-                padding: rems(1.),
-                gap: rems(0.75),
-                control_height: rems(1.875),
-                font_size: rems(0.8125),
-                code_font_family,
-                radius: px(4.),
-                dialog_width: rems(22.),
-            },
-            Self::Settings => Palette {
-                canvas: rgb(0xf3f2ee).into(),
-                surface: rgb(0xffffff).into(),
-                field: rgb(0xfafaf8).into(),
-                foreground: rgb(0x243328).into(),
-                muted: rgb(0x606c63).into(),
-                border: rgb(0xa6b2a7).into(),
-                accent: rgb(0x286447).into(),
-                accent_foreground: rgb(0xffffff).into(),
-                highlight: rgb(0xe1eee3).into(),
-                error: rgb(0xb42318).into(),
-                padding: rems(1.75),
-                gap: rems(1.25),
-                control_height: rems(2.625),
-                font_size: rems(0.9375),
-                code_font_family,
-                radius: px(10.),
-                dialog_width: rems(28.),
-            },
-        }
-    }
-}
+#[path = "presentation.rs"]
+mod presentation;
+pub(crate) use presentation::{Appearance, Palette};
 
 pub(crate) struct Demo {
     appearance: Appearance,
@@ -132,6 +59,8 @@ pub(crate) struct Demo {
     pub(crate) settings_trace: Entity<CollapsibleState>,
     pub(crate) calendar: Entity<CalendarState>,
     pub(crate) date_picker: Entity<DatePickerState>,
+    pub(crate) typed_date: Entity<InputState>,
+    pub(crate) typed_date_invalid: bool,
     pub(crate) schedule_split: Entity<ResizableState>,
     pub(crate) schedule_scroll: ScrollHandle,
     pub(crate) commands: Entity<CommandState>,
@@ -140,6 +69,7 @@ pub(crate) struct Demo {
     pub(crate) select: Entity<SelectState>,
     pub(crate) stroke: Entity<RadioGroupState>,
     pub(crate) tabs: Entity<TabsState>,
+    pub(crate) sections_rail: Entity<CollapsibleState>,
     pub(crate) help: Entity<PopoverState>,
     pub(crate) actions: Entity<MenuState>,
     pub(crate) context_actions: Entity<MenuState>,
@@ -211,7 +141,7 @@ impl Demo {
                 window,
                 cx,
             );
-            state.set_selected_value(Some("balanced"), window, cx);
+            state.set_selected_values(["balanced"], window, cx);
             state
         });
         preset.read(cx).input().clone().update(cx, |state, _| {
@@ -222,13 +152,15 @@ impl Demo {
             .items(cx)
             .iter()
             .map(|item| {
-                DataTableRow::new(
-                    item.value().clone(),
+                DataTableRow::new(item.value().clone(), {
+                    let (megabits, updated) = Self::preset_metrics(item.value());
                     [
-                        item.label().clone(),
-                        SharedString::from(Self::preset_description(item.value())),
-                    ],
-                )
+                        DataTableCell::text(item.label().clone()),
+                        DataTableCell::text(Self::preset_description(item.value())),
+                        DataTableCell::number(format!("{megabits} Mbps"), megabits.into()),
+                        DataTableCell::date(updated.format("%b %-d, %Y").to_string(), updated),
+                    ]
+                })
                 .disabled(item.is_disabled())
             })
             .collect::<Vec<_>>();
@@ -237,6 +169,8 @@ impl Demo {
                 [
                     DataTableColumn::new("Preset", px(180.)),
                     DataTableColumn::new("Description", px(280.)),
+                    DataTableColumn::new("Bitrate", px(110.)).align_end(),
+                    DataTableColumn::new("Updated", px(130.)),
                 ],
                 preset_rows,
                 2,
@@ -268,16 +202,18 @@ impl Demo {
             .default_value("pen")
         });
         let stroke = cx.new(|cx| {
-            RadioGroupState::new(
+            let mut state = RadioGroupState::new(
                 [
                     RadioItem::new("fine", "Fine"),
                     RadioItem::new("medium", "Medium (unavailable)").disabled(true),
                     RadioItem::new("bold", "Bold"),
                 ],
                 cx,
-            )
-            .default_value("fine")
+            );
+            state.set_selected_value(Some("fine"), window, cx);
+            state
         });
+        let sections_rail = cx.new(|cx| CollapsibleState::new(cx).default_open(true));
         let tabs = cx.new(|cx| {
             TabsState::new(
                 [
@@ -298,13 +234,30 @@ impl Demo {
                     NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
                     NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
                 )
-                .default_value(initial)
+                .default_selection(CalendarSelection::Single(Some(initial)))
         });
         let date_picker = cx.new(|cx| DatePickerState::new(&calendar, window, cx));
+        let typed_date = cx.new(|cx| {
+            let mut state = InputState::new(window, cx).placeholder("2026-11-20 or in 3 days");
+            state.set_editor_style(Self::input_style(palette));
+            state.set_accessibility(
+                InputAccessibility::new(Some(Role::TextInput))
+                    .with_placeholder(Some("2026-11-20 or in 3 days".into())),
+            );
+            state
+        });
         let schedule_split = cx.new(|cx| {
-            ResizableState::new(Axis::Vertical, cx)
-                .limits(0.3..=0.7)
-                .default_ratio(0.5)
+            ResizableState::new(
+                Axis::Vertical,
+                [
+                    ResizablePanel::new(0.5).limits(0.3..=0.7).collapsible(0.),
+                    // Keep the recording plan at least 96 px tall.
+                    ResizablePanel::new(0.5)
+                        .limits(0.3..=1.)
+                        .pixel_limits(px(96.)..=px(10_000.)),
+                ],
+                cx,
+            )
         });
         let help = cx.new(PopoverState::new);
         let menu_items = [
@@ -326,24 +279,25 @@ impl Demo {
                 ],
                 cx,
             )
-            .default_open("keyboard")
+            .default_open(["keyboard"])
         });
-        let preview = cx.new(|cx| SliderState::new(0.0..=100.0, 5.0, cx).default_value(40.0));
+        let preview = cx.new(|cx| SliderState::new(0.0..=100.0, 5.0, [40.0], cx));
         let preview_options = cx.new(CollapsibleState::new);
         let settings_trace = cx.new(CollapsibleState::new);
         let reset_cancel_focus = cx.focus_handle();
         let reset_dialog =
             cx.new(|cx| DialogState::new(cx).with_initial_focus(&reset_cancel_focus));
         let formatting = cx.new(|cx| {
-            ToggleGroupState::new(
+            let mut state = ToggleGroupState::new(
                 [
                     ToggleItem::new("bold", "Bold"),
                     ToggleItem::new("underline", "Underline (unavailable)").disabled(true),
                     ToggleItem::new("italic", "Italic"),
                 ],
                 cx,
-            )
-            .default_values(["bold"])
+            );
+            state.set_selected_values(["bold"], window, cx);
+            state
         });
         // The form summary and its presentation read these retained states.
         let subscriptions = vec![
@@ -355,6 +309,41 @@ impl Demo {
                     cx.notify();
                 }
             }),
+            cx.observe(&typed_date, |_, _, cx| cx.notify()),
+            cx.subscribe_in(&typed_date, window, |this, input, event, window, cx| {
+                match event {
+                    InputEvent::PressEnter {
+                        secondary: false,
+                        shift: false,
+                    } => {
+                        // The example treats its initial Calendar date as today.
+                        let today = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+                        let date = parse_date_text(&input.read(cx).value(), today);
+                        let applied = date.is_some_and(|date| {
+                            this.calendar.read(cx).selection().first_date() == Some(date)
+                                || this.date_picker.update(cx, |picker, cx| {
+                                    picker.set_selection(
+                                        CalendarSelection::Single(Some(date)),
+                                        window,
+                                        cx,
+                                    )
+                                })
+                        });
+                        this.typed_date_invalid = !applied;
+                        if let (true, Some(date)) = (applied, date) {
+                            input.update(cx, |input, cx| {
+                                input.set_value(date.format("%Y-%m-%d").to_string(), window, cx)
+                            });
+                        }
+                        cx.notify();
+                    }
+                    InputEvent::Change if this.typed_date_invalid => {
+                        this.typed_date_invalid = false;
+                        cx.notify();
+                    }
+                    _ => {}
+                }
+            }),
             cx.observe(&preset, |_, _, cx| cx.notify()),
             cx.observe(&preset_table, |_, _, cx| cx.notify()),
             cx.observe(&edit_hint, |_, _, cx| cx.notify()),
@@ -364,6 +353,7 @@ impl Demo {
             cx.observe(&select, |_, _, cx| cx.notify()),
             cx.observe(&stroke, |_, _, cx| cx.notify()),
             cx.observe(&tabs, |_, _, cx| cx.notify()),
+            cx.observe(&sections_rail, |_, _, cx| cx.notify()),
             cx.observe(&date_picker, |_, _, cx| cx.notify()),
             cx.observe(&schedule_split, |_, _, cx| cx.notify()),
             cx.observe(&help, |_, _, cx| cx.notify()),
@@ -410,6 +400,8 @@ impl Demo {
             settings_trace,
             calendar,
             date_picker,
+            typed_date,
+            typed_date_invalid: false,
             schedule_split,
             schedule_scroll: ScrollHandle::new(),
             commands,
@@ -418,6 +410,7 @@ impl Demo {
             select,
             stroke,
             tabs,
+            sections_rail,
             help,
             actions,
             context_actions,
@@ -442,6 +435,18 @@ impl Demo {
             "quality" => "A preset for detailed visual references.",
             _ => "Choose a recording preset in the session settings.",
         }
+    }
+
+    /// Illustrative bitrate and last-change date for each preset.
+    fn preset_metrics(value: &str) -> (u32, NaiveDate) {
+        let (megabits, month, day) = match value {
+            "balanced" => (8, 11, 2),
+            "broadcast" => (12, 9, 18),
+            "presentation" => (6, 10, 30),
+            "quality" => (20, 11, 14),
+            _ => (0, 1, 1),
+        };
+        (megabits, NaiveDate::from_ymd_opt(2026, month, day).unwrap())
     }
 
     fn input_style(palette: Palette) -> InputEditorStyle {
@@ -536,7 +541,7 @@ impl Demo {
     ) -> impl IntoElement + use<> {
         let state = self.calendar.read(cx);
         let month = state.month();
-        let selected = state.selected_date();
+
         let calendar = Calendar::new("recording-calendar", &self.calendar)
             .accessibility_label(format!("Recording date, {}", month.format("%B %Y")))
             .flex()
@@ -555,8 +560,10 @@ impl Demo {
                             .map(|(column, day)| {
                                 div()
                                     .id(("weekday", column))
+                                    .test_support()
                                     .role(Role::ColumnHeader)
                                     .aria_column_index(column)
+                                    .aria_label(day)
                                     .flex_1()
                                     .min_w_0()
                                     .text_center()
@@ -592,7 +599,7 @@ impl Demo {
                             .hover(|style| style.bg(palette.highlight))
                             .focus_visible(|style| style.border_color(palette.accent))
                             .styles(|styles| styles.disabled(|style| style.opacity(0.35)))
-                            .when(selected == Some(date), |day| {
+                            .when(state.is_selected(date), |day| {
                                 day.bg(palette.accent).text_color(palette.accent_foreground)
                             })
                             .child(date.day().to_string())
@@ -649,7 +656,7 @@ impl Demo {
         window: &Window,
         cx: &Context<Self>,
     ) -> impl IntoElement + use<> {
-        let selected_date = self.calendar.read(cx).selected_date();
+        let selected_date = self.calendar.read(cx).selection().first_date();
         let date_label = selected_date
             .map(|date| date.format("%Y-%m-%d").to_string())
             .unwrap_or_else(|| "Pick a date".to_string());
@@ -671,6 +678,41 @@ impl Demo {
                 )
             })
             .content(self.calendar_content(palette, window, cx));
+        let typed_focused = self.typed_date.focus_handle(cx).is_focused(window);
+        let typed_date = Field::new("typed-date-field", &self.typed_date, "Type a date")
+            .description("YYYY-MM-DD, today, tomorrow, in 3 days or 2 weeks ago. Enter applies it.")
+            .error(
+                self.typed_date_invalid
+                    .then(|| "Enter an available date in 2026–2027, such as 2026-11-20.".into()),
+            )
+            .styles(|styles| {
+                styles
+                    .description(|style| style.text_sm().text_color(palette.muted))
+                    .error(|style| style.text_sm().text_color(palette.error))
+            })
+            .flex()
+            .flex_col()
+            .gap_1()
+            .child(
+                InputBase::new("typed-date")
+                    .role(None::<Role>)
+                    .semantic_owner::<Input>(self.typed_date.entity_id())
+                    .focused(typed_focused)
+                    .h(palette.control_height)
+                    .w_full()
+                    .px_3()
+                    .border_1()
+                    .border_color(if self.typed_date_invalid {
+                        palette.error
+                    } else if typed_focused {
+                        palette.accent
+                    } else {
+                        palette.border
+                    })
+                    .rounded(palette.radius)
+                    .bg(palette.field)
+                    .child(Input::new(&self.typed_date)),
+            );
         let notes = Field::new("schedule-notes-field", &self.notes, "Session notes")
             .description("The same notes are available in Preferences.")
             .styles(|styles| styles.description(|style| style.text_sm().text_color(palette.muted)))
@@ -699,7 +741,8 @@ impl Demo {
         let preset = self
             .preset
             .read(cx)
-            .selected_item(cx)
+            .selected_items(cx)
+            .next()
             .map(|item| item.label().clone())
             .unwrap_or_else(|| "Choose a preset".into());
         let plan = Table::new(
@@ -758,13 +801,14 @@ impl Demo {
                 palette,
             ))
             .child(picker)
+            .child(typed_date)
             .child(Marker::new("schedule-marker", marker_label, palette))
             .child(
                 Resizable::new("schedule-panes", &self.schedule_split)
                     .w_full()
                     .h(px(280.))
-                    .first(notes)
-                    .handle(|handle| {
+                    .panel(notes)
+                    .handle(move |_, handle| {
                         handle
                             .accessibility_label("Space for session notes")
                             .h(px(10.))
@@ -775,7 +819,7 @@ impl Demo {
                             .focus_visible(|style| style.bg(palette.highlight))
                             .child(div().w_8().h(px(2.)).bg(palette.border))
                     })
-                    .second(
+                    .panel(
                         ScrollArea::new("recording-plan-scroll", &self.schedule_scroll)
                             .axis(ScrollbarAxis::Both)
                             .accessibility_label("Recording plan columns and rows")
@@ -827,15 +871,22 @@ impl Demo {
     fn render_preset_preview(&self, palette: Palette, cx: &Context<Self>) -> gpui::AnyElement {
         let preset_state = self.preset.read(cx);
         let preset_label = preset_state
-            .selected_item(cx)
+            .selected_items(cx)
+            .next()
             .map(|item| item.label().clone())
             .unwrap_or_else(|| "None".into());
         let preset_description = Self::preset_description(
             preset_state
-                .selected_value(cx)
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
                 .map_or("", |value| value.as_ref()),
         );
-        let preset_value = preset_state.selected_value(cx).map(|value| value.as_ref());
+        let preset_value = preset_state
+            .selected_items(cx)
+            .next()
+            .map(|item| item.value())
+            .map(|value| value.as_ref());
         let (preset_initials, frame_ratio, frame_label) = match preset_value {
             Some("presentation") => ("PR", 4. / 3., "4:3"),
             Some("quality") => ("HQ", 16. / 9., "16:9"),
@@ -934,11 +985,21 @@ impl Demo {
                     )
                     .child(frame_preview)
                     .child(div().text_sm().child(preset_description))
+                    .child(
+                        // Hidden people stay named by the "+N" chip.
+                        AvatarGroup::new("preset-people", "People using this preset", palette)
+                            .avatar(Avatar::new("person-ana", "Ana Kim", "AK", palette))
+                            .avatar(Avatar::new("person-bo", "Bo Park", "BP", palette))
+                            .avatar(Avatar::new("person-cy", "Cy Lee", "CL", palette))
+                            .avatar(Avatar::new("person-di", "Di Cho", "DC", palette))
+                            .avatar(Avatar::new("person-eu", "Eun Seo", "ES", palette))
+                            .max_visible(3),
+                    )
                     .child(div().text_sm().text_color(palette.muted).child(format!(
                         "Recording date: {}",
                         self.calendar
                             .read(cx)
-                            .selected_date()
+                            .selection().first_date()
                             .map(|date| date.format("%Y-%m-%d").to_string())
                             .unwrap_or_else(|| "Not scheduled".to_string())
                     )))
@@ -1129,14 +1190,14 @@ impl Demo {
         let configuration = serde_json::json!({
             "session_name": self.input.read(cx).value().as_ref(),
             "notes": self.notes.read(cx).value().as_ref(),
-            "recording_preset": self.preset.read(cx).selected_value(cx).map(|value| value.as_ref()),
+            "recording_preset": self.preset.read(cx).selected_items(cx).next().map(|item| item.value()).map(|value| value.as_ref()),
             "drawing": {
                 "tool": self.select.read(cx).selected_item().map(|item| item.value().as_ref()),
                 "stroke": self.stroke.read(cx).selected_item().map(|item| item.value().as_ref()),
                 "show_cursor": self.show_cursor,
             },
             "toolbar": { "pinned": self.keep_toolbar },
-            "preview_percent": self.preview.read(cx).value(),
+            "preview_percent": self.preview.read(cx).values()[0],
         });
         serde_json::to_string_pretty(&configuration)
             .expect("example settings are JSON values")
@@ -1204,7 +1265,7 @@ impl Demo {
                 .focus_visible(|style| style.border_color(palette.accent))
                 .when(item.is_disabled(), |header| header.opacity(0.45))
                 .child(item.label().clone())
-                .child(if accordion_state.open_index() == Some(index) {
+                .child(if accordion_state.is_open(index) {
                     "−"
                 } else {
                     "+"
@@ -1290,13 +1351,15 @@ impl Demo {
         let date = self
             .calendar
             .read(cx)
-            .selected_date()
+            .selection()
+            .first_date()
             .map(|date| date.format("%Y-%m-%d").to_string())
             .unwrap_or_else(|| "Not selected".to_string());
         let preset = self
             .preset
             .read(cx)
-            .selected_item(cx)
+            .selected_items(cx)
+            .next()
             .map(|item| item.label().clone())
             .unwrap_or_else(|| "Not selected".into());
         let tool = self
@@ -1379,7 +1442,7 @@ impl Demo {
                     .child(
                         Label::new(
                             "preview-percentage-label",
-                            preview.focus_handle(),
+                            preview.thumb_focus_handle(0),
                             preview_label.clone(),
                         )
                         .disabled(preview.is_disabled()),
@@ -1387,16 +1450,15 @@ impl Demo {
                     .child(if self.preview_indeterminate {
                         "· Unknown".to_string()
                     } else {
-                        format!("· {:.0}%", preview.value())
+                        format!("· {:.0}%", preview.values()[0])
                     }),
             )
             .child(
                 Slider::new("preview-percentage", &self.preview)
-                    .accessibility_label(preview_label)
+                    .accessibility_label(preview_label.clone())
                     .relative()
                     .h(palette.control_height)
                     .rounded(palette.radius)
-                    .focus_visible(|style| style.bg(palette.highlight))
                     .child(
                         div()
                             .absolute()
@@ -1415,19 +1477,25 @@ impl Demo {
                             .top(relative(0.5))
                             .mt(px(-2.))
                             .h(px(4.))
-                            .w(relative(preview.percentage()))
+                            .w(relative(preview.percentage(0)))
                             .rounded_full()
                             .bg(palette.accent),
                     )
                     .child(
-                        div()
+                        SliderThumb::new(&self.preview, 0)
+                            .accessibility_label(preview_label)
                             .absolute()
-                            .left(relative(preview.percentage()))
+                            .left(relative(preview.percentage(0)))
                             .top(relative(0.5))
                             .ml(px(-7.))
                             .mt(px(-7.))
                             .size(px(14.))
                             .rounded_full()
+                            .border_2()
+                            .border_color(palette.accent)
+                            .focus_visible(|style| {
+                                style.border_color(palette.foreground).bg(palette.highlight)
+                            })
                             .bg(palette.accent),
                     ),
             )
@@ -1454,7 +1522,7 @@ impl Demo {
                         row.child(
                             Progress::new("preview-progress")
                                 .accessibility_label("Preview progress")
-                                .value(preview.value())
+                                .value(preview.values()[0])
                                 .w_full()
                                 .h_2()
                                 .rounded_full()
@@ -1464,7 +1532,7 @@ impl Demo {
                                     div()
                                         .debug_selector(|| "preview-progress-fill".into())
                                         .h_full()
-                                        .w(relative(preview.percentage()))
+                                        .w(relative(preview.percentage(0)))
                                         .rounded_full()
                                         .bg(palette.accent),
                                 ),
@@ -1576,7 +1644,7 @@ impl Demo {
                             .on_click(move |_, window, cx| {
                                 owner.update(cx, |this, cx| {
                                     this.preview.update(cx, |state, cx| {
-                                        state.set_value(40.0, window, cx);
+                                        state.set_thumb_value(0, 40.0, window, cx);
                                     });
                                     this.preview_indeterminate = false;
                                     this.reset_dialog
@@ -1800,9 +1868,7 @@ impl Render for Demo {
                 )
                 .when(item.is_disabled(), |option| option.opacity(0.45))
                 .child(item.label().clone())
-                .when(preset_state.selected_index() == Some(index), |option| {
-                    option.child("✓")
-                })
+                .when(preset_state.is_selected(index), |option| option.child("✓"))
         });
         let preset = Combobox::new("recording-preset", &self.preset)
             .input(|input| {
@@ -1844,7 +1910,8 @@ impl Render for Demo {
                     }),
             );
         let preset_label = preset_state
-            .selected_item(cx)
+            .selected_items(cx)
+            .next()
             .map(|item| item.label().clone())
             .unwrap_or_else(|| "None".into());
         let preset_preview = self.render_preset_preview(palette, cx);
@@ -1952,9 +2019,11 @@ impl Render for Demo {
             );
         let stroke_state = self.stroke.read(cx);
         let stroke_label = stroke_state.selected_item().unwrap().label().clone();
+        let stroke_focus = stroke_state
+            .option_focus_handle(stroke_state.selected_index().unwrap_or(0))
+            .clone();
         let stroke = RadioGroup::new("stroke-width", &self.stroke)
             .axis(Axis::Horizontal)
-            .accessibility_label("Stroke width")
             .flex()
             .flex_wrap()
             .gap_2()
@@ -1986,6 +2055,9 @@ impl Render for Demo {
         let stacked_sections = window.viewport_size().width < px(640.);
         let navigation = if sidebar {
             Sidebar::new("session-sections", &self.tabs, "Session sections", palette)
+                .rail(&self.sections_rail)
+                .group("Workspace", ["preferences", "sync", "help"])
+                .group("Session", ["schedule", "presets"])
                 .flex_shrink_0()
                 .when(stacked_sections, |sidebar| sidebar.w_full())
                 .into_any_element()
@@ -2017,10 +2089,16 @@ impl Render for Demo {
         let preset_table = DataTable::new("preset-catalogue", &self.preset_table, palette)
             .accessibility_label("Recording presets")
             .action_label("Use preset")
-            .selected_value(preset_state.selected_value(cx).cloned())
+            .selected_value(
+                preset_state
+                    .selected_items(cx)
+                    .next()
+                    .map(|item| item.value())
+                    .cloned(),
+            )
             .on_action(move |value, window, cx| {
                 table_preset.update(cx, |state, cx| {
-                    state.set_selected_value(Some(value.as_ref()), window, cx);
+                    state.set_selected_values([value.as_ref()], window, cx);
                 });
             });
         let sections = [
@@ -2033,12 +2111,18 @@ impl Render for Demo {
                     .child(show_cursor)
                     .child(keep_toolbar)
                     .child(
-                        div()
+                        // The field label focuses the checked option, as a
+                        // label for a radio group does.
+                        ControlField::new("stroke-width-field", &stroke_focus, "Stroke width")
+                            .description("Applies to new strokes.")
+                            .styles(|styles| {
+                                styles
+                                    .description(|style| style.text_sm().text_color(palette.muted))
+                            })
+                            .control(move |metadata| stroke.field(metadata))
                             .flex()
                             .flex_col()
-                            .gap_1()
-                            .child("Stroke width")
-                            .child(stroke),
+                            .gap_1(),
                     )
                     .child(
                         Separator::new("notes-separator")
@@ -2105,6 +2189,7 @@ impl Render for Demo {
                 "Session settings",
                 palette,
             )
+            .side(SheetSide::Right)
             .when(sidebar, |sheet| sheet.w(rems(46.)))
             .description("Choose the session's drawing and toolbar settings.")
             .child(name_field)
@@ -2268,16 +2353,37 @@ impl Render for Demo {
                         .child(
                             Item::new("recording-preset-item", "Recording preset", palette)
                                 .description(preset_label)
+                                // A drawn record dot is decorative; the title names
+                                // the row. Symbol glyphs depend on installed fonts.
+                                .media(
+                                    div()
+                                        .size(px(32.))
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .rounded(palette.radius)
+                                        .bg(palette.surface)
+                                        .child(
+                                            div().size(px(12.)).rounded_full().bg(palette.accent),
+                                        ),
+                                )
+                                .header(
+                                    div()
+                                        .text_sm()
+                                        .text_color(palette.muted)
+                                        .child("Applies to new recordings"),
+                                )
+                                .footer(div().text_sm().text_color(palette.muted).child(format!(
+                                    "Recording date: {}",
+                                    self.calendar
+                                        .read(cx)
+                                        .selection()
+                                        .first_date()
+                                        .map(|date| date.format("%Y-%m-%d").to_string())
+                                        .unwrap_or_else(|| "Not scheduled".to_string())
+                                )))
                                 .action(preset_preview),
                         )
-                        .child(div().text_color(palette.muted).child(format!(
-                                "Recording date: {}",
-                                self.calendar
-                                    .read(cx)
-                                    .selected_date()
-                                    .map(|date| date.format("%Y-%m-%d").to_string())
-                                    .unwrap_or_else(|| "Not scheduled".to_string())
-                            )))
                         .when(name_invalid && !self.dialog.read(cx).is_open(), |content| {
                             content.child(
                                 Alert::new(
@@ -2310,6 +2416,25 @@ impl Render for Demo {
                             .rounded(palette.radius)
                             .bg(palette.surface)
                             .text_color(palette.foreground)
+                            // Rich visible content; the description above stays
+                            // the trigger's native text equivalent.
+                            .content(move |_, _| {
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap_1()
+                                    .child(
+                                        div()
+                                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                                            .child("Edit session"),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_sm()
+                                            .text_color(palette.muted)
+                                            .child("Name · Recording preset · Notes"),
+                                    )
+                            })
                             .trigger(|button| {
                                 Self::button(
                                     palette,
@@ -2363,7 +2488,7 @@ impl Render for Demo {
 
 #[cfg(not(test))]
 fn main() {
-    use gpui::{WindowBounds, WindowOptions, size};
+    use gpui::{TitlebarOptions, WindowBounds, WindowOptions, size};
     use gpui_design::Root;
 
     let appearance = match std::env::args().nth(1).as_deref() {
@@ -2384,6 +2509,10 @@ fn main() {
         .detach();
         cx.open_window(
             WindowOptions {
+                titlebar: Some(TitlebarOptions {
+                    title: Some("GPUI Design · Session settings".into()),
+                    ..Default::default()
+                }),
                 window_bounds: Some(WindowBounds::centered(size(px(760.), px(780.)), cx)),
                 ..WindowOptions::default()
             },

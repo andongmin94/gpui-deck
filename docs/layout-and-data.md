@@ -59,12 +59,14 @@ explicit accessible label when their visible content does not provide one.
 
 This is an ordinary table, without cell navigation or a data controller. Row or
 column spans, automatic intrinsic column sizing, sorting, filtering, pagination,
-row selection, and virtualization are not supplied. Data operations should be
+selection management, and virtualization are not supplied. `TableRow::selected`
+and `TableCell::sort_direction` project application-owned selection and sorting
+into native metadata; they do not perform data operations. Data operations should be
 composed over this structure when a real application needs them.
 
 The copyable [DataTable recipe](presentation-recipes.md#data-table) adds text
-filtering, single-column sorting, pagination, empty-state recovery, and stable-ID
-row actions. The native example uses it to browse and apply recording presets;
+filtering, single-column sorting, pagination, page/row checkbox selection, column
+visibility, empty-state recovery, and stable-ID row actions. The native example uses it to browse and apply recording presets;
 its query and page state belong to the application, outside Table.
 
 ## ScrollArea
@@ -127,95 +129,139 @@ table from the same retained state used by the other controls.
 
 ## Resizable
 
-Resizable divides a bounded frame into two continuously mounted panes. Its
-state owns the first pane's ratio, resize limits, and one divider focus handle.
-The remaining share belongs to the second pane:
+Resizable divides a bounded frame into two or more continuously laid out
+panels separated by focusable dividers. Its state owns panel sizes, each
+panel's constraints, and one focus handle per divider:
 
 ```rust
 let split = cx.new(|cx| {
-    ResizableState::new(Axis::Vertical, cx)
-        .limits(0.3..=0.7)
-        .default_ratio(0.5)
+    ResizableState::new(
+        Axis::Horizontal,
+        [
+            ResizablePanel::new(0.25).limits(0.15..=0.4).collapsible(0.),
+            ResizablePanel::new(0.5).limits(0.3..=1.),
+            ResizablePanel::new(0.25).limits(0.15..=0.4),
+        ],
+        cx,
+    )
 });
 
-Resizable::new("notes-and-preview", &split)
-    .w_full()
-    .h(px(280.))
-    .first(notes)
-    .second(preview)
-    .handle(|handle| {
+Resizable::new("workspace", &split)
+    .size_full()
+    .panel(sidebar)
+    .panel(editor)
+    .panel(inspector)
+    .handle(|index, handle| {
         handle
-            .accessibility_label("Space for session notes")
-            .h(px(10.))
+            .accessibility_label(["Sidebar width", "Editor width"][index])
+            .w(px(6.))
             .bg(divider_color)
     })
 ```
 
-`Axis::Horizontal` places panes left/right and uses the handle's width.
-`Axis::Vertical` places them top/bottom and uses its height. Set an actual handle
-thickness and bound the frame's dimensions. The ratio divides the usable pane
-space after that thickness, so a 50/50 split shares the available space equally
-and stays proportional when the parent resizes. Frame padding is supported;
-the internal layout has no gap, and main-axis divider margins are reserved.
-Put spacing inside the application's pane contents.
+Supply one `panel` per configured panel, in order. `handle` builds every
+divider from its index, which is the index of the panel before it.
+`Axis::Horizontal` places panels left to right and uses the handle's width;
+`Axis::Vertical` places them top to bottom and uses its height. Bound the frame's
+dimensions and give handles an actual thickness. Sizes are fractions of the
+usable space after divider thicknesses, sum to one, and stay proportional when
+the parent resizes. Frame padding is supported; the internal layout has no gap.
 
-The default ratio is 0.5 with limits 0.1–0.9. `limits` accepts finite fractions
-with `0 < minimum < maximum < 1`, and `default_ratio` clamps the initial value.
-For example, limits 0.3–0.7 guarantee both panes retain at least 30% of the usable
-space. They are proportions, not pixel minimums. Panes clip overflow; use
-ScrollArea inside a pane when its content should scroll. Nest independent
-two-pane groups for more complex layouts.
+`ResizablePanel::new(default)` starts free between zero and one. `limits`
+bounds the expanded size and `collapsible(size)` allows a smaller collapsed
+size. Constructing a state panics when defaults violate a panel's constraints
+or do not sum to one. `pixel_limits(min..=max)` adds logical-pixel bounds that
+apply once the group is measured; the tighter of the fractional and pixel bound
+wins. When the measured space changes, a layout that breaks the new bounds is
+refitted once, nearest first, and emits a Change; a still-valid layout keeps its
+proportions. If the space cannot satisfy every pixel limit, the group uses the
+fractional limits alone until it can. Divider values and Home/End reflect the
+measured bounds.
+
+Moving a divider grows the panel on one side and shrinks the panels on the
+other side nearest first, so a panel at its minimum passes the move to the next
+one. A move no panel can absorb leaves the divider in place. Dragging past
+halfway between a collapsible panel's minimum and collapsed size snaps it
+closed; dragging back past that point reopens it at its minimum.
 
 | Input | Result |
 | --- | --- |
-| Drag the divider | Resize from the actual press position, bounded by the ratio limits |
-| Left / Right in a horizontal group | Decrease / increase the first pane by two percentage points |
-| Up / Down in a vertical group | Decrease / increase the first pane by two percentage points |
-| Home / End | Reach the minimum / maximum first-pane ratio |
-| Tab / Shift+Tab | Traverse the divider and pane controls in ordinary document order |
+| Drag a divider | Resize from the actual press position, cascading within constraints |
+| Left / Right in a horizontal group | Shrink / grow the panel before the divider by two percentage points |
+| Up / Down in a vertical group | Shrink / grow the panel before the divider by two percentage points |
+| Arrow toward a collapsed panel | Reopen it at its minimum |
+| Arrow against a collapsible panel at its minimum | Collapse it |
+| Home / End | Give the panel before the divider its smallest / largest allowed size |
+| Enter | Collapse a collapsible panel before the divider, or restore its last size |
+| Tab / Shift+Tab | Traverse dividers and panel controls in ordinary document order |
 
-Only the divider owns the resize key context. Text editing, selection, and
-scrolling inside panes retain their own behavior. Pointer dragging uses GPUI's
-existing drag lifecycle and identifies its owning state, so independent or
-nested groups do not react to another group's drag.
+Home, End and Enter follow the
+[APG window splitter pattern](https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/).
+Only dividers own the resize key context. Text editing, selection, and scrolling
+inside panels retain their own behavior. Pointer dragging uses GPUI's drag
+lifecycle and identifies its owning state and divider, so independent or nested
+groups do not react to another divider's drag.
 
-The divider has a native Splitter role with numeric value, limits, and step in
-percent. Native orientation describes the divider line: a left/right layout has
-a vertical divider, while a top/bottom layout has a horizontal divider. Give it
-a label identifying the pane it adjusts and keep its grip children non-interactive.
-The application supplies hover/focus/disabled styling and all pane content.
+Each divider has a native Splitter role whose numeric value, limits, and step
+describe the panel before it, in percent. Native orientation describes the
+divider line. Give each divider a label naming the panel it adjusts and keep its
+grip children non-interactive. The application supplies all styling.
 
-Observe the state to update presentation. `ratio()`, `min_ratio()`, `max_ratio()`,
-`axis()`, `focus_handle()`, and `is_disabled()` expose its contract.
-`set_ratio(ratio, window, cx)` clamps a finite value and emits
-`ResizableEvent::Change` only when the ratio changes, including programmatic
-updates. `set_disabled` blocks pointer, keyboard, and accessibility resizing and
-normal Tab entry. A divider already focused retains its binding so Tab can leave;
-application updates through `set_ratio` remain available.
+A panel collapsed to zero size unmounts its content, so it contributes no focus
+stops or accessibility nodes. If focus was inside, it moves to the adjacent
+divider (or the group itself while resizing is disabled). A non-zero collapsed
+size, such as an icon rail, keeps its content mounted.
 
-The Schedule example reuses the same notes state as Preferences in the first
-pane and puts its plan table in a two-axis ScrollArea in the second. Closing or
-switching tabs preserves text and ratio because the application retains their
-states. The component does not implement zero-size collapse, pixel constraints,
-an arbitrary multi-pane solver, or automatic storage/persistence.
+Observe the state to update presentation. `sizes()`, `panel_count()`,
+`is_collapsed(index)`, `axis()`, `handle_focus(index)`, and `is_disabled()`
+expose its contract. `set_sizes` replaces the whole layout and panics on an
+invalid one, then fits it to the measured pixel limits. To persist a layout,
+store `sizes()` from `ResizableEvent::Change` in application storage and pass
+it to `set_sizes` on the next launch.
+`collapse(index)` and `expand(index)` act on collapsible panels and do nothing
+when the neighbors cannot absorb the change. Each layout change emits one
+`ResizableEvent::Change(sizes)`, including programmatic updates. `set_disabled`
+blocks pointer, keyboard, and accessibility resizing and normal Tab entry; a
+focused divider retains its binding so Tab can leave.
+
+The Schedule example puts the shared notes in a collapsible first panel and the
+plan table in a two-axis ScrollArea in the second, which keeps at least 96 px.
+Closing or switching tabs
+preserves text and sizes because the application retains their states. The
+library writes no files; the storage location belongs to the application.
 
 ## Carousel
 
 `CarouselState::new(labels, cx)` retains a fixed ordered collection and selected
-slide. Selection is bounded by default; `.looping(true)` permits wrapping.
-`Carousel::new(id, &state, label)` supplies a named focusable region, and
-`CarouselSlide::new(&state, index)` mounts only the active slide. The application
-retains slide data and supplies media, sizing, content and indicator presentation.
+(leading) slide. Selection is bounded by default; `.looping(true)` permits wrapping.
+`.slides_per_view(n)` or `set_slides_per_view(n, window, cx)` shows `n`
+consecutive slides, like shadcn's fractional item basis. Each step moves by one
+slide and the last view stays full, so `snap_count()` leading positions exist and
+`visible_range()` names the mounted slides; looping wraps between the last full
+view and the first. `Carousel::new(id, &state, label)` supplies a named focusable
+region, and `CarouselSlide::new(&state, index)` mounts only slides in the current
+view. The application retains slide data and supplies media, slide widths (for
+example equal `flex_1` slides in a row), content and indicator presentation.
 `CarouselControl::previous/next` compose Button with boundary disabled behavior.
 
 Left/Right act while the horizontal region itself holds focus, Up/Down for a
-vertical region; Home/End select the ends. Slide descendants keep their own keys.
-Configure axis and direction on `Carousel`; every slide uses that same state for
-swipes. Direction is inherited by default. A pointer drag of 40 logical pixels
-snaps once per gesture, including a single move followed immediately by release.
-Changing away from a slide containing focus returns focus to the carousel scope
-before unmounting it; external previous/next controls retain focus. There is no
-autoplay, inertia, animated motion or multi-slide sizing system.
+vertical region; Home/End select the first and last views. Slide descendants keep
+their own keys. Configure axis and direction on `Carousel`; every slide uses that
+same state for swipes. Direction is inherited by default. A pointer drag of 40
+logical pixels snaps once per gesture, including a single move followed
+immediately by release. Moving slides out of view, including by shrinking the
+view, returns focus inside them to the carousel scope before unmounting; focus in
+slides that stay visible and on external previous/next controls is kept. There is
+no inertia, animated motion or free-scrolling between snaps.
+
+`set_autoplay(Some(interval), window, cx)` advances one slide per interval and
+wraps from the last view to the first; `None` or `is_autoplaying()` control and
+report it. Rotation pauses while the pointer is over the carousel, focus is inside
+it, the window is inactive, or reduced motion is on, and keyboard, swipe and
+`CarouselControl` navigation stop it, like Embla's default autoplay plugin.
+Application calls such as pagination `select` do not stop it. Render a visible
+play/pause Button, as the catalogue does with "Play slideshow", so people can
+stop rotation (WCAG 2.2.2).
 
 ## Chart
 
@@ -223,19 +269,38 @@ autoplay, inertia, animated motion or multi-slide sizing system.
 finite value per category. The retained state supplies visible series, inspected
 category, exact-value descriptions, and a zero-inclusive signed numeric range.
 Hiding all series or using all-zero data yields a usable `0..1` range. The range
-is retained until visibility changes; normalizing a point does not rescan the
-dataset. `Chart`
-provides a named plot focus region: pointer travel and Left/Right/Home/End inspect
-evenly spaced categories, including RTL. It emits inspection/visibility events
-without prescribing colors or draw paths.
+is retained until visibility or layout changes; normalizing a point does not
+rescan the dataset.
+
+`ChartLayout` selects how the same data shares the plot, and `set_layout` keeps
+visibility and inspection:
+
+- `Grouped` (default) places side-by-side series over evenly spaced category bands.
+- `Stacked` stacks positive and negative values separately from zero. Its range
+  covers each category's visible sums, and `stack_span(series, category)` gives a
+  visible segment's start and end values.
+- `Pie` gives each category one slice sized by its nonnegative visible-series
+  total. `pie_slices` returns start/end turns; a zero or negative total has an
+  empty slice.
+- `Radar` places categories on evenly spaced spokes (`radar_turn`) with radii
+  normalized like Grouped.
+
+Radial turns run clockwise from the top and mirror counterclockwise in RTL.
+`Chart` provides a named plot focus region: Left/Right/Home/End inspect
+categories in every layout. Pointer travel inspects by horizontal band for
+Grouped/Stacked, and by angle inside the largest centered circle for Pie/Radar;
+a pointer outside that circle or over no slice keeps the current inspection. It
+emits inspection/visibility events without prescribing colors or draw paths.
 
 The copyable `examples/recipes/chart.rs` builds on this behavior with GPUI canvas
-line, grouped bar and area plots, axis labels, Toggle-based series legend, an
-exact-value readout and an ordinary Table containing the same complete dataset.
-The catalogue's Media and data view switches plot kind and direction and retains
-legend/inspection state. Plot geometry, palette and numeric formatting belong to
-the consumer. This categorical contract does not supply stacking, time/log scales,
-pie/radar charts, zoom, streaming data ingestion or a separate rendering engine.
+line, grouped bar, area, stacked bar/area, pie, donut and radar plots, axis or
+spoke labels, a pie category key, Toggle-based series legend, an exact-value
+readout and an ordinary Table containing the same complete dataset. `ChartKind::layout`
+names the state layout each kind draws; the catalogue's Media and data view sets
+both when switching kind or direction and retains legend/inspection state. Plot
+geometry, palette and numeric formatting belong to the consumer. This categorical
+contract does not supply time/log scales, per-slice legend selection, zoom,
+streaming data ingestion or a separate rendering engine.
 
 ## MessageScroller
 

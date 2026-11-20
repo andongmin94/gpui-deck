@@ -20,7 +20,9 @@ const CLOSE_DELAY: Duration = Duration::from_millis(200);
 /// before closing, so the pointer can cross their gap. Keyboard focus opens
 /// immediately. The preview never moves focus and adds no Tab stops. Escape,
 /// pointer presses, trigger activation keys, focus changes, and window
-/// deactivation dismiss it. Explicit dismissal suppresses reopening until a
+/// deactivation dismiss it. A touch long press on the trigger opens it at once
+/// without activating the Button; the next press dismisses it. Explicit
+/// dismissal suppresses reopening until a
 /// fresh trigger entry or keyboard focus.
 ///
 /// Keep the matching HoverCard mounted with its trigger and observe this state
@@ -398,11 +400,24 @@ impl RenderOnce for HoverCard {
             );
         }
         let geometry_state = self.state.clone();
+        let touch_state = self.state.clone();
         let press_state = self.state;
         div()
             .refine_style(&self.style)
             .relative()
             .child(popup)
+            .child(crate::long_press::long_press_region(
+                touch_state.clone(),
+                move |_, window, cx| {
+                    touch_state.update(cx, |state, cx| {
+                        // Touch has no hover: a long press previews immediately
+                        // instead of activating, until the next press elsewhere.
+                        state.suppressed = false;
+                        state.show(window, cx);
+                        state.open
+                    })
+                },
+            ))
             .child(
                 canvas(
                     move |bounds, window, cx| {
@@ -774,5 +789,42 @@ mod tests {
             assert!(!view.state.read(cx).is_open());
             assert_eq!(view.escapes.get(), 2);
         });
+    }
+
+    #[gpui::test]
+    fn touch_long_press_previews_without_activation_until_the_next_press(cx: &mut TestAppContext) {
+        use gpui::{TouchEvent, TouchId, TouchPhase};
+        let (cx, view) = harness(cx);
+        let trigger = cx.debug_bounds("preview-trigger").unwrap().center();
+        let touch = |phase| TouchEvent {
+            id: TouchId(3),
+            phase,
+            position: trigger,
+            predicted_position: None,
+            force: None,
+        };
+        cx.simulate_event(touch(TouchPhase::Started));
+        cx.executor().advance_clock(
+            gpui::GestureTuning::default().long_press_duration + Duration::from_millis(1),
+        );
+        settle(cx);
+        cx.simulate_event(touch(TouchPhase::Ended));
+        settle(cx);
+        cx.update(|window, cx| {
+            let view = view.read(cx);
+            assert!(
+                view.state.read(cx).is_open(),
+                "the preview opens without a delay"
+            );
+            assert_eq!(view.activations.get(), 0, "a long press does not activate");
+            assert!(view.after.is_focused(window), "focus does not move");
+        });
+        cx.simulate_mouse_down(
+            point(px(400.), px(400.)),
+            gpui::MouseButton::Left,
+            Modifiers::default(),
+        );
+        settle(cx);
+        cx.update(|_, cx| assert!(!view.read(cx).state.read(cx).is_open()));
     }
 }

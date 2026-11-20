@@ -36,7 +36,8 @@ pub(crate) fn init(cx: &mut App) {
 /// distinct MenuState for each mounted target. Use [`crate::MenuSubmenu`] for
 /// nested commands, and [`crate::MenuOption::check_state`] or
 /// [`crate::MenuOption::radio_checked`] for application-controlled selections.
-/// Touch long-press is not provided.
+/// A touch long press opens the menu at the press position, like a secondary
+/// click, and claims the gesture so it neither pans nor reaches the content.
 #[derive(IntoElement)]
 pub struct ContextMenu {
     id: ElementId,
@@ -109,6 +110,7 @@ impl RenderOnce for ContextMenu {
         let right = self.state.clone();
         let keyboard = self.state.clone();
         let accessible = self.state.clone();
+        let touch = self.state.clone();
         let content = crate::menu::menu_content(&self.state, self.label, self.content, cx);
         let target = self
             .base
@@ -139,12 +141,24 @@ impl RenderOnce for ContextMenu {
                 .on_action(move |_: &OpenContextMenu, window, cx| {
                     keyboard.update(cx, |state, cx| state.open(window, cx));
                 })
-                .on_a11y_action(
-                    AccessibleAction::ShowContextMenu,
-                    move |_, window, cx| {
-                        accessible.update(cx, |state, cx| state.open(window, cx));
+                .on_a11y_action(AccessibleAction::ShowContextMenu, move |_, window, cx| {
+                    accessible.update(cx, |state, cx| state.open(window, cx));
+                })
+                .relative()
+                .child(crate::long_press::long_press_region(
+                    touch.clone(),
+                    move |position, window, cx| {
+                        touch.update(cx, |state, cx| {
+                            if state.is_disabled(cx) {
+                                return false;
+                            }
+                            let focus = state.focus_handle().clone();
+                            focus.focus(window, cx);
+                            state.open_at_position(position, window, cx);
+                            true
+                        })
                     },
-                )
+                ))
             })
             .a11y_disabled(disabled);
 
@@ -457,5 +471,62 @@ mod tests {
             assert!(!view.read(cx).menu.read(cx).is_open(cx));
             assert!(view.read(cx).commands.is_empty());
         });
+    }
+
+    fn long_press(cx: &mut VisualTestContext, position: gpui::Point<gpui::Pixels>) {
+        use gpui::{TouchEvent, TouchId, TouchPhase};
+        let touch = |phase| TouchEvent {
+            id: TouchId(7),
+            phase,
+            position,
+            predicted_position: None,
+            force: None,
+        };
+        cx.simulate_event(touch(TouchPhase::Started));
+        cx.executor().advance_clock(
+            gpui::GestureTuning::default().long_press_duration
+                + std::time::Duration::from_millis(1),
+        );
+        settle(cx);
+        cx.simulate_event(touch(TouchPhase::Ended));
+        settle(cx);
+    }
+
+    #[gpui::test]
+    fn touch_long_press_opens_at_the_press_and_survives_release(cx: &mut TestAppContext) {
+        let (cx, view) = harness(cx);
+        let target = cx.debug_bounds("context-target").unwrap();
+        let position = target.origin + point(px(40.), px(30.));
+        long_press(cx, position);
+        cx.update(|window, cx| {
+            let view = view.read(cx);
+            let menu = view.menu.read(cx);
+            assert!(
+                menu.is_open(cx),
+                "release after a long press keeps the menu"
+            );
+            assert_eq!(menu.position(), Some(position));
+            assert!(!view.before.is_focused(window));
+            assert!(view.commands.is_empty());
+        });
+        press(cx, "escape");
+        cx.update(|window, cx| {
+            let menu = view.read(cx).menu.read(cx);
+            assert!(!menu.is_open(cx));
+            assert!(
+                menu.focus_handle().is_focused(window),
+                "focus returns to the target"
+            );
+        });
+        // A disabled target ignores the gesture.
+        cx.update(|window, cx| {
+            view.read(cx)
+                .menu
+                .clone()
+                .update(cx, |menu, cx| menu.set_disabled(true, window, cx));
+        });
+        settle(cx);
+        long_press(cx, position);
+        cx.update(|_, cx| assert!(!view.read(cx).menu.read(cx).is_open(cx)));
     }
 }

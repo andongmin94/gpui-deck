@@ -3,15 +3,16 @@
 //! surrounding surface, item presentation, and the action's effects.
 
 use gpui::{
-    AnyElement, App, AppContext as _, Context, ElementId, Entity, EntityId,
+    AnyElement, App, AppContext as _, Bounds, Context, ElementId, Entity, EntityId,
     EntityInputHandler as _, EventEmitter, FocusHandle, Focusable as _, InteractiveElement,
-    Interactivity, IntoElement, MouseButton, ParentElement, RenderOnce, Role, ScrollHandle,
+    Interactivity, IntoElement, MouseButton, ParentElement, Pixels, RenderOnce, Role, ScrollHandle,
     SharedString, StatefulInteractiveElement, StyleRefinement, Styled, Subscription, Window, div,
-    prelude::FluentBuilder as _,
+    prelude::FluentBuilder as _, px,
 };
 
 use crate::{
-    Input, InputAccessibility, InputBase, InputState, InputStyles, TestSupportExt as _,
+    ElementExt as _, Input, InputAccessibility, InputBase, InputState, InputStyles,
+    TestSupportExt as _,
     a11y_disabled::A11yDisabledExt as _,
     input::{InputEvent, MoveDown, MoveUp},
 };
@@ -23,6 +24,7 @@ pub struct SearchItem {
     label: SharedString,
     search_text: String,
     disabled: bool,
+    group: Option<SharedString>,
 }
 
 impl SearchItem {
@@ -34,6 +36,7 @@ impl SearchItem {
             value,
             label,
             disabled: false,
+            group: None,
         }
     }
 
@@ -51,6 +54,16 @@ impl SearchItem {
         self
     }
 
+    /// Names the result group. Group labels do not change matching or item order.
+    pub fn group(mut self, label: impl Into<SharedString>) -> Self {
+        self.group = Some(label.into());
+        self
+    }
+
+    pub fn group_label(&self) -> Option<&SharedString> {
+        self.group.as_ref()
+    }
+
     pub fn value(&self) -> &SharedString {
         &self.value
     }
@@ -64,6 +77,73 @@ impl SearchItem {
     }
 }
 
+fn collect_items(items: impl IntoIterator<Item = SearchItem>) -> Vec<SearchItem> {
+    let items: Vec<_> = items.into_iter().collect();
+    for (index, item) in items.iter().enumerate() {
+        assert!(
+            items[..index].iter().all(|other| other.value != item.value),
+            "SearchItem values must be unique"
+        );
+        if index > 0 && items[index - 1].group != item.group {
+            assert!(
+                items[..index].iter().all(|other| other.group != item.group),
+                "SearchItem groups must be contiguous"
+            );
+        }
+    }
+    items
+}
+
+/// Ranks one lowercase query term against an item's lowercase search text, or
+/// `None` when the term's characters do not appear in order. A match at a word
+/// start ranks above any other substring, which ranks above a subsequence; a
+/// tighter subsequence ranks above a looser one.
+fn term_score(text: &str, term: &str) -> Option<u32> {
+    if term.is_empty() {
+        return Some(0);
+    }
+    let mut substring = None;
+    for (start, _) in text.match_indices(term) {
+        let word_start = text[..start]
+            .chars()
+            .next_back()
+            .is_none_or(|previous| !previous.is_alphanumeric());
+        if word_start {
+            return Some(300);
+        }
+        substring = Some(200);
+    }
+    if substring.is_some() {
+        return substring;
+    }
+    let length = term.chars().count();
+    // The shortest window containing the term's characters in order.
+    let chars: Vec<char> = text.chars().collect();
+    let pattern: Vec<char> = term.chars().collect();
+    let mut shortest: Option<usize> = None;
+    for start in 0..chars.len() {
+        if chars[start] != pattern[0] {
+            continue;
+        }
+        let mut matched = 1;
+        let mut end = start;
+        while matched < pattern.len() {
+            end += 1;
+            if end >= chars.len() {
+                break;
+            }
+            if chars[end] == pattern[matched] {
+                matched += 1;
+            }
+        }
+        if matched == pattern.len() {
+            let span = end - start + 1;
+            shortest = Some(shortest.map_or(span, |current| current.min(span)));
+        }
+    }
+    shortest.map(|span| 1 + (99 * length / span) as u32)
+}
+
 /// An explicit command activation. The application decides what it does.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CommandEvent {
@@ -72,9 +152,12 @@ pub enum CommandEvent {
 
 /// A query input and its fixed collection of searchable actions in one window.
 ///
-/// InputState is the query's source of truth. Each whitespace-separated query
-/// term must be a case-insensitive substring of the value, label, or keywords.
-/// Results retain item order; matching does not rank or fuzzy-match them.
+/// InputState is the query's source of truth. The characters of each
+/// whitespace-separated query term must appear in order, case-insensitively, in
+/// the value, label, or keywords. Results rank word-start matches above other
+/// substrings and those above looser in-order matches, summed over terms. Groups
+/// stay contiguous, ordered by their best result; equal scores and an empty
+/// query keep collection order.
 /// Query changes highlight the first enabled result. Arrows move that highlight
 /// without committing a value, and Enter or a pointer click emits an action.
 ///
@@ -89,6 +172,7 @@ pub struct CommandState {
     visible: Vec<usize>,
     highlighted: Option<usize>,
     scroll: ScrollHandle,
+    option_bounds: Vec<Option<Bounds<Pixels>>>,
     _input_observation: Subscription,
     _input_events: Subscription,
 }
@@ -99,13 +183,7 @@ impl CommandState {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
-        let items: Vec<_> = items.into_iter().collect();
-        for (index, item) in items.iter().enumerate() {
-            assert!(
-                items[..index].iter().all(|other| other.value != item.value),
-                "SearchItem values must be unique"
-            );
-        }
+        let items = collect_items(items);
         let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search commands..."));
         let focus = input.focus_handle(cx);
         let input_observation = cx.observe(&input, |state, _, cx| {
@@ -126,6 +204,7 @@ impl CommandState {
             }
         });
         Self {
+            option_bounds: vec![None; items.len()],
             visible: (0..items.len()).collect(),
             highlighted: items.iter().position(|item| !item.disabled),
             items,
@@ -152,9 +231,59 @@ impl CommandState {
         &self.items
     }
 
+    /// Replaces available actions and refilters the existing native query without
+    /// changing input focus, selection, composition, or editing history.
+    /// Keeps the highlighted value when it remains enabled and visible.
+    pub fn set_items(
+        &mut self,
+        items: impl IntoIterator<Item = SearchItem>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let highlighted = self
+            .highlighted
+            .map(|index| self.items[index].value.clone());
+        let items = collect_items(items);
+        self.option_bounds = vec![None; items.len()];
+        self.items = items;
+        self.filter_query(self.input.read(cx).value());
+        if let Some(value) = highlighted {
+            self.highlighted = self
+                .visible
+                .iter()
+                .copied()
+                .find(|&index| !self.items[index].disabled && self.items[index].value == value)
+                .or(self.highlighted);
+        }
+        cx.notify();
+        window.refresh();
+    }
+
     /// Original item indices in display order, including matching disabled items.
     pub fn visible_indices(&self) -> &[usize] {
         &self.visible
+    }
+
+    /// Nonempty named groups in first-result order. Render each group's options
+    /// in [`Self::visible_group_indices`] order; ungrouped options use None.
+    pub fn visible_groups(&self) -> Vec<SharedString> {
+        let mut groups = Vec::new();
+        for &index in &self.visible {
+            if let Some(group) = &self.items[index].group
+                && !groups.contains(group)
+            {
+                groups.push(group.clone());
+            }
+        }
+        groups
+    }
+
+    pub fn visible_group_indices(&self, group: Option<&str>) -> Vec<usize> {
+        self.visible
+            .iter()
+            .copied()
+            .filter(|&index| self.items[index].group.as_deref() == group)
+            .collect()
     }
 
     pub fn highlighted_index(&self) -> Option<usize> {
@@ -189,24 +318,59 @@ impl CommandState {
         if query == self.filtered_query {
             return;
         }
+        self.filter_query(query);
+    }
+
+    fn filter_query(&mut self, query: SharedString) {
         let terms: Vec<_> = query.split_whitespace().map(str::to_lowercase).collect();
-        self.visible = self
+        let scored: Vec<(usize, u32)> = self
             .items
             .iter()
             .enumerate()
-            .filter(|(_, item)| {
+            .filter_map(|(index, item)| {
                 terms
                     .iter()
-                    .all(|term| item.search_text.contains(term.as_str()))
+                    .map(|term| term_score(&item.search_text, term))
+                    .sum::<Option<u32>>()
+                    .map(|score| (index, score))
             })
-            .map(|(index, _)| index)
             .collect();
+        // Groups stay contiguous: they order by their best item, and items by
+        // score within their group. Equal scores keep collection order.
+        let best = |group: &Option<SharedString>| {
+            scored
+                .iter()
+                .filter(|(index, _)| &self.items[*index].group == group)
+                .map(|(_, score)| *score)
+                .max()
+                .unwrap_or(0)
+        };
+        let mut ranked: Vec<(u32, usize, u32, usize)> = scored
+            .iter()
+            .map(|&(index, score)| {
+                let group = &self.items[index].group;
+                let first = self
+                    .items
+                    .iter()
+                    .position(|item| &item.group == group)
+                    .unwrap_or(index);
+                (best(group), first, score, index)
+            })
+            .collect();
+        ranked.sort_by(|a, b| {
+            b.0.cmp(&a.0)
+                .then(a.1.cmp(&b.1))
+                .then(b.2.cmp(&a.2))
+                .then(a.3.cmp(&b.3))
+        });
+        self.visible = ranked.into_iter().map(|(_, _, _, index)| index).collect();
         self.highlighted = self
             .visible
             .iter()
             .copied()
             .find(|&index| !self.items[index].disabled);
         self.filtered_query = query;
+        self.option_bounds.fill(None);
         self.scroll.set_offset(Default::default());
         self.scroll_to_highlight();
     }
@@ -218,12 +382,22 @@ impl CommandState {
     }
 
     fn scroll_to_highlight(&self) {
-        if let Some(position) = self
-            .highlighted
-            .and_then(|index| self.visible.binary_search(&index).ok())
-        {
-            self.scroll.scroll_to_item(position);
+        let Some(bounds) = self.highlighted.and_then(|index| self.option_bounds[index]) else {
+            return;
+        };
+        let viewport = self.scroll.bounds();
+        let mut offset = self.scroll.offset();
+        // Bounds are stored without the viewport's scroll offset, so nested
+        // group wrappers do not change which exact option must be revealed.
+        let top = bounds.top() + offset.y;
+        let bottom = bounds.bottom() + offset.y;
+        if top < viewport.top() {
+            offset.y += viewport.top() - top;
+        } else if bottom > viewport.bottom() {
+            offset.y -= bottom - viewport.bottom();
         }
+        offset.y = offset.y.clamp(-self.scroll.max_offset().y, px(0.));
+        self.scroll.set_offset(offset);
     }
 
     pub(crate) fn move_cursor(
@@ -437,14 +611,16 @@ impl RenderOnce for CommandInput {
 
 /// A named, vertically scrolling result list with no independent Tab stop.
 ///
-/// Render CommandOption children for `visible_indices()` in that exact order.
-/// Keep extra controls, group headings, and empty-result text outside this list.
+/// Render CommandOption children for `visible_indices()` in that exact order,
+/// optionally inside CommandGroup wrappers. Keep extra controls and empty-result
+/// text outside this list; group headings never participate in navigation.
 /// Applications supply its height limit, spacing, and item presentation.
 #[derive(IntoElement)]
 pub struct CommandList {
     base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
     state: Entity<CommandState>,
     label: Option<SharedString>,
+    multiple: bool,
 }
 
 impl CommandList {
@@ -453,6 +629,7 @@ impl CommandList {
             base: div().id(id).test_support().flex().flex_col().min_h_0(),
             state: state.clone(),
             label: None,
+            multiple: false,
         }
     }
 
@@ -465,11 +642,13 @@ impl CommandList {
         base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
         state: &Entity<CommandState>,
         label: Option<SharedString>,
+        multiple: bool,
     ) -> Self {
         Self {
             base,
             state: state.clone(),
             label,
+            multiple,
         }
     }
 }
@@ -501,6 +680,99 @@ impl RenderOnce for CommandList {
             .when_some(self.label, |this, label| this.aria_label(label))
             .overflow_y_scroll()
             .track_scroll(&self.state.read(cx).scroll)
+            .a11y_selection(false, self.multiple)
+    }
+}
+
+/// A named, non-focusable result group with an application-styled heading.
+/// Render only the matching [`CommandState::visible_group_indices`] options.
+/// A group without visible matching items contributes no layout or native nodes.
+#[derive(IntoElement)]
+pub struct CommandGroup {
+    base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
+    state: Entity<CommandState>,
+    label: SharedString,
+    heading: gpui::Div,
+    children: Vec<AnyElement>,
+}
+
+impl CommandGroup {
+    pub fn new(
+        id: impl Into<ElementId>,
+        state: &Entity<CommandState>,
+        label: impl Into<SharedString>,
+    ) -> Self {
+        let id = id.into();
+        let label = label.into();
+        Self::from_base(
+            div().id(id).test_support(),
+            state,
+            label.clone(),
+            div().child(label),
+        )
+    }
+
+    pub(crate) fn from_base(
+        base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
+        state: &Entity<CommandState>,
+        label: SharedString,
+        heading: gpui::Div,
+    ) -> Self {
+        Self {
+            base,
+            state: state.clone(),
+            label,
+            heading,
+            children: Vec::new(),
+        }
+    }
+
+    pub fn heading(mut self, build: impl FnOnce(gpui::Div) -> gpui::Div) -> Self {
+        self.heading = build(self.heading);
+        self
+    }
+}
+
+impl Styled for CommandGroup {
+    fn style(&mut self) -> &mut StyleRefinement {
+        self.base.style()
+    }
+}
+
+impl ParentElement for CommandGroup {
+    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+        self.children.extend(elements);
+    }
+}
+
+impl RenderOnce for CommandGroup {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+        if self
+            .state
+            .read(cx)
+            .visible_group_indices(Some(&self.label))
+            .is_empty()
+        {
+            return gpui::Empty.into_any_element();
+        }
+        // The heading precedes options while the group's accessible name stays
+        // independent of its decorative presentation.
+        self.base
+            .role(Role::Group)
+            .aria_label(self.label.clone())
+            .flex()
+            .flex_col()
+            .flex_shrink_0()
+            .child(
+                self.heading
+                    .id("heading")
+                    .test_support()
+                    .role(Role::Heading)
+                    .aria_level(3)
+                    .aria_label(self.label),
+            )
+            .children(self.children)
+            .into_any_element()
     }
 }
 
@@ -592,6 +864,7 @@ impl RenderOnce for CommandOption {
         let focus = state.focus.clone();
         let hover = self.state.clone();
         let activate = self.state;
+        let geometry = activate.clone();
         self.base
             .role(Role::ListBoxOption)
             .aria_label(label)
@@ -611,6 +884,22 @@ impl RenderOnce for CommandOption {
                 .on_click(move |_, window, cx| {
                     activate.update(cx, |state, cx| state.activate(index, window, cx));
                 })
+            })
+            .on_prepaint(move |bounds, window, cx| {
+                geometry.update(cx, |state, _| {
+                    let first = state.option_bounds[index].is_none();
+                    state.option_bounds[index] = Some(Bounds::new(
+                        bounds.origin - state.scroll.offset(),
+                        bounds.size,
+                    ));
+                    if first && state.highlighted == Some(index) {
+                        let previous = state.scroll.offset();
+                        state.scroll_to_highlight();
+                        if state.scroll.offset() != previous {
+                            window.request_animation_frame();
+                        }
+                    }
+                });
             })
             .a11y_disabled(disabled)
             .into_any_element()
@@ -913,5 +1202,50 @@ mod tests {
                 assert_eq!(input.value(), "메모");
             });
         });
+    }
+
+    #[gpui::test]
+    fn fuzzy_terms_rank_word_starts_and_keep_groups_contiguous(cx: &mut TestAppContext) {
+        let (cx, view, _) = harness(
+            cx,
+            vec![
+                SearchItem::new("export", "Export recording").group("File"),
+                SearchItem::new("report", "Send report").group("File"),
+                SearchItem::new("present", "Present slides").group("View"),
+                SearchItem::new("pointer", "Show pointer").group("View"),
+            ],
+        );
+        let visible = |query: &str, cx: &mut VisualTestContext| {
+            cx.update(|window, cx| {
+                let command = view.read(cx).command.clone();
+                command.update(cx, |state, cx| {
+                    state.set_query(query.to_owned(), window, cx);
+                    state.visible_indices().to_vec()
+                })
+            })
+        };
+        assert_eq!(visible("", cx), [0, 1, 2, 3], "an empty query keeps order");
+        assert_eq!(
+            visible("rep", cx),
+            [1, 0, 2],
+            "a word start ranks above in-order letters"
+        );
+        assert_eq!(
+            visible("pnt", cx),
+            [3, 2, 1],
+            "tighter in-order matches rank first"
+        );
+        assert_eq!(
+            visible("po", cx),
+            [3, 0, 1],
+            "the best group leads, kept contiguous"
+        );
+        cx.update(|_, cx| {
+            let groups = view.read(cx).command.read(cx).visible_groups();
+            assert_eq!(groups, ["View", "File"]);
+            assert_eq!(view.read(cx).command.read(cx).highlighted_index(), Some(3));
+        });
+        assert_eq!(visible("re sl", cx), [2], "every term must match");
+        assert!(visible("xyz", cx).is_empty());
     }
 }

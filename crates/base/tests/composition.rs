@@ -2,6 +2,10 @@
 //! Each distinct flow runs once, across representative compact and settings appearances.
 //! GPUI's input simulation does not run a platform IME or screen reader.
 
+// Each native binary owns its module tree; this test exercises both binaries'
+// source directly, including their shared palette and Sidebar recipe imports.
+#![allow(clippy::duplicate_mod)]
+
 #[path = "../examples/two_styles.rs"]
 mod two_styles;
 
@@ -19,8 +23,8 @@ use gpui::{
     VisualTestContext, point, px,
 };
 use gpui_design::{
-    ComboboxEvent, CommandEvent, MenuEvent, NaiveDate, RadioGroupEvent, Root, SelectEvent,
-    TabsEvent, test_support,
+    CalendarSelection, ComboboxEvent, CommandEvent, MenuEvent, NaiveDate, RadioGroupEvent, Root,
+    SelectEvent, TabsEvent, test_support,
 };
 use two_styles::{Appearance, Demo};
 
@@ -879,7 +883,7 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
         });
     }
 
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     cx.update(|window, cx| {
         assert!(
@@ -998,14 +1002,15 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     });
 
     // A hidden region has no Tab stops; its application-owned values survive remounting.
+    // The Sidebar rail trigger sits between the last entry and the section content.
     cx.simulate_keystrokes("tab tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "space");
     cx.update(|_, cx| assert!(!demo.read(cx).show_cursor));
-    cx.simulate_keystrokes("shift-tab shift-tab shift-tab");
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab");
     draw(cx);
     activate_key(cx, "enter");
     cx.update(|window, _| {
@@ -1014,7 +1019,7 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("shift-tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     cx.update(|window, cx| {
         assert!(!demo.read(cx).show_cursor);
@@ -1024,10 +1029,10 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     });
 
     // The root ancestor explicitly selects Preferences and restores its Sidebar focus.
-    cx.simulate_keystrokes("shift-tab shift-tab shift-tab");
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab");
     draw(cx);
     activate_key(cx, "enter");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "enter");
     cx.simulate_keystrokes("tab");
@@ -1055,7 +1060,7 @@ fn settings_sidebar_and_popover_preserve_nested_focus(cx: &mut TestAppContext) {
     cx.simulate_keystrokes("tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.simulate_keystrokes("tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "enter");
     cx.update(|window, cx| {
@@ -1164,7 +1169,7 @@ fn help_typography_wraps_in_both_appearances_without_adding_focus(cx: &mut TestA
 
                 let demo = demo.read(cx);
                 assert!(demo.tabs.read(cx).tab_focus_handle(2).is_focused(window));
-                assert_eq!(demo.accordion.read(cx).open_index(), Some(2));
+                assert!(demo.accordion.read(cx).is_open(2));
                 assert_eq!(demo.fields_scroll.offset().x, px(0.));
                 (body, ownership.bounds().size.height)
             });
@@ -1203,7 +1208,7 @@ fn help_typography_wraps_in_both_appearances_without_adding_focus(cx: &mut TestA
             cx.update(|window, cx| {
                 let sections = demo.read(cx).accordion.clone();
                 sections.update(cx, |state, cx| {
-                    if state.open_index() != Some(0) {
+                    if !state.is_open(0) {
                         state.toggle(0, window, cx);
                     }
                 });
@@ -1388,7 +1393,7 @@ fn configuration_code_copies_current_values_and_contains_nested_scrolling(cx: &m
                 let demo = demo.read(cx);
                 assert!(demo.configuration_focus.is_focused(window));
                 assert_eq!(demo.tabs.read(cx).selected_index(), Some(2));
-                assert_eq!(demo.accordion.read(cx).open_index(), Some(2));
+                assert!(demo.accordion.read(cx).is_open(2));
                 assert_eq!(demo.fields_scroll.offset().x, px(0.));
                 let maximum = demo.configuration_scroll.max_offset();
                 assert!(maximum.x > px(0.) && maximum.y > px(0.));
@@ -1403,7 +1408,7 @@ fn configuration_code_copies_current_values_and_contains_nested_scrolling(cx: &m
                 assert!((offset.y + maximum.y).abs() < px(1.));
                 assert_eq!(demo.fields_scroll.offset(), parent_offset);
                 assert!(demo.configuration_focus.is_focused(window));
-                assert_eq!(demo.accordion.read(cx).open_index(), Some(2));
+                assert!(demo.accordion.read(cx).is_open(2));
             });
             cx.simulate_event(ScrollEvent {
                 position: code_bounds.center(),
@@ -1473,7 +1478,7 @@ fn configuration_code_copies_current_values_and_contains_nested_scrolling(cx: &m
             assert_eq!(demo.configuration_code(cx), current_code);
             assert!(demo.input.focus_handle(cx).is_focused(window));
             assert_eq!(demo.tabs.read(cx).selected_index(), Some(2));
-            assert_eq!(demo.accordion.read(cx).open_index(), Some(2));
+            assert!(demo.accordion.read(cx).is_open(2));
         });
     }
 }
@@ -1742,7 +1747,7 @@ fn configuration_attachment_tracks_utf8_content_and_keyboard_inspection(cx: &mut
             assert_eq!(demo.notes.read(cx).value(), notes);
             assert_eq!(demo.configuration_code(cx), current);
             assert_eq!(demo.tabs.read(cx).selected_index(), Some(2));
-            assert_eq!(demo.accordion.read(cx).open_index(), Some(2));
+            assert!(demo.accordion.read(cx).is_open(2));
             assert_metadata(window, current.as_ref());
         });
     }
@@ -2026,7 +2031,7 @@ fn settings_trace_discloses_current_values_with_retained_focus_and_parent_scroll
             });
             let calendar = demo.read(cx).calendar.clone();
             calendar.update(cx, |state, cx| {
-                assert!(state.set_selected_date(None, window, cx))
+                assert!(state.set_selection(CalendarSelection::Single(None), window, cx))
             });
         });
         draw(cx);
@@ -2089,9 +2094,9 @@ fn settings_trace_discloses_current_values_with_retained_focus_and_parent_scroll
             assert!(demo.settings_trace.read(cx).is_open());
             assert_eq!(demo.input.read(cx).value(), replacement_name);
             assert_eq!(demo.notes.read(cx).value(), replacement_notes);
-            assert_eq!(demo.calendar.read(cx).selected_date(), None);
+            assert_eq!(demo.calendar.read(cx).selection().first_date(), None);
             assert_eq!(demo.tabs.read(cx).selected_index(), Some(2));
-            assert_eq!(demo.accordion.read(cx).open_index(), Some(2));
+            assert!(demo.accordion.read(cx).is_open(2));
             assert_eq!(
                 test_support::find(window, &[], &body_id).unwrap().label(),
                 Some(replacement.as_str())
@@ -2199,7 +2204,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     draw(cx);
     cx.update(|window, cx| {
         let accordion = demo.read(cx).accordion.read(cx);
-        assert_eq!(accordion.open_index(), Some(0));
+        assert!(accordion.is_open(0));
         assert!(accordion.trigger_focus_handle(0).is_focused(window));
     });
     cx.simulate_keystrokes("down");
@@ -2207,15 +2212,11 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     cx.update(|window, cx| {
         let accordion = demo.read(cx).accordion.read(cx);
         assert!(accordion.trigger_focus_handle(2).is_focused(window));
-        assert_eq!(
-            accordion.open_index(),
-            Some(0),
-            "arrows only move header focus"
-        );
+        assert!(accordion.is_open(0), "arrows only move header focus");
     });
     activate_key(cx, "enter");
     cx.update(|window, cx| {
-        assert_eq!(demo.read(cx).accordion.read(cx).open_index(), Some(2));
+        assert!(demo.read(cx).accordion.read(cx).is_open(2));
         assert!(test_support::find(window, &[], &"keyboard-help".into()).is_none());
     });
     cx.simulate_keystrokes("tab");
@@ -2233,7 +2234,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     cx.simulate_keystrokes("shift-tab");
     draw(cx);
     activate_key(cx, "space");
-    cx.update(|_, cx| assert_eq!(demo.read(cx).accordion.read(cx).open_index(), None));
+    cx.update(|_, cx| assert!(demo.read(cx).accordion.read(cx).open_values().is_empty()));
 
     cx.simulate_keystrokes("home");
     draw(cx);
@@ -2253,7 +2254,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     draw(cx);
     cx.update(|window, cx| {
         let demo = demo.read(cx);
-        assert_eq!(demo.accordion.read(cx).open_index(), None);
+        assert!(demo.accordion.read(cx).open_values().is_empty());
         assert!(!demo.help.read(cx).is_open());
         assert!(
             demo.accordion
@@ -2267,7 +2268,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     activate_key(cx, "enter");
     cx.update(|window, cx| {
         let demo = demo.read(cx);
-        assert_eq!(demo.accordion.read(cx).open_index(), Some(0));
+        assert!(demo.accordion.read(cx).is_open(0));
         assert!(!demo.help.read(cx).is_open());
         assert!(test_support::find(window, &[], &"keyboard-help".into()).is_some());
         assert!(!demo.show_cursor);
@@ -2328,8 +2329,12 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     draw(cx);
     cx.update(|window, cx| {
         let preview = demo.read(cx).preview.read(cx);
-        assert!(preview.focus_handle().is_focused(window));
-        assert_eq!(preview.value(), 40.0, "a label does not adjust the Slider");
+        assert!(preview.thumb_focus_handle(0).is_focused(window));
+        assert_eq!(
+            preview.values()[0],
+            40.0,
+            "a label does not adjust the Slider"
+        );
     });
     cx.simulate_keystrokes("shift-tab");
     draw(cx);
@@ -2349,8 +2354,8 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     draw(cx);
     cx.update(|window, cx| {
         let preview = demo.read(cx).preview.read(cx);
-        assert!(preview.focus_handle().is_focused(window));
-        assert_eq!(preview.value(), 45.0);
+        assert!(preview.thumb_focus_handle(0).is_focused(window));
+        assert_eq!(preview.values()[0], 45.0);
         let progress = test_support::find(window, &[], &"preview-progress".into()).unwrap();
         assert_eq!(progress.role(), Some(Role::ProgressIndicator));
         assert_eq!(progress.label(), Some("Preview progress"));
@@ -2359,7 +2364,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     cx.simulate_keystrokes("end");
     draw(cx);
     let progress_width = cx.update(|window, cx| {
-        assert_eq!(demo.read(cx).preview.read(cx).value(), 100.0);
+        assert_eq!(demo.read(cx).preview.read(cx).values()[0], 100.0);
         test_support::find(window, &[], &"preview-progress".into())
             .unwrap()
             .bounds()
@@ -2381,7 +2386,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     activate_key(cx, "space");
     cx.update(|window, cx| {
         assert!(demo.read(cx).preview_indeterminate);
-        assert_eq!(demo.read(cx).preview.read(cx).value(), 100.0);
+        assert_eq!(demo.read(cx).preview.read(cx).values()[0], 100.0);
         let progress = test_support::find(window, &[], &"preview-progress".into()).unwrap();
         assert_eq!(progress.role(), Some(Role::ProgressIndicator));
         assert_eq!(progress.label(), Some("Preview progress"));
@@ -2449,10 +2454,12 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
         let demo = demo.read(cx);
         assert!(demo.reset_dialog.read(cx).is_open());
         assert!(demo.reset_cancel_focus.is_focused(window));
-        assert_eq!(demo.preview.read(cx).value(), 100.0);
+        assert_eq!(demo.preview.read(cx).values()[0], 100.0);
         assert!(demo.preview_indeterminate);
         assert!(test_support::snapshots(window).iter().any(|item| {
-            item.role() == Some(Role::AlertDialog) && item.label() == Some("Reset preview?")
+            item.role() == Some(Role::AlertDialog)
+                && item.label() == Some("Reset preview?")
+                && item.modal()
         }));
     });
     cx.simulate_click(
@@ -2468,7 +2475,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     cx.update(|window, cx| {
         let demo = demo.read(cx);
         assert!(!demo.reset_dialog.read(cx).is_open());
-        assert_eq!(demo.preview.read(cx).value(), 100.0);
+        assert_eq!(demo.preview.read(cx).values()[0], 100.0);
         assert!(demo.preview_indeterminate);
         assert!(demo.actions.read(cx).focus_handle().is_focused(window));
         assert!(test_support::find(window, &[], &"preview-progress-placeholder".into()).is_some());
@@ -2482,7 +2489,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
     cx.update(|window, cx| {
         let demo = demo.read(cx);
         assert!(!demo.reset_dialog.read(cx).is_open());
-        assert_eq!(demo.preview.read(cx).value(), 40.0);
+        assert_eq!(demo.preview.read(cx).values()[0], 40.0);
         assert!(!demo.preview_indeterminate);
         assert!(demo.actions.read(cx).focus_handle().is_focused(window));
         assert!(test_support::find(window, &[], &"preview-progress-placeholder".into()).is_none());
@@ -2507,7 +2514,7 @@ fn compact_commands_and_sections_preserve_nested_focus(cx: &mut TestAppContext) 
                 .focus_handle()
                 .is_focused(window)
         );
-        assert_eq!(demo.preview.read(cx).value(), 40.0);
+        assert_eq!(demo.preview.read(cx).values()[0], 40.0);
         assert_eq!(
             demo.formatting.read(cx).selected_values(),
             ["bold", "italic"].map(gpui::SharedString::from),
@@ -2647,7 +2654,7 @@ fn command_search_opens_a_retained_multiline_form(cx: &mut TestAppContext) {
         &[gpui::SharedString::from("edit")]
     );
 
-    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab tab");
     draw(cx);
     cx.update(|window, cx| {
         assert!(demo.read(cx).notes.focus_handle(cx).is_focused(window));
@@ -2917,7 +2924,7 @@ fn field_feedback_and_search_selection_work_inside_the_dialog(cx: &mut TestAppCo
     draw(cx);
     cx.update(|window, cx| assert!(demo.read(cx).input.focus_handle(cx).is_focused(window)));
 
-    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab tab tab tab");
     draw(cx);
     draw(cx); // The focused input's reveal request updates the form's scroll offset.
     cx.update(|window, cx| {
@@ -2942,7 +2949,11 @@ fn field_feedback_and_search_selection_work_inside_the_dialog(cx: &mut TestAppCo
         assert!(preset.is_open());
         assert_eq!(preset.visible_indices(cx), &[2]);
         assert_eq!(
-            preset.selected_value(cx).map(|value| value.as_ref()),
+            preset
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
+                .map(|value| value.as_ref()),
             Some("balanced")
         );
     });
@@ -2969,14 +2980,18 @@ fn field_feedback_and_search_selection_work_inside_the_dialog(cx: &mut TestAppCo
         assert!(!preset.is_open());
         assert!(preset.focus_handle().is_focused(window));
         assert_eq!(
-            preset.selected_value(cx).map(|value| value.as_ref()),
+            preset
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
+                .map(|value| value.as_ref()),
             Some("presentation")
         );
         assert_eq!(preset.input().read(cx).value(), "Presentation");
     });
     assert_eq!(
         changes.borrow().as_slice(),
-        &[gpui::SharedString::from("presentation")]
+        &[vec![gpui::SharedString::from("presentation")]]
     );
     cx.simulate_keystrokes(select_all);
     cx.simulate_input("no matching preset");
@@ -3051,7 +3066,9 @@ fn field_feedback_and_search_selection_work_inside_the_dialog(cx: &mut TestAppCo
             demo.read(cx)
                 .preset
                 .read(cx)
-                .selected_value(cx)
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
                 .map(|value| value.as_ref()),
             Some("presentation")
         );
@@ -3110,7 +3127,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         let calendar = demo.calendar.read(cx);
         assert!(calendar.focus_handle().is_focused(window));
         assert_eq!(
-            calendar.selected_date(),
+            calendar.selection().first_date(),
             NaiveDate::from_ymd_opt(2026, 11, 9)
         );
         let day = test_support::snapshots(window)
@@ -3165,12 +3182,20 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
             NaiveDate::from_ymd_opt(2026, 12, 10).unwrap()
         );
         assert_eq!(
-            calendar.selected_date(),
+            calendar.selection().first_date(),
             NaiveDate::from_ymd_opt(2026, 11, 9)
         );
         let grid = test_support::find(window, &[], &"recording-calendar".into()).unwrap();
         assert_eq!(grid.role(), Some(Role::Grid));
         assert_eq!(grid.label(), Some("Recording date, December 2026"));
+        for (column, label) in ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+            .into_iter()
+            .enumerate()
+        {
+            let heading = test_support::find(window, &[], &("weekday", column).into()).unwrap();
+            assert_eq!(heading.role(), Some(Role::ColumnHeader));
+            assert_eq!(heading.label(), Some(label));
+        }
         assert_eq!(
             test_support::find(window, &[], &marker_label_id)
                 .unwrap()
@@ -3190,7 +3215,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         );
         assert!(demo.date_picker.read(cx).focus_handle().is_focused(window));
         assert_eq!(
-            demo.calendar.read(cx).selected_date(),
+            demo.calendar.read(cx).selection().first_date(),
             NaiveDate::from_ymd_opt(2026, 11, 9)
         );
         assert_eq!(
@@ -3215,7 +3240,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     draw(cx);
     cx.update(|window, cx| {
         assert_eq!(
-            demo.read(cx).calendar.read(cx).selected_date(),
+            demo.read(cx).calendar.read(cx).selection().first_date(),
             NaiveDate::from_ymd_opt(2026, 12, 10)
         );
         let demo = demo.read(cx);
@@ -3234,6 +3259,59 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
             Some("Selected date · 2026-12-10")
         );
     });
+    // The typed-date field follows the picker. An impossible date reports an
+    // error without changing the selection; a relative date applies through
+    // the same picker setter and is rewritten as ISO text.
+    cx.simulate_keystrokes("tab");
+    draw(cx);
+    cx.simulate_input("2026-02-30");
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|window, cx| {
+        let demo = demo.read(cx);
+        assert!(demo.typed_date.focus_handle(cx).is_focused(window));
+        assert!(demo.typed_date_invalid);
+        assert_eq!(
+            demo.calendar.read(cx).selection().first_date(),
+            NaiveDate::from_ymd_opt(2026, 12, 10)
+        );
+    });
+    for _ in 0.."2026-02-30".len() {
+        cx.simulate_keystrokes("backspace");
+    }
+    cx.update(|_, cx| {
+        assert!(
+            !demo.read(cx).typed_date_invalid,
+            "editing clears the error"
+        )
+    });
+    cx.simulate_input("in 5 weeks");
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|_, cx| {
+        let demo = demo.read(cx);
+        assert!(!demo.typed_date_invalid);
+        assert_eq!(demo.typed_date.read(cx).value().as_ref(), "2026-12-14");
+        assert_eq!(
+            demo.calendar.read(cx).selection().first_date(),
+            NaiveDate::from_ymd_opt(2026, 12, 14)
+        );
+    });
+    cx.simulate_input("x");
+    for _ in 0.."2026-12-14x".len() {
+        cx.simulate_keystrokes("backspace");
+    }
+    cx.simulate_input("in 31 days");
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|_, cx| {
+        let demo = demo.read(cx);
+        assert!(!demo.typed_date_invalid);
+        assert_eq!(
+            demo.calendar.read(cx).selection().first_date(),
+            NaiveDate::from_ymd_opt(2026, 12, 10)
+        );
+    });
     cx.simulate_keystrokes("tab");
     draw(cx);
     cx.simulate_input("Prepare the workshop demo.");
@@ -3243,7 +3321,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         let demo = demo.read(cx);
         assert!(demo.notes.focus_handle(cx).is_focused(window));
         assert_eq!(
-            demo.schedule_split.read(cx).ratio(),
+            demo.schedule_split.read(cx).sizes()[0],
             0.5,
             "editing keys do not resize panes"
         );
@@ -3255,10 +3333,10 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     cx.update(|window, cx| {
         let demo = demo.read(cx);
         let split = demo.schedule_split.read(cx);
-        assert!(split.focus_handle().is_focused(window));
-        assert!((split.ratio() - 0.52).abs() < 0.001);
+        assert!(split.handle_focus(0).is_focused(window));
+        assert!((split.sizes()[0] - 0.52).abs() < 0.001);
         assert!(demo.schedule_scroll.bounds().size.height < old_table_height);
-        let id = (gpui::ElementId::from("schedule-panes"), "handle").into();
+        let id = (gpui::ElementId::from("schedule-panes"), "handle-0").into();
         let handle = test_support::find(window, &[], &id).unwrap();
         assert_eq!(handle.role(), Some(Role::Splitter));
         assert_eq!(handle.label(), Some("Space for session notes"));
@@ -3333,11 +3411,11 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         let demo = demo.read(cx);
         assert_eq!(demo.tabs.read(cx).selected_index(), Some(3));
         assert_eq!(
-            demo.calendar.read(cx).selected_date(),
+            demo.calendar.read(cx).selection().first_date(),
             NaiveDate::from_ymd_opt(2026, 12, 10)
         );
         assert!(!demo.date_picker.read(cx).is_open(cx));
-        assert!((demo.schedule_split.read(cx).ratio() - 0.52).abs() < 0.001);
+        assert!((demo.schedule_split.read(cx).sizes()[0] - 0.52).abs() < 0.001);
         assert_eq!(demo.notes.read(cx).value(), "Prepare the workshop demo.");
         assert!(test_support::texts(window).iter().any(|text| {
             text.path().contains(&"plan-date".into()) && text.text() == "2026-12-10"
@@ -3384,7 +3462,7 @@ fn schedule_marker_tracks_selection_at_narrow_widths_without_adding_focus(cx: &m
             cx.update(|window, cx| {
                 let calendar = demo.read(cx).calendar.clone();
                 calendar.update(cx, |state, cx| {
-                    assert!(state.set_selected_date(date, window, cx));
+                    assert!(state.set_selection(CalendarSelection::Single(date), window, cx));
                 });
             });
             draw(cx);
@@ -3428,12 +3506,13 @@ fn schedule_marker_tracks_selection_at_narrow_widths_without_adding_focus(cx: &m
                 assert!(text.bounds().left() >= marker.bounds().left());
                 assert!(text.bounds().right() <= marker.bounds().right() + px(1.));
                 let demo = demo.read(cx);
-                assert_eq!(demo.calendar.read(cx).selected_date(), date);
+                assert_eq!(demo.calendar.read(cx).selection().first_date(), date);
                 assert!(demo.date_picker.read(cx).focus_handle().is_focused(window));
                 assert_eq!(demo.fields_scroll.offset().x, px(0.));
             });
         }
-        cx.simulate_keystrokes("tab");
+        // The typed-date field sits between the picker and the notes.
+        cx.simulate_keystrokes("tab tab");
         draw(cx);
         cx.update(|window, cx| assert!(demo.read(cx).notes.focus_handle(cx).is_focused(window)));
     }
@@ -3598,7 +3677,11 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
         cx.update(|window, cx| {
             let calendar = demo.read(cx).calendar.clone();
             calendar.update(cx, |state, cx| {
-                assert!(state.set_selected_date(NaiveDate::from_ymd_opt(2026, 12, 24), window, cx));
+                assert!(state.set_selection(
+                    CalendarSelection::Single(NaiveDate::from_ymd_opt(2026, 12, 24)),
+                    window,
+                    cx
+                ));
             });
         });
         draw(cx);
@@ -3617,7 +3700,7 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
                 demo.read(cx)
                     .schedule_split
                     .read(cx)
-                    .focus_handle()
+                    .handle_focus(0)
                     .is_focused(window)
             )
         });
@@ -3693,7 +3776,7 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
             assert_eq!(demo.notes.read(cx).value(), body);
             assert_eq!(demo.notes_edited_at, time);
             assert_eq!(
-                demo.calendar.read(cx).selected_date(),
+                demo.calendar.read(cx).selection().first_date(),
                 NaiveDate::from_ymd_opt(2026, 12, 24)
             );
             assert_eq!(
@@ -3711,7 +3794,8 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
     cx.simulate_keystrokes("tab tab tab tab tab");
     draw(cx);
     activate_key(cx, "enter");
-    cx.simulate_keystrokes("tab");
+    // The sidebar's rail trigger follows the last section entry.
+    cx.simulate_keystrokes("tab tab");
     draw(cx);
     let id = gpui::ElementId::from("preset-catalogue");
     let pagination = gpui::ElementId::from((id.clone(), "pagination"));
@@ -3753,15 +3837,77 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         );
     });
 
-    // Search, two sort buttons, then the only enabled page action.
-    cx.simulate_keystrokes("tab tab tab");
+    // Column controls use native menu checks and restore the trigger on close.
+    cx.simulate_keystrokes("tab");
+    activate_key(cx, "enter");
+    cx.simulate_keystrokes("down");
+    activate_key(cx, "enter");
+    cx.update(|window, cx| {
+        assert!(!demo.read(cx).preset_table.read(cx).is_column_visible(1));
+        assert!(test_support::find(window, &[], &(id.clone(), "heading-1").into()).is_none());
+        assert_eq!(
+            test_support::find(window, &[], &(id.clone(), "columns").into())
+                .unwrap()
+                .focused(),
+            Some(true)
+        );
+    });
+    activate_key(cx, "enter");
+    cx.simulate_keystrokes("down");
+    activate_key(cx, "enter");
+    cx.simulate_keystrokes("tab");
+    activate_key(cx, "space");
+    cx.update(|window, cx| {
+        let state = demo.read(cx).preset_table.read(cx);
+        assert!(state.is_column_visible(1));
+        assert_eq!(
+            state.filtered_selected_count(),
+            1,
+            "unavailable Broadcast cannot be selected"
+        );
+        assert!(state.is_row_selected(&"balanced".into()));
+        let row = gpui::ElementId::from((id.clone(), "row-balanced"));
+        assert_eq!(
+            test_support::find(window, &[], &row).unwrap().selected(),
+            Some(true)
+        );
+        assert_eq!(
+            test_support::find(window, &[], &(id.clone(), "select-page").into())
+                .unwrap()
+                .checked(),
+            Some(true)
+        );
+    });
+    // The current preset can be independently selected and unselected.
+    cx.simulate_keystrokes("tab tab tab tab tab");
+    activate_key(cx, "space");
+    cx.update(|window, cx| {
+        assert_eq!(
+            demo.read(cx)
+                .preset_table
+                .read(cx)
+                .filtered_selected_count(),
+            0
+        );
+        assert_eq!(
+            test_support::find(window, &[], &(id.clone(), "select-page").into())
+                .unwrap()
+                .checked(),
+            Some(false)
+        );
+    });
+    activate_key(cx, "space");
+    // Disabled Broadcast and Previous are skipped; the current page is next.
+    let first_page = gpui::ElementId::from((pagination.clone(), "page-0"));
+    let second_page = gpui::ElementId::from((pagination.clone(), "page-1"));
+    cx.simulate_keystrokes("tab");
     draw(cx);
     cx.update(|window, _| {
-        assert_eq!(
-            test_support::find(window, &[], &next).unwrap().focused(),
-            Some(true)
-        )
+        let page = test_support::find(window, &[], &first_page).unwrap();
+        assert_eq!(page.focused(), Some(true));
+        assert_eq!(page.label(), Some("Page 1, current page"));
     });
+    cx.simulate_keystrokes("tab");
     activate_key(cx, "enter");
     cx.update(|window, cx| {
         let state = demo.read(cx).preset_table.read(cx);
@@ -3777,8 +3923,13 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             test_support::find(window, &[], &next).unwrap().disabled(),
             Some(true)
         );
+        let page = test_support::find(window, &[], &second_page).unwrap();
+        assert_eq!(page.focused(), Some(true));
+        assert_eq!(page.label(), Some("Page 2, current page"));
     });
-    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab shift-tab");
+    cx.simulate_keystrokes(
+        "shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab          shift-tab",
+    );
     draw(cx);
     cx.update(|window, cx| {
         assert_eq!(
@@ -3798,6 +3949,12 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             test_support::find(window, &[], &sort).unwrap().label(),
             Some("Preset, sorted ascending; sort descending")
         );
+        assert_eq!(
+            test_support::find(window, &[], &(id.clone(), "heading-0").into())
+                .unwrap()
+                .sort_direction(),
+            Some(gpui::accesskit::SortDirection::Ascending)
+        );
     });
     activate_key(cx, "enter");
     cx.update(|window, cx| {
@@ -3813,9 +3970,20 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             test_support::find(window, &[], &sort).unwrap().label(),
             Some("Preset, sorted descending; sort ascending")
         );
+        assert_eq!(
+            state.filtered_selected_count(),
+            1,
+            "selection survives paging and sorting"
+        );
+        assert_eq!(
+            test_support::find(window, &[], &(id.clone(), "heading-0").into())
+                .unwrap()
+                .sort_direction(),
+            Some(gpui::accesskit::SortDirection::Descending)
+        );
     });
 
-    cx.simulate_keystrokes("shift-tab");
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab");
     cx.simulate_input("no matching preset");
     draw(cx);
     cx.update(|window, cx| {
@@ -3838,12 +4006,14 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             demo.read(cx)
                 .preset
                 .read(cx)
-                .selected_value(cx)
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
                 .map(|value| value.as_ref()),
             Some("balanced")
         );
     });
-    cx.simulate_keystrokes("tab");
+    cx.simulate_keystrokes("tab tab");
     draw(cx);
     cx.update(|window, _| {
         assert_eq!(
@@ -3871,7 +4041,7 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             "presentation"
         );
     });
-    cx.simulate_keystrokes("tab tab tab");
+    cx.simulate_keystrokes("tab tab tab tab tab tab tab tab");
     draw(cx);
     let row = gpui::ElementId::from((id.clone(), "row-presentation"));
     let action = gpui::ElementId::from((row, "action"));
@@ -3887,7 +4057,11 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
     cx.update(|window, cx| {
         let preset = demo.read(cx).preset.read(cx);
         assert_eq!(
-            preset.selected_value(cx).map(|value| value.as_ref()),
+            preset
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
+                .map(|value| value.as_ref()),
             Some("presentation")
         );
         assert_eq!(preset.input().read(cx).value(), "Presentation");
@@ -3895,7 +4069,8 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         assert_eq!(action.disabled(), Some(true));
         assert_eq!(action.focused(), Some(true));
     });
-    cx.simulate_keystrokes("tab");
+    // The single current page remains a Tab stop before the dialog actions.
+    cx.simulate_keystrokes("tab tab");
     draw(cx);
     cx.update(|window, _| {
         assert!(
@@ -3920,7 +4095,9 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
         assert_eq!(
             demo.preset
                 .read(cx)
-                .selected_value(cx)
+                .selected_items(cx)
+                .next()
+                .map(|item| item.value())
                 .map(|value| value.as_ref()),
             Some("presentation")
         );
@@ -3981,7 +4158,132 @@ fn disabled_select_and_composition_commit_do_not_leak_actions(cx: &mut TestAppCo
 }
 
 #[gpui::test]
+fn catalogue_sheets_keep_each_edge_and_scroll_body_within_the_viewport(cx: &mut TestAppContext) {
+    cx.update(gpui_design::init);
+    let (root, cx) = cx.add_window_view(|window, cx| {
+        let catalogue = cx.new(|cx| catalogue::Catalogue::new(window, cx));
+        Root::new(catalogue, window, cx)
+    });
+    let view = root
+        .read_with(cx, |root, _| root.view().clone())
+        .downcast::<catalogue::Catalogue>()
+        .unwrap();
+    let forms = cx.update(|window, cx| {
+        window.activate_window();
+        let tabs = view.read(cx).tabs.clone();
+        tabs.update(cx, |tabs, cx| {
+            tabs.select_value("forms", window, cx);
+        });
+        view.read(cx).forms.clone()
+    });
+    for (width, height) in [(320., 520.), (980., 840.)] {
+        cx.simulate_resize(gpui::size(px(width), px(height)));
+        for edge in 0..4 {
+            cx.update(|window, cx| {
+                let trigger = forms.read(cx).sheet_triggers[edge].clone();
+                trigger.focus(window, cx);
+            });
+            draw(cx);
+            activate_key(cx, "enter");
+            let (header, body, footer, overflow) = cx.update(|window, cx| {
+                assert!(forms.read(cx).sheet.read(cx).is_open());
+                let id = gpui::ElementId::from("session-help");
+                let bounds = |part| {
+                    test_support::find(window, &[], &(id.clone(), part).into())
+                        .unwrap()
+                        .bounds()
+                };
+                assert!(
+                    test_support::snapshots(window)
+                        .iter()
+                        .any(|node| node.label() == Some("Close help")
+                            && node.focused() == Some(true))
+                );
+                (
+                    bounds("header"),
+                    bounds("body"),
+                    bounds("footer"),
+                    forms.read(cx).sheet_scroll.max_offset().y,
+                )
+            });
+            for bounds in [header, body, footer] {
+                assert!(bounds.left() >= px(-1.) && bounds.right() <= px(width) + px(1.));
+                assert!(bounds.top() >= px(-1.) && bounds.bottom() <= px(height) + px(1.));
+            }
+            assert!(header.bottom() <= body.top() && body.bottom() <= footer.top());
+            match edge {
+                0 => {
+                    assert!(header.top().abs() <= px(1.));
+                    assert!((header.size.width - px(width)).abs() <= px(1.));
+                }
+                1 => {
+                    assert!((header.right() - px(width)).abs() <= px(1.));
+                    assert!(header.top().abs() <= px(1.));
+                    assert!((footer.bottom() - px(height)).abs() <= px(1.));
+                }
+                2 => {
+                    assert!((footer.bottom() - px(height)).abs() <= px(1.));
+                    assert!((header.size.width - px(width)).abs() <= px(1.));
+                }
+                _ => {
+                    assert!(header.left().abs() <= px(1.));
+                    assert!(header.top().abs() <= px(1.));
+                    assert!((footer.bottom() - px(height)).abs() <= px(1.));
+                }
+            }
+            if height == 520. || edge == 0 || edge == 2 {
+                assert!(
+                    overflow > px(0.),
+                    "the actual help text overflows the bounded body"
+                );
+            }
+            if overflow > px(0.) {
+                cx.simulate_event(ScrollEvent {
+                    position: body.center(),
+                    delta: ScrollDelta::Pixels(point(px(0.), px(-100.))),
+                    ..Default::default()
+                });
+                draw(cx);
+                cx.update(|window, cx| {
+                    assert!(forms.read(cx).sheet_scroll.offset().y < px(0.));
+                    let id = gpui::ElementId::from("session-help");
+                    assert_eq!(
+                        test_support::find(window, &[], &(id.clone(), "header").into())
+                            .unwrap()
+                            .bounds(),
+                        header
+                    );
+                    assert_eq!(
+                        test_support::find(window, &[], &(id, "footer").into())
+                            .unwrap()
+                            .bounds(),
+                        footer
+                    );
+                });
+            }
+            activate_key(cx, "escape");
+            cx.update(|window, cx| {
+                assert!(!forms.read(cx).sheet.read(cx).is_open());
+                assert!(forms.read(cx).sheet_triggers[edge].is_focused(window));
+            });
+        }
+    }
+}
+
+#[gpui::test]
 fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext) {
+    let assert_named_buttons = |window: &gpui::Window| {
+        for node in test_support::snapshots(window)
+            .into_iter()
+            .filter(|node| node.role() == Some(Role::Button))
+        {
+            assert!(
+                node.label().is_some_and(|label| !label.trim().is_empty()),
+                "button needs a native accessible name: {:?}",
+                node.path()
+            );
+        }
+    };
     cx.update(gpui_design::init);
     let (root, cx) = cx.add_window_view(|window, cx| {
         let catalogue = cx.new(|cx| catalogue::Catalogue::new(window, cx));
@@ -3997,6 +4299,7 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
     });
     cx.run_until_parked();
     cx.update(|window, _| {
+        assert_named_buttons(window);
         let nodes = test_support::snapshots(window);
         assert!(
             nodes.iter().any(|node| node.role() == Some(Role::MenuBar)
@@ -4010,6 +4313,148 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
         );
     });
 
+    // The breadcrumb ellipsis is an ordinary DropdownMenu inside a list item;
+    // a hidden ancestor navigates and returns focus to the ellipsis.
+    let current_page = |cx: &mut VisualTestContext| {
+        cx.update(|_, cx| view.read(cx).navigation.read(cx).page.to_string())
+    };
+    assert_eq!(current_page(cx), "overview");
+    let more = cx.update(|window, _| {
+        test_support::find(window, &[], &"page-crumb-more".into())
+            .unwrap()
+            .bounds()
+    });
+    cx.simulate_click(more.center(), gpui::Modifiers::default());
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(test_support::snapshots(window).iter().any(|node| {
+            node.role() == Some(Role::Menu) && node.label() == Some("Hidden locations")
+        }));
+    });
+    cx.simulate_keystrokes("c");
+    activate_key(cx, "enter");
+    cx.run_until_parked();
+    draw(cx);
+    assert_eq!(current_page(cx), "api");
+    cx.update(|window, _| {
+        assert!(
+            !test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::Menu))
+        );
+        let more = test_support::find(window, &[], &"page-crumb-more".into()).unwrap();
+        assert_eq!(more.focused(), Some(true));
+        assert_eq!(more.expanded(), Some(false));
+    });
+    let home = cx.update(|window, _| {
+        test_support::find(window, &[], &"page-crumb-home-button".into())
+            .unwrap()
+            .bounds()
+    });
+    cx.simulate_click(home.center(), gpui::Modifiers::default());
+    draw(cx);
+    assert_eq!(current_page(cx), "overview");
+
+    // Exercise the actual nested Sidebar consumer once. Collapsing navigation
+    // unmounts its entries while the application's selected page stays mounted.
+    let (project, sidebar, tools) = cx.update(|window, cx| {
+        let navigation = view.read(cx).navigation.read(cx);
+        let states = (
+            navigation.sections.clone(),
+            navigation.sidebar.clone(),
+            navigation.tools.clone(),
+        );
+        let focus = states.1.read(cx).trigger_focus_handle().clone();
+        focus.focus(window, cx);
+        states
+    });
+    draw(cx);
+    cx.simulate_keystrokes("tab tab");
+    draw(cx);
+    cx.update(|window, cx| {
+        assert!(
+            tools.read(cx).trigger_focus_handle().is_focused(window),
+            "Tab skips unavailable Activity"
+        );
+        assert_eq!(project.read(cx).selected_index(), Some(0));
+        assert!(
+            test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::Group) && node.label() == Some("Project"))
+        );
+    });
+    cx.simulate_keystrokes("tab");
+    activate_key(cx, "enter");
+    cx.update(|window, cx| {
+        assert_eq!(project.read(cx).selected_index(), Some(2));
+        let page = test_support::find(window, &[], &"project-section".into()).unwrap();
+        assert_eq!(page.role(), Some(Role::Region));
+        assert_eq!(page.label(), Some("Members"));
+        tools.update(cx, |tools, cx| tools.set_open(false, window, cx));
+    });
+    draw(cx);
+    cx.update(|window, cx| {
+        assert!(tools.read(cx).trigger_focus_handle().is_focused(window));
+        let member = (gpui::ElementId::from("project-sidebar"), "2".to_string()).into();
+        assert!(test_support::find(window, &[], &member).is_none());
+        assert_eq!(
+            test_support::find(window, &[], &"project-section".into())
+                .unwrap()
+                .label(),
+            Some("Members")
+        );
+    });
+    activate_key(cx, "enter");
+    cx.simulate_keystrokes("tab");
+    draw(cx);
+    cx.update(|window, cx| {
+        assert!(project.read(cx).tab_focus_handle(2).is_focused(window));
+        sidebar.update(cx, |sidebar, cx| sidebar.set_open(false, window, cx));
+    });
+    draw(cx);
+    cx.update(|window, cx| {
+        assert!(sidebar.read(cx).trigger_focus_handle().is_focused(window));
+        let nodes = test_support::snapshots(window);
+        assert!(
+            !nodes.iter().any(|node| node.role() == Some(Role::Button)
+                && node.label() == Some("Project overview"))
+        );
+        assert!(nodes.iter().any(|node| node.role() == Some(Role::Button)
+            && node.label() == Some("Project sections")
+            && node.expanded() == Some(false)));
+    });
+    activate_key(cx, "enter");
+    cx.update(|window, cx| {
+        assert_eq!(project.read(cx).selected_index(), Some(2));
+        assert_eq!(
+            test_support::find(window, &[], &"project-section".into())
+                .unwrap()
+                .label(),
+            Some("Members")
+        );
+    });
+
+    for width in [320., 980.] {
+        cx.simulate_resize(gpui::size(px(width), px(840.)));
+        draw(cx);
+        draw(cx);
+        cx.update(|window, _| {
+            let navigation = test_support::find(window, &[], &"project-sidebar".into())
+                .unwrap()
+                .bounds();
+            let content = test_support::find(window, &[], &"project-section".into())
+                .unwrap()
+                .bounds();
+            assert!(navigation.left() >= px(0.) && navigation.right() <= px(width));
+            assert!(content.left() >= px(0.) && content.right() <= px(width));
+            if width < 640. {
+                assert!(navigation.bottom() <= content.top());
+            } else {
+                assert!(navigation.right() <= content.left());
+            }
+        });
+    }
+
     let section = |cx: &mut VisualTestContext, index: usize| {
         cx.update(|window, cx| {
             let tabs = view.read(cx).tabs.clone();
@@ -4022,6 +4467,7 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
         });
         cx.run_until_parked();
         draw(cx);
+        cx.update(|window, _| assert_named_buttons(window));
     };
     section(cx, 1);
     cx.simulate_keystrokes("tab");
@@ -4072,6 +4518,37 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
         assert!(nodes.iter().any(|node| node.role() == Some(Role::Table)
             && node.label() == Some("All transfer values in megabytes, including hidden series")));
     });
+    let donut = cx.update(|window, _| {
+        test_support::snapshots(window)
+            .into_iter()
+            .find(|node| node.role() == Some(Role::Button) && node.label() == Some("Donut"))
+            .unwrap()
+            .bounds()
+    });
+    cx.simulate_click(donut.center(), gpui::Modifiers::default());
+    draw(cx);
+    let plot = cx.update(|window, _| {
+        test_support::snapshots(window)
+            .into_iter()
+            .find(|node| node.label() == Some("Transfer samples in megabytes"))
+            .unwrap()
+            .bounds()
+    });
+    assert_eq!(plot.size, gpui::size(px(240.), px(200.)));
+    // Three quarters of a turn lies in Friday's slice; a grouped band would be Wednesday.
+    cx.simulate_mouse_move(
+        plot.center() - gpui::point(px(40.), px(0.)),
+        None,
+        gpui::Modifiers::default(),
+    );
+    draw(cx);
+    cx.update(|window, _| {
+        let plot = test_support::snapshots(window)
+            .into_iter()
+            .find(|node| node.label() == Some("Transfer samples in megabytes"))
+            .unwrap();
+        assert_eq!(plot.value(), Some("Fri: Uploaded: 48, Removed: -16"));
+    });
     section(cx, 3);
     cx.update(|window, _| {
         let nodes = test_support::snapshots(window);
@@ -4098,5 +4575,164 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
                 .iter()
                 .any(|node| node.role() == Some(Role::Dialog))
         );
+    });
+
+    section(cx, 4);
+    cx.simulate_keystrokes("tab");
+    draw(cx);
+    activate_key(cx, "enter");
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        let picker = test_support::find(window, &[], &"recording-date-range".into()).unwrap();
+        assert_eq!(picker.expanded(), Some(true), "a partial range stays open");
+    });
+    cx.simulate_keystrokes("right right");
+    activate_key(cx, "enter");
+    cx.run_until_parked();
+    draw(cx);
+    cx.update(|window, _| {
+        let picker = test_support::find(window, &[], &"recording-date-range".into()).unwrap();
+        assert_eq!(picker.expanded(), Some(false));
+        assert_eq!(picker.focused(), Some(true));
+        assert_eq!(
+            picker.label(),
+            Some("Recording date range: Nov 11 – Nov 13, 2026")
+        );
+    });
+    // Previous month is disabled at the availability calendar's lower bound.
+    cx.simulate_keystrokes("tab tab tab tab");
+    draw(cx);
+    cx.update(|window, _| {
+        let nodes = test_support::snapshots(window);
+        let focused = nodes
+            .iter()
+            .filter(|node| node.focused() == Some(true))
+            .map(|node| (node.role(), node.label()))
+            .collect::<Vec<_>>();
+        assert!(
+            nodes.iter().any(|node| {
+                node.role() == Some(Role::ComboBox)
+                    && node.label() == Some("Search recording targets")
+                    && node.focused() == Some(true)
+            }),
+            "focused controls: {focused:?}"
+        );
+    });
+    cx.simulate_input("archive");
+    draw(cx);
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        let nodes = test_support::snapshots(window);
+        assert!(
+            nodes
+                .iter()
+                .any(|node| node.role() == Some(Role::Group) && node.label() == Some("Online"))
+        );
+        assert!(
+            nodes
+                .iter()
+                .any(|node| node.role() == Some(Role::ComboBox) && node.expanded() == Some(true))
+        );
+        assert!(nodes.iter().any(|node| node.role() == Some(Role::Button)
+            && node.label() == Some("Remove Cloud archive")));
+    });
+    cx.simulate_keystrokes("escape tab tab");
+    draw(cx);
+    activate_key(cx, "enter");
+    draw(cx);
+    cx.update(|window, _| {
+        let nodes = test_support::snapshots(window);
+        assert!(!nodes.iter().any(|node| node.role() == Some(Role::Button)
+            && node.label() == Some("Remove Cloud archive")));
+        assert!(
+            nodes
+                .iter()
+                .any(|node| node.role() == Some(Role::ComboBox) && node.focused() == Some(true))
+        );
+    });
+    cx.simulate_keystrokes("tab tab tab");
+    activate_key(cx, "enter");
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab");
+    cx.simulate_input("Backup");
+    draw(cx);
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        assert!(
+            test_support::snapshots(window).iter().any(|node| {
+                node.role() == Some(Role::Button) && node.label() == Some("Remove Backup archive")
+            }),
+            "the replaced item collection is selectable without recreating the editor"
+        );
+    });
+    cx.simulate_keystrokes("escape tab tab tab tab tab");
+    draw(cx);
+    cx.update(|window, _| {
+        assert_eq!(
+            test_support::find(window, &[], &"calendar-reading-direction".into())
+                .unwrap()
+                .focused(),
+            Some(true)
+        );
+    });
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        let nodes = test_support::snapshots(window);
+        let sunday = nodes
+            .iter()
+            .find(|node| node.role() == Some(Role::ColumnHeader) && node.label() == Some("Sun"))
+            .unwrap();
+        let monday = nodes
+            .iter()
+            .find(|node| node.role() == Some(Role::ColumnHeader) && node.label() == Some("Mon"))
+            .unwrap();
+        assert!(
+            sunday.bounds().left() > monday.bounds().left(),
+            "Sunday-first columns are visually reversed for RTL"
+        );
+    });
+    cx.simulate_keystrokes("shift-tab shift-tab shift-tab shift-tab shift-tab shift-tab");
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(
+            test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::GridCell)
+                    && node.label() == Some("Wednesday, November 11, 2026")
+                    && node.focused() == Some(true))
+        );
+    });
+    cx.simulate_keystrokes("left left left");
+    draw(cx);
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        let nodes = test_support::snapshots(window);
+        let saturday = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Some(Role::GridCell)
+                    && node.label() == Some("Saturday, November 14, 2026")
+            })
+            .unwrap();
+        assert_eq!(saturday.focused(), Some(true));
+        assert_eq!(saturday.disabled(), Some(true));
+        assert_eq!(
+            saturday.selected(),
+            Some(false),
+            "unavailable dates are discoverable but cannot be selected"
+        );
+    });
+    cx.simulate_keystrokes("left left");
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        let nodes = test_support::snapshots(window);
+        let monday = nodes
+            .iter()
+            .find(|node| {
+                node.role() == Some(Role::GridCell)
+                    && node.label() == Some("Monday, November 16, 2026")
+            })
+            .unwrap();
+        assert_eq!(monday.focused(), Some(true));
+        assert_eq!(monday.selected(), Some(true));
     });
 }

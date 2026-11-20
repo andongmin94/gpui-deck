@@ -9,30 +9,74 @@ consumer's `Palette` or application-supplied `Styled` values.
 
 ## Copy into an application
 
+The source CLI copies a recipe with its transitive recipe dependencies, light/dark
+token source, module declarations, license and required assets:
+
+```sh
+cargo run -p gpui-design-cli --locked -- list
+cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+```
+
+Declare `mod ui;` in the consumer and use `ui::recipes::{DataTable, Avatar}` and
+`ui::Appearance::Settings.palette()` or `ui::Appearance::Compact.palette()`.
+Use the matching Cargo dependencies in the README. The CLI does not change the
+consumer's manifest. It embeds the repository's current recipe source when built;
+there is no remote registry or update service.
+
+Keep the README's consumer feature declaration:
+
+```toml
+[features]
+test-support = ["gpui-design/test-support"]
+```
+
+Copied recipe tests are guarded by this consumer feature. Declaring it also makes
+their `cfg` values known to Rust; enable it to run the existing GPUI tests.
+
+Run `add` again with more names to extend the same directory. Existing recipe
+and palette edits are preserved. Generated `mod.rs` declarations and
+`recipes/.gpui-design` track the installed set; if those scaffolds were edited,
+the CLI stops before writing and explains how to add declarations manually.
+Conflicting new files are also rejected. The copied source belongs to the
+application.
+
+To copy manually:
+
 1. Copy the desired files from
    [`crates/base/examples/recipes`](../crates/base/examples/recipes) into an
    application module, preserving the repository's license terms.
 2. Declare the copied modules and re-export the types, following the small
    [`mod.rs`](../crates/base/examples/recipes/mod.rs). Copy only the modules needed
    by the application and list only those modules.
-3. For recipes that import `use super::super::Palette`, use the application's
-   token type and adapt the field names or recipe styling. The example's
-   `Palette` and its compact and settings values show the fields used by these
-   recipes. AspectRatio takes no palette; its consumer supplies the visual style.
+3. Copy [`presentation.rs`](../crates/base/examples/presentation.rs) beside the
+   application's `recipes` directory. It contains the actual `Palette` and both
+   appearances used by the tested example, without the Demo or its behavior.
+   Declare it and expose its tokens in the recipes' parent module:
+
+   ```rust,ignore
+   mod presentation;
+   pub(crate) use presentation::{Appearance, Palette};
+   mod recipes;
+   ```
+
+   Choose `Appearance::Settings.palette()` or `Appearance::Compact.palette()` in
+   the application view. Recipe imports such as `use super::super::Palette`
+   work directly. Change the copied token values to fit the application, or replace Palette with an
+   existing token type. AspectRatio takes no palette; its consumer supplies the
+   visual style. Bubble and Chart currently keep their own copyable styling.
 4. Import the types from that application module. They use `pub(crate)` visibility
    and are not exported from `gpui_design`. No extra dependency is required.
 
-The source in this repository is the distribution mechanism. There is no recipe
-registry, installer, or separate theme provider. The existing crate continues to
-own interactive behavior; the application owns the copied recipe source.
+The palette module and recipes are application source, outside the library
+exports. The CLI provides local source distribution; these visual tokens do not
+install a global theme provider. The library continues to own interactive behavior.
 
 Some recipes compose other recipe modules. Copy those modules and their re-exports
 alongside the desired recipe:
 
 | Recipe | Other recipe modules required |
 | --- | --- |
-| Pagination | ButtonGroup |
-| DataTable | InputGroup, EmptyState, Pagination, and ButtonGroup |
+| DataTable | InputGroup, EmptyState, and Pagination |
 | Message | Typography (`Paragraph`) |
 | Trace | Typography (`Paragraph`) |
 
@@ -190,23 +234,33 @@ permissions from its child elements. `Styled` can override the frame.
 ## Item
 
 [`item.rs`](../crates/base/examples/recipes/item.rs) groups a title, optional
-description, and optional trailing action in a content row.
+description, leading media, full-width header and footer, and an optional
+trailing action.
 
 ```rust,ignore
 Item::new("recording-preset-item", "Recording preset", palette)
     .description(selected_preset_label)
+    .media(record_dot)
+    .header("Applies to new recordings")
+    .footer(recording_date)
     .action(preset_preview_and_edit)
 ```
 
-Its native Group is named by the title. The text column can shrink while the
-action keeps its required width. The example supplies the existing HoverCard
-trigger, which previews the preset on hover/focus and opens settings on ordinary
-activation. Its focus handle, button name, and return-focus behavior are retained.
+Its native Group is named by the title and described by the description. The
+text column can shrink while media and the action keep their required width; the
+header and footer span the frame above and below that row. The example supplies
+a decorative drawn record dot, a muted scope header, the selected recording date
+as footer, and the existing HoverCard trigger, which previews the preset on
+hover/focus and opens settings on ordinary activation. Its focus handle, button
+name, and return-focus behavior are retained.
 
-The row has no whole-row click, Tab stop, selected value, or list navigation.
-Supplied controls own their semantics and actions. Use Field for associated input
-labels and validation. Media, header/footer slots, and a separate ItemGroup are
-outside the current recipe's scope. `Styled` can change the frame and spacing.
+Slots add no role, name, or focus stop; they carry only the semantics of their
+content. Give informative media, such as an Avatar, its own name and keep
+decorative shapes unnamed. Prefer drawn shapes to symbol glyphs, which depend on
+installed fonts. The row has no whole-row click, Tab stop, selected
+value, or list navigation. Supplied controls own their semantics and actions. Use
+Field for associated input labels and validation. A separate ItemGroup is outside
+the current recipe's scope. `Styled` can change the frame and spacing.
 
 ## Alert
 
@@ -239,9 +293,9 @@ current inline recipe has no action or media slot; `Styled` controls its frame.
 
 ## Pagination
 
-[`pagination.rs`](../crates/base/examples/recipes/pagination.rs) composes existing
-Button and ButtonGroup controls into named native navigation. The application
-supplies the zero-based page index, page count, and callback.
+[`pagination.rs`](../crates/base/examples/recipes/pagination.rs) composes ordinary
+Buttons into named native navigation. The application supplies the zero-based
+page index, page count, and callback.
 
 ```rust,ignore
 Pagination::new("preset-pages", "Recording preset pages", page, page_count, palette)
@@ -252,18 +306,21 @@ Pagination::new("preset-pages", "Recording preset pages", page, page_count, pale
 
 For a nonempty collection, the page index must be less than the count. Empty
 results use index zero and count zero, display `No pages`, and disable both
-buttons. Otherwise the text is `Page N of M`, Previous is disabled on the first
-page, and Next is disabled on the last. The buttons preserve ordinary Tab and
-activation behavior, including focus on a button that becomes disabled after its
-action. The recipe requests a page change; it owns no retained page or data.
-`Styled` controls the frame. Numbered links, ellipsis, routing, and fetching are
-outside this recipe's scope.
+Previous and Next. Otherwise numbered buttons follow Previous: up to seven pages
+appear directly, and longer collections keep the first and last pages, the
+current page and its neighbors, with each elided run shown as a static
+`More pages` label. The entry count stays at seven while paging, so controls
+do not shift. The current page has native current-page metadata and selected
+styling and does not request a change. Previous is disabled on the first page
+and Next on the last. Buttons keep ordinary Tab and activation behavior,
+including focus on a button that becomes disabled after its action. The recipe
+owns no retained page or data; routing and fetching belong to the application.
 
 ## Data Table
 
 [`data_table.rs`](../crates/base/examples/recipes/data_table.rs) provides a working
-client-side text-table composition. It uses the existing native Input/Field,
-Table, ScrollArea, and Button, plus the InputGroup, EmptyState, and Pagination
+client-side table composition. It uses the existing native Input/Field,
+Table, ScrollArea, Checkbox, DropdownMenu, and Button, plus the InputGroup, EmptyState, and Pagination
 recipes. Columns and immutable rows belong to the consuming application.
 
 ```rust,ignore
@@ -272,8 +329,10 @@ let state = cx.new(|cx| {
         [
             DataTableColumn::new("Preset", px(180.)),
             DataTableColumn::new("Description", px(280.)),
+            DataTableColumn::new("Bitrate", px(110.)).align_end(),
+            DataTableColumn::new("Updated", px(130.)),
         ],
-        rows, // DataTableRow::new(stable_id, [name, description]).disabled(false)
+        rows, // DataTableRow::new(stable_id, [cells…]).disabled(false)
         2,    // Rows per page; must be positive.
         window,
         cx,
@@ -286,17 +345,20 @@ DataTable::new("preset-catalogue", &state, palette)
     .selected_value(current_preset)
     .on_action(move |id, window, cx| {
         preset.update(cx, |state, cx| {
-            state.set_selected_value(Some(id.as_ref()), window, cx);
+            state.set_selected_values([id.as_ref()], window, cx);
         });
     })
 ```
 
 Keep the state entity in the application and observe it to redraw the parent.
 Apply the application's `InputEditorStyle` to `query_input()`, as the two-style
-example does. A row has a unique stable ID and one text value per column. The
+example does. A row has a unique stable ID and one `DataTableCell` per column.
+`DataTableCell::text` (or a plain string) sorts case-insensitively;
+`DataTableCell::number(display, value)` and `DataTableCell::date(display, date)`
+show formatted text such as `$1,250.00` or `Nov 2, 2026` but sort by value.
+`align_end` right-aligns a column's heading and values, as for amounts. The
 initial display order is the supplied row order. Header Buttons toggle one column
-between ascending and descending case-insensitive text order; equal keys retain
-their original order.
+between ascending and descending order; equal keys retain their original order.
 
 The native input owns the query. Every whitespace-separated term must appear in
 the combined cell text, ignoring case. Matching/sorted indices are derived when
@@ -306,24 +368,38 @@ does not reset it. `visible_rows()`, `filtered_count()`, `page_index()`, and
 and page/filter/sort changes return the row viewport to its vertical start.
 
 The example derives its four rows from the same preset definitions used by the
-Combobox. `.selected_value` supplies that Combobox's current value each render;
+Combobox, with an end-aligned numeric bitrate and a formatted update date. `.selected_value` supplies that Combobox's current value each render;
 the table keeps no second selected value. A row action passes the stable ID to
 the application even after filtering, sorting, or paging. Current and unavailable
 rows have disabled action Buttons. The selected value remains in the application
 when its row is filtered out or appears on another page.
 
+Checkbox selection is independent of that current preset. The header checkbox
+selects only enabled rows on the displayed page and shows a mixed state for a
+partial selection. Selected stable IDs survive filtering, sorting, paging and
+unmounting; unavailable rows cannot be selected. `is_row_selected` and
+`filtered_selected_count` expose the selection. The footer counts selected rows
+within the current filter, including other pages. Application row actions do not
+change these checkboxes.
+
+Columns opens a native checked menu. Toggle any data column, including all of
+them; selection and action columns remain mounted. Hiding a column preserves
+filtering, sorting, selection and pagination; filtering still searches its displayed text.
+`is_column_visible` exposes each source column's visibility.
+
 An empty result replaces the row viewport with EmptyState and Clear filter.
 Clearing restores the rows and query focus without applying a row action. With
-results, focus follows query → sort Buttons → enabled row actions → enabled page
-Buttons. Horizontal and vertical ScrollArea scrolling reveals focused controls;
+results, focus follows query → Columns → page checkbox → visible sort Buttons →
+enabled row checkboxes/actions → enabled page Buttons. Horizontal and vertical ScrollArea scrolling reveals focused controls;
 there is no grid-style arrow navigation. Query, sort, and page survive unmounting
 the view while its state entity is retained.
 
-Native Table indices describe the displayed page. Header Button names announce
-the current sorting description and next action; native sort-direction metadata
-is not supplied by the pinned Table/GPUI API. The columns are fixed-width text,
-with one application action column. Numeric/date ordering, custom cell renderers,
-multi-column sorting, multiple row selection, column hiding/reordering, mutable
+Native Table indices describe the displayed page. `TableRow::selected` exposes
+the checkbox selection. `TableCell::sort_direction` exposes the active native
+column-header direction; body/footer cells ignore it. Header Button names also
+announce the sorting description and next action. The columns are fixed-width text,
+with selection and application action columns. Numeric/date ordering, custom cell renderers,
+multi-column sorting, column reordering, mutable
 row sources, remote data, and virtualization are outside the current scope.
 Adapt the copied source when an application needs different data operations.
 
@@ -418,6 +494,14 @@ the retained Combobox state; there is no second selected-preset value. This
 bundled artwork requires no network request. Applications supply their own assets
 when copying the recipe.
 
+
+`AvatarGroup::new(id, "Team members", palette)` stacks `.avatar(...)` items like
+shadcn's avatar group. Each visible avatar sits in a surface-colored ring and
+overlaps the previous one. `.max_visible(n)` shows the first `n` and adds a
+"+N" chip whose Label name lists the hidden people ("2 more: Cy Lee, Di Cho"),
+so nobody is lost to assistive technology. The frame is a named Group with no
+focus stop. The preset preview shows five people with three visible.
+
 ## Aspect Ratio
 
 [`aspect_ratio.rs`](../crates/base/examples/recipes/aspect_ratio.rs) provides a
@@ -455,10 +539,11 @@ does not add controls to HoverCard's noninteractive content.
 ## Sheet
 
 [`sheet.rs`](../crates/base/examples/recipes/sheet.rs) presents existing Dialog
-content in a full-height panel at the right edge of the window:
+content at a chosen window edge, defaulting to a full-height right panel:
 
 ```rust,ignore
 Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", palette)
+    .side(SheetSide::Right)
     .description("Choose the session's drawing and toolbar settings.")
     .child(form_fields)
     .footer(
@@ -485,11 +570,18 @@ reopening, native reveal of the initial focus target can adjust its offset.
 The consumer must keep the header and footer's combined content within the
 viewport height. Long form content belongs in the scrolling body.
 
-`Styled` customizes the popup surface. Use `.w(...)` to change its preferred width
-and retain the default maximum width, height, and flex layout to preserve the
-Sheet's sizing contract. This recipe covers right-edge presentation; other edges,
-drag gestures, and transition animation are outside its current scope. It does
-not implement Drawer interaction.
+Use `.side(SheetSide::Left | Right | Top | Bottom)` to choose an edge. Left/right
+fill the height and use `palette.dialog_width` as preferred width; top/bottom fill
+the width and use that token as preferred height. Both dimensions are capped at
+the viewport. `Styled` overrides apply after edge defaults, so `.w(...)` changes a
+vertical panel's preferred width and `.h(...)` a horizontal panel's height,
+regardless of builder order. Retain the viewport caps and flex layout. All sides
+keep the same fixed header/footer and scrolling body. Drag gestures and transition
+animation are outside this recipe; Drawer owns its drag interaction.
+
+The catalogue's Forms section opens the current session help from all four edges
+using one retained DialogState and ScrollHandle. Closing restores the chosen
+trigger. The help text and session values stay application-owned.
 
 The application supplies footer controls, including any `DialogClose` and its
 disabled state. Keyboard interaction stays with the supplied controls and
@@ -563,9 +655,34 @@ and focus handles. Compact continues to use its own horizontal TabList and
 TabPanel composition. Breadcrumb's Session settings action explicitly selects
 Preferences and focuses its navigation entry in either appearance.
 
-The recipe adds no routing, navigation history, disclosure state, nested groups,
-or separate selection model. Its application-owned layout uses the existing
-Sheet's scrolling body and modal focus containment.
+Use `.group("Workspace", ["preferences", "help"])` for named groups with native
+headings. Values must name existing items and occur in at most one group. Items
+outside groups appear first. Grouping changes presentation order, while item IDs
+and focus handles retain their source indices.
+
+Retain and observe `CollapsibleState::new(cx).default_open(true)` to add
+`.collapsible(&sidebar_disclosure)` or
+`.collapsible_group("Session", ["schedule", "presets"], &session_disclosure)`.
+The existing Collapsible owns expanded/disabled metadata, keyboard activation,
+active-only content and focus restoration when closure removes a focused entry.
+The disclosure trigger stays mounted. Closing navigation preserves the selected
+page; the application continues to own its separate Region. The catalogue's
+Project sidebar demonstrates whole and group closure, including narrow layout.
+
+`.rail(&rail_state)` instead collapses the Sidebar to an icon rail, like shadcn's
+`collapsible="icon"`. An open state shows labels; a closed state narrows the
+navigation to 3.5 rem and keeps every entry mounted as an icon-only Button with
+the same accessible name, current-page metadata and focus handle, plus a GPUI
+hover tooltip naming it. Group headings and group disclosures are hidden in the
+rail while the named Groups remain. A CollapsibleTrigger after the entries,
+named "<label> labels", toggles the state and exposes it as expanded/collapsed.
+`.icon(value, || element)` supplies a decorative icon per entry; others show
+their initial in a small frame. Prefer drawn shapes to symbol glyphs, which
+depend on installed fonts. A Sidebar uses either `.rail` or `.collapsible`, not
+both. Settings' Session sections Sidebar demonstrates the rail.
+
+The recipe adds no routing, navigation history or separate selection model.
+Settings uses the existing Sheet's scrolling body and modal focus containment.
 
 ## Typography
 
@@ -714,7 +831,7 @@ presentation; supply a bounded width and allow the label's height to grow. The
 recipe uses GPUI's existing text layout and adds no text renderer or timeline state.
 
 Both appearances place Marker between Schedule's DatePicker and its notes/plan
-panes. The consumer reads `CalendarState::selected_date()` and formats
+panes. The consumer reads `CalendarState::selection().first_date()` and formats
 `Selected date · YYYY-MM-DD`, or `No date selected` when the selection is empty.
 Moving the calendar cursor without committing a selection does not change this
 boundary. Date formatting remains application-owned, and the marker does not
@@ -1027,7 +1144,8 @@ message grouping and reaction values belong to the conversation view. It adds no
 transport, persistence or alternate message-state engine.
 
 `chart.rs` is the presentation for the public Chart family, and is not counted
-as a second catalogue entry. It supplies native canvas line/bar/area paths, axes,
+as a second catalogue entry. It supplies native canvas line/bar/area, stacked,
+pie/donut and radar paths, axes or spoke labels,
 series Toggles, an inspected-value readout and a same-data Table. Its color array,
 layout and formatting are application-owned. See the
 [layout and data guide](layout-and-data.md) for the shared Chart contract.

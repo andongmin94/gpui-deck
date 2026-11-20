@@ -28,12 +28,14 @@ mod typography;
 pub(crate) use alert::Alert;
 pub(crate) use aspect_ratio::AspectRatio;
 pub(crate) use attachment::Attachment;
-pub(crate) use avatar::Avatar;
+pub(crate) use avatar::{Avatar, AvatarGroup};
 pub(crate) use badge::Badge;
 pub(crate) use button_group::ButtonGroup;
 pub(crate) use card::Card;
 pub(crate) use code_block::CodeBlock;
-pub(crate) use data_table::{DataTable, DataTableColumn, DataTableRow, DataTableState};
+pub(crate) use data_table::{
+    DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState,
+};
 pub(crate) use empty::EmptyState;
 pub(crate) use input_group::InputGroup;
 pub(crate) use item::Item;
@@ -41,7 +43,7 @@ pub(crate) use kbd::{Kbd, KbdGroup};
 pub(crate) use marker::Marker;
 pub(crate) use message::Message;
 pub(crate) use pagination::Pagination;
-pub(crate) use sheet::Sheet;
+pub(crate) use sheet::{Sheet, SheetSide};
 pub(crate) use sidebar::Sidebar;
 pub(crate) use skeleton::Skeleton;
 pub(crate) use spinner::Spinner;
