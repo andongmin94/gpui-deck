@@ -338,12 +338,15 @@ impl DataCatalogue {
 impl Render for DataCatalogue {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let mut modes = self.direction.row(div()).gap_2().flex_wrap();
-        for kind in [ChartKind::Line, ChartKind::Bar, ChartKind::Area] {
+        for kind in ChartKind::ALL {
             modes = modes.child(
                 Self::button((ElementId::from("chart-mode"), kind.label()), kind.label())
                     .selected(self.chart_kind == kind)
-                    .on_click(cx.listener(move |this, _, _, cx| {
+                    .on_click(cx.listener(move |this, _, window, cx| {
                         this.chart_kind = kind;
+                        this.chart.update(cx, |chart, cx| {
+                            chart.set_layout(kind.layout(), window, cx);
+                        });
                         cx.notify();
                     })),
             );

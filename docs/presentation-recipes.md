@@ -1114,7 +1114,8 @@ message grouping and reaction values belong to the conversation view. It adds no
 transport, persistence or alternate message-state engine.
 
 `chart.rs` is the presentation for the public Chart family, and is not counted
-as a second catalogue entry. It supplies native canvas line/bar/area paths, axes,
+as a second catalogue entry. It supplies native canvas line/bar/area, stacked,
+pie/donut and radar paths, axes or spoke labels,
 series Toggles, an inspected-value readout and a same-data Table. Its color array,
 layout and formatting are application-owned. See the
 [layout and data guide](layout-and-data.md) for the shared Chart contract.

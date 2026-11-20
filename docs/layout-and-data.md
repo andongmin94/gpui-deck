@@ -245,19 +245,38 @@ autoplay, inertia, animated motion or multi-slide sizing system.
 finite value per category. The retained state supplies visible series, inspected
 category, exact-value descriptions, and a zero-inclusive signed numeric range.
 Hiding all series or using all-zero data yields a usable `0..1` range. The range
-is retained until visibility changes; normalizing a point does not rescan the
-dataset. `Chart`
-provides a named plot focus region: pointer travel and Left/Right/Home/End inspect
-evenly spaced categories, including RTL. It emits inspection/visibility events
-without prescribing colors or draw paths.
+is retained until visibility or layout changes; normalizing a point does not
+rescan the dataset.
+
+`ChartLayout` selects how the same data shares the plot, and `set_layout` keeps
+visibility and inspection:
+
+- `Grouped` (default) places side-by-side series over evenly spaced category bands.
+- `Stacked` stacks positive and negative values separately from zero. Its range
+  covers each category's visible sums, and `stack_span(series, category)` gives a
+  visible segment's start and end values.
+- `Pie` gives each category one slice sized by its nonnegative visible-series
+  total. `pie_slices` returns start/end turns; a zero or negative total has an
+  empty slice.
+- `Radar` places categories on evenly spaced spokes (`radar_turn`) with radii
+  normalized like Grouped.
+
+Radial turns run clockwise from the top and mirror counterclockwise in RTL.
+`Chart` provides a named plot focus region: Left/Right/Home/End inspect
+categories in every layout. Pointer travel inspects by horizontal band for
+Grouped/Stacked, and by angle inside the largest centered circle for Pie/Radar;
+a pointer outside that circle or over no slice keeps the current inspection. It
+emits inspection/visibility events without prescribing colors or draw paths.
 
 The copyable `examples/recipes/chart.rs` builds on this behavior with GPUI canvas
-line, grouped bar and area plots, axis labels, Toggle-based series legend, an
-exact-value readout and an ordinary Table containing the same complete dataset.
-The catalogue's Media and data view switches plot kind and direction and retains
-legend/inspection state. Plot geometry, palette and numeric formatting belong to
-the consumer. This categorical contract does not supply stacking, time/log scales,
-pie/radar charts, zoom, streaming data ingestion or a separate rendering engine.
+line, grouped bar, area, stacked bar/area, pie, donut and radar plots, axis or
+spoke labels, a pie category key, Toggle-based series legend, an exact-value
+readout and an ordinary Table containing the same complete dataset. `ChartKind::layout`
+names the state layout each kind draws; the catalogue's Media and data view sets
+both when switching kind or direction and retains legend/inspection state. Plot
+geometry, palette and numeric formatting belong to the consumer. This categorical
+contract does not supply time/log scales, per-slice legend selection, zoom,
+streaming data ingestion or a separate rendering engine.
 
 ## MessageScroller
 

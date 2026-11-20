@@ -86,7 +86,7 @@ pub use calendar::{
     Calendar, CalendarDay, CalendarEvent, CalendarSelection, CalendarState, NaiveDate, Weekday,
 };
 pub use carousel::{Carousel, CarouselControl, CarouselEvent, CarouselSlide, CarouselState};
-pub use chart::{Chart, ChartEvent, ChartSeries, ChartState};
+pub use chart::{Chart, ChartEvent, ChartLayout, ChartSeries, ChartState};
 pub use checkbox::{Checkbox, CheckboxState, CheckboxStyles};
 pub use collapsible::{
     Collapsible, CollapsibleContent, CollapsibleEvent, CollapsibleState, CollapsibleTrigger,

@@ -4420,6 +4420,37 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
         assert!(nodes.iter().any(|node| node.role() == Some(Role::Table)
             && node.label() == Some("All transfer values in megabytes, including hidden series")));
     });
+    let donut = cx.update(|window, _| {
+        test_support::snapshots(window)
+            .into_iter()
+            .find(|node| node.role() == Some(Role::Button) && node.label() == Some("Donut"))
+            .unwrap()
+            .bounds()
+    });
+    cx.simulate_click(donut.center(), gpui::Modifiers::default());
+    draw(cx);
+    let plot = cx.update(|window, _| {
+        test_support::snapshots(window)
+            .into_iter()
+            .find(|node| node.label() == Some("Transfer samples in megabytes"))
+            .unwrap()
+            .bounds()
+    });
+    assert_eq!(plot.size, gpui::size(px(240.), px(200.)));
+    // Three quarters of a turn lies in Friday's slice; a grouped band would be Wednesday.
+    cx.simulate_mouse_move(
+        plot.center() - gpui::point(px(40.), px(0.)),
+        None,
+        gpui::Modifiers::default(),
+    );
+    draw(cx);
+    cx.update(|window, _| {
+        let plot = test_support::snapshots(window)
+            .into_iter()
+            .find(|node| node.label() == Some("Transfer samples in megabytes"))
+            .unwrap();
+        assert_eq!(plot.value(), Some("Fri: Uploaded: 48, Removed: -16"));
+    });
     section(cx, 3);
     cx.update(|window, _| {
         let nodes = test_support::snapshots(window);
