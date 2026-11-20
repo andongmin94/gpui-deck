@@ -34,10 +34,15 @@ test("a Korean page links to its English original", async ({ page }) => {
 
 test("search finds a component page", async ({ page }) => {
   await page.goto("/en/docs");
-  await page
-    .getByRole("button", { name: /search/i })
-    .first()
-    .click();
-  await page.getByRole("dialog").getByRole("combobox").fill("carousel");
+  const input = page.getByRole("dialog").getByRole("combobox");
+  // The trigger only opens the dialog once the page has hydrated.
+  await expect(async () => {
+    await page
+      .getByRole("button", { name: /search/i })
+      .first()
+      .click();
+    await expect(input).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await input.fill("carousel");
   await expect(page.getByRole("dialog").getByText("Carousel").first()).toBeVisible();
 });
