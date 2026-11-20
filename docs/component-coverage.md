@@ -151,26 +151,27 @@ documented. Platform observations are recorded separately from automated checks.
 | 4 | Source distribution and developer experience | A small complete starter, compilable public examples, explicit supported API boundary, and a source-copy workflow that resolves recipe dependencies and tokens | Starter, doctest gate, application tokens and dependency-aware source CLI implemented; supported input/control boundary and consumer test feature documented; unused ThemeAppearance removed |
 | 5 | Release validation | Existing formatting, lint, full behavior suite and native example builds pass; representative native IME, screen-reader, DPI, and visual flows have platform-specific observations | Not complete |
 
-The current Windows checkpoint passed 712 behavior/integration tests, five CLI
+The current Windows checkpoint passed 717 behavior/integration tests, five CLI
 tests, 15 doctests (two existing ignored), formatting, Clippy and all native
-example/CLI builds after stacked/pie/donut/radar Chart layouts, several Carousel
-slides per view, a collapsed Breadcrumb with a dropdown of hidden ancestors,
-Item media/header/footer slots and noninteractive rich Tooltip content were
-added. The [three-platform run for fb7b70dd](https://github.com/andongmin94/gpui-design/actions/runs/44630787949)
-covers the preceding Resizable, Pagination, Data Table and Toaster work; the
+example/CLI builds after ranked fuzzy Command/Combobox matching, measured pixel
+limits for Resizable panels, typed DatePicker dates and touch long press for
+ContextMenu and HoverCard were added. The
+[three-platform run for 23c86437](https://github.com/andongmin94/gpui-design/actions/runs/44644341735)
+passed for the preceding Chart, Carousel, Breadcrumb, Item and Tooltip work; the
 new commits run on Linux, macOS and Windows through the PR's CI. Recipe sources
-and exports are unchanged apart from the Item and Chart recipes, whose CLI
-dependencies stay empty; the earlier audit of 24 copied recipe modules, assets
-and 59 local document links is not repeated beyond the one new guide anchor.
+and CLI dependencies are unchanged by this change set; the earlier audit of 24
+copied recipe modules, assets and 59 local document links is not repeated.
 [Draft PR #1](https://github.com/andongmin94/gpui-design/pull/1) contains the
 implementation commits and current validation status.
 
-The remaining "not supplied" limits above are outside the official examples or
-need an external engine: Command fuzzy ranking, touch long-press, Resizable
-storage and pixel units, and Date Picker natural-language parsing, whose shadcn
-example depends on a separate date-parsing library. Rich chart and Carousel
-drawing, the Breadcrumb dropdown and the rich Tooltip have headless and
-composition coverage only; their native visual appearance has not been observed.
+The "not supplied" limits that shadcn's official examples cover are now
+implemented within explicit boundaries: typed dates accept ISO and a few English
+relative forms rather than arbitrary natural language, and layout storage stays
+with the application. Touch long press is exercised with simulated GPUI touch
+events only; it has not been tried on touch hardware. Chart and Carousel
+drawing, the Breadcrumb dropdown, the rich Tooltip and the typed-date field have
+headless and composition coverage only; their native visual appearance has not
+been observed.
 
 Existing tests cover the documented selection/overlay contracts, retained-value
 setters, unavailable Calendar days/RTL, table selection/visibility, Sidebar closure,
