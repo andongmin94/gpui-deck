@@ -2,7 +2,7 @@
 
 Table, ScrollArea, and Resizable provide reusable structure and native behavior. Applications
 own their data, layout dimensions, colors, typography, and cell contents. The
-[two-style example](../crates/base/examples/two_styles.rs) combines them in its
+[two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) combines them in its
 Schedule tab and uses ScrollArea for the surrounding form.
 
 ## Table

@@ -1,5 +1,9 @@
 # GPUI Design
 
+**Documentation:** <https://andongmin94.github.io/gpui-design/>
+
+<!-- ANCHOR: intro -->
+
 A source-owned, headless UI foundation for Rust and GPUI.
 
 The library owns control behavior, state, focus, and accessibility semantics.
@@ -14,11 +18,15 @@ sidebar presentations. The source is maintained in this repository, with GPUI
 kept as an exactly pinned rendering
 dependency.
 
-The [completion criteria and current work](docs/component-coverage.md#completion-criteria-and-current-work)
+The [completion criteria and current work](https://github.com/andongmin94/gpui-design/blob/main/docs/component-coverage.md#completion-criteria-and-current-work)
 track behavior, accessibility, visual defaults, source distribution, and native
 validation. Catalogue coverage alone is not a claim of shadcn/ui-level completeness.
 
+<!-- ANCHOR_END: intro -->
+
 ## Current scope
+
+<!-- ANCHOR: components -->
 
 | Control | Behavior supplied by the library | Application-owned presentation |
 | --- | --- | --- |
@@ -69,8 +77,8 @@ Shared support includes the window root, popup positioning, input infrastructure
 and opt-in test observations. Internal editing machinery retained for Input is
 not a separate editor product. Public APIs are still being developed.
 
-The [crate exports](crates/base/src/lib.rs) define the public control and support
-surface. The [input module](crates/base/src/input/mod.rs) intentionally also exposes
+The [crate exports](https://github.com/andongmin94/gpui-design/blob/main/crates/base/src/lib.rs) define the public control and support
+surface. The [input module](https://github.com/andongmin94/gpui-design/blob/main/crates/base/src/input/mod.rs) intentionally also exposes
 `EditorState`, display mapping, diagnostics and provider types used by its shared
 engine; its standalone `Editor` renderer is available only to inherited tests.
 `Input` and `Textarea` are the supported rendered text controls. Native test
@@ -80,8 +88,8 @@ and scrollbars; application palettes own light/dark appearance.
 
 ### Copyable presentation recipes
 
-The [recipe modules](crates/base/examples/recipes) are application-owned source
-compositions, documented in the [presentation guide](docs/presentation-recipes.md).
+The [recipe modules](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes) are application-owned source
+compositions, documented in the [presentation guide](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md).
 Copy the desired module and adapt its styling and any palette import to your
 application tokens.
 These types live in the example, outside the `gpui_design` crate exports.
@@ -113,7 +121,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Bubble** | Incoming/outgoing surfaces, grouped author/time labels and supplied reactions | Catalogue transcript with retained reaction Buttons |
 
 The breadth target is the range of screens and interactions supported by
-shadcn/ui. The [component coverage map](docs/component-coverage.md) compares all
+shadcn/ui. The [component coverage map](https://github.com/andongmin94/gpui-design/blob/main/docs/component-coverage.md) compares all
 66 entries in its current main catalogue with the actual public scope here.
 It distinguishes behavior, source-owned presentation recipes, and larger
 compositions. The 42 library families and 23 recipes supply 65 distinct
@@ -137,7 +145,7 @@ Applications can replace items while preserving native query editing and stable
 selected values. Fetching, request ordering and free-form values belong to the
 application rather than a second input or network engine.
 
-The [two-style example](crates/base/examples/two_styles.rs) applies a compact dark
+The [two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) applies a compact dark
 presentation and a light settings presentation to shared form controls, with
 different section navigation. Its styles live in application code, outside the
 behavior layer. A Session actions menu and
@@ -238,7 +246,7 @@ and keeps no separate message history or copy of the note.
 An informational Alert explains that the example retains preferences without
 scheduling an actual recording. Its date bounds are 2026–2027.
 
-The separate [catalogue example](crates/base/examples/catalogue.rs) connects the
+The separate [catalogue example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/catalogue.rs) connects the
 remaining families into five retained views. Navigation demonstrates coordinated
 menus, destination links, a collapsed breadcrumb with a dropdown of hidden ancestors and collapsible grouped project navigation; Forms and feedback runs numeric code entry through
 a confirmation Drawer into a stacked, pausing Toast, plus help Sheets at all four edges; Media and data supplies RTL-aware
@@ -249,7 +257,11 @@ ranges, independent dates and grouped multiple recording targets. Its calendars
 start weeks on Sunday, disable weekend selection and offer RTL layout. These examples are local
 and make no network requests.
 
+<!-- ANCHOR_END: components -->
+
 ## Layers and source ownership
+
+<!-- ANCHOR: architecture -->
 
 | Layer | Implementation and origin | Responsibility |
 | --- | --- | --- |
@@ -298,23 +310,27 @@ Appearance belongs in the application. The local `gpui-design-cli` copies select
 presentation recipes and their dependencies into consumer-owned modules. A remote
 registry and separately published styled component package are not provided.
 
-See the [form control guide](docs/form-controls.md) for state ownership, keyboard
+See the [form control guide](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md) for state ownership, keyboard
 contracts, and application-owned styling. Checkbox and Switch report the next
 value through a callback; the application stores it and notifies its view.
 RadioGroup retains selection and option focus in an entity, accepts fixed ordered
 options with unique values, and changes selection immediately on arrow navigation.
 
-The [navigation and overlay guide](docs/navigation-overlays.md) covers Breadcrumb, Tabs,
+The [navigation and overlay guide](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md) covers Breadcrumb, Tabs,
 Accordion, Collapsible, Popover, DropdownMenu, ContextMenu, Command, Tooltip,
 HoverCard, and AlertDialog. Inactive panels do
 not contribute layout, focus, or accessibility nodes. Popover reuses the existing popup positioning
 primitive and lets keyboard focus leave its contents within the enclosing window
 or dialog. Both menu triggers use that lifecycle and close before dispatching a
 command, so a command can open another surface without losing its new focus.
-The [layout and data guide](docs/layout-and-data.md) explains shared Table columns,
+The [layout and data guide](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md) explains shared Table columns,
 ScrollArea composition, Resizable panes, and their current limits.
 
+<!-- ANCHOR_END: architecture -->
+
 ## Run the example
+
+<!-- ANCHOR: installation -->
 
 Install [Rust with rustup](https://rustup.rs/). The repository selects **Rust
 1.99.1**, including rustfmt and Clippy, through `rust-toolchain.toml`.
@@ -345,7 +361,7 @@ cargo run -p gpui-design --example starter --locked
 `compact` is the default when no appearance argument is supplied. Both commands
 run the same session-settings interaction with application-owned styling.
 
-Start with [`starter.rs`](crates/base/examples/starter.rs) for a small complete
+Start with [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) for a small complete
 application. It uses only public APIs: `init`, `Root`, a retained `InputState`,
 `Field`, and `Button`. The application keeps its observation and event subscriptions,
 owns the colors and layout, and handles both Enter and button activation. Copy
@@ -367,7 +383,7 @@ test-support = ["gpui-design/test-support"]
 The feature declaration supports the test guards in copied recipe source;
 enable it when running those GPUI tests. Use the repository's pinned Rust toolchain and native prerequisites above. Copy
 the desired presentation recipes into the application using their
-[dependency and token instructions](docs/presentation-recipes.md#copy-into-an-application).
+[dependency and token instructions](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application).
 
 The GPUI snapshot family is pinned to **`=0.3.11`**. Update those pins and
 `Cargo.lock` together when changing the rendering dependency.
@@ -383,11 +399,14 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 Declare `mod ui;` in the consumer. The tool preserves edits to previously installed
 recipe and palette files; modified generated module declarations or new-file
 conflicts stop before writing. It leaves Cargo dependencies to the consumer.
-See the [source-copy guide](docs/presentation-recipes.md#copy-into-an-application).
+See the [source-copy guide](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application).
 The catalogue's Selection section demonstrates range/multiple dates, grouped
 recording targets, removable selected chips and replaceable local option data.
 
 
+<!-- ANCHOR_END: installation -->
+
+<!-- ANCHOR: contributing -->
 ## Work on the source
 
 | Location | Responsibility |
@@ -402,6 +421,7 @@ recording targets, removable selected chips and replaceable local option data.
 | `crates/base/examples/assets/` | Embedded example artwork used by the preset preview and its image-decoding regression |
 | `docs/form-controls.md` | Form control usage and interaction contracts |
 | `docs/navigation-overlays.md` | Breadcrumb, Tabs, Accordion, command menus, and composed focus behavior |
+| `docs/book.toml`, `docs/SUMMARY.md`, `docs/theme/` | Documentation site built with mdBook from these guides and README sections |
 | `docs/layout-and-data.md` | Table structure, ScrollArea composition, and Resizable panes |
 | `docs/presentation-recipes.md` | Copying recipes, their slots, and application-owned styling |
 | `docs/component-coverage.md` | Current shadcn catalogue comparison, supported scope, and next priorities |
@@ -427,6 +447,12 @@ cargo build --workspace --bins --examples --locked
 The [Verify workflow](https://github.com/andongmin94/gpui-design/actions/workflows/verify.yml)
 uses one matrix for Linux, Windows, and macOS. Platform-independent checks run
 once; each platform still compiles its native dependencies and all examples.
+
+The [Docs workflow](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml)
+builds the documentation site with a pinned mdBook and publishes `main` to GitHub
+Pages. The site reuses the guides in `docs/` and README sections through mdBook
+include anchors, so edit those sources rather than copies. Preview it locally with
+`mdbook serve docs` after `cargo install mdbook --version 0.5.4 --locked`.
 
 | Check | Linux | Windows | macOS |
 | --- | --- | --- | --- |
@@ -491,6 +517,8 @@ native tooltip rendering with Button focus, hover timing, and dismissal behavior
 HoverCard reuses Popup for rich, noninteractive previews, adding delayed pointer
 transitions and focus-preserving dismissal without a second placement engine.
 
-Software source is licensed under [Apache-2.0](LICENSE-APACHE). The original
+Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gpui-design/blob/main/LICENSE-APACHE). The original
 Longbridge copyright and license notices are retained. Dependencies keep their
 respective licenses.
+
+<!-- ANCHOR_END: contributing -->

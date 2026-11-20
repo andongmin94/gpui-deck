@@ -1,0 +1,25 @@
+[book]
+title = "GPUI Design"
+description = "Source-owned, headless UI components for Rust and GPUI."
+authors = ["GPUI Design contributors"]
+language = "en"
+src = "."
+
+[build]
+build-dir = "book"
+create-missing = false
+
+[output.html]
+default-theme = "light"
+preferred-dark-theme = "coal"
+additional-css = ["theme/site.css"]
+git-repository-url = "https://github.com/andongmin94/gpui-design"
+edit-url-template = "https://github.com/andongmin94/gpui-design/edit/main/docs/{path}"
+site-url = "/gpui-design/"
+no-section-label = true
+
+[output.html.fold]
+enable = false
+
+[output.html.search]
+limit-results = 20
