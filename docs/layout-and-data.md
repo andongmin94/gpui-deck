@@ -170,7 +170,13 @@ the parent resizes. Frame padding is supported; the internal layout has no gap.
 `ResizablePanel::new(default)` starts free between zero and one. `limits`
 bounds the expanded size and `collapsible(size)` allows a smaller collapsed
 size. Constructing a state panics when defaults violate a panel's constraints
-or do not sum to one. Constraints are proportions, not pixel minimums.
+or do not sum to one. `pixel_limits(min..=max)` adds logical-pixel bounds that
+apply once the group is measured; the tighter of the fractional and pixel bound
+wins. When the measured space changes, a layout that breaks the new bounds is
+refitted once, nearest first, and emits a Change; a still-valid layout keeps its
+proportions. If the space cannot satisfy every pixel limit, the group uses the
+fractional limits alone until it can. Divider values and Home/End reflect the
+measured bounds.
 
 Moving a divider grows the panel on one side and shrinks the panels on the
 other side nearest first, so a panel at its minimum passes the move to the next
@@ -209,7 +215,9 @@ size, such as an icon rail, keeps its content mounted.
 Observe the state to update presentation. `sizes()`, `panel_count()`,
 `is_collapsed(index)`, `axis()`, `handle_focus(index)`, and `is_disabled()`
 expose its contract. `set_sizes` replaces the whole layout and panics on an
-invalid one; use it to restore a layout the application stored.
+invalid one, then fits it to the measured pixel limits. To persist a layout,
+store `sizes()` from `ResizableEvent::Change` in application storage and pass
+it to `set_sizes` on the next launch.
 `collapse(index)` and `expand(index)` act on collapsible panels and do nothing
 when the neighbors cannot absorb the change. Each layout change emits one
 `ResizableEvent::Change(sizes)`, including programmatic updates. `set_disabled`
@@ -217,9 +225,10 @@ blocks pointer, keyboard, and accessibility resizing and normal Tab entry; a
 focused divider retains its binding so Tab can leave.
 
 The Schedule example puts the shared notes in a collapsible first panel and the
-plan table in a two-axis ScrollArea in the second. Closing or switching tabs
-preserves text and sizes because the application retains their states. Storage
-and pixel-unit constraints are not supplied.
+plan table in a two-axis ScrollArea in the second, which keeps at least 96 px.
+Closing or switching tabs
+preserves text and sizes because the application retains their states. The
+library writes no files; the storage location belongs to the application.
 
 ## Carousel
 

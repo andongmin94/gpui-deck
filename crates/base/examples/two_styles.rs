@@ -236,7 +236,10 @@ impl Demo {
                 Axis::Vertical,
                 [
                     ResizablePanel::new(0.5).limits(0.3..=0.7).collapsible(0.),
-                    ResizablePanel::new(0.5).limits(0.3..=1.),
+                    // Keep the recording plan at least 96 px tall.
+                    ResizablePanel::new(0.5)
+                        .limits(0.3..=1.)
+                        .pixel_limits(px(96.)..=px(10_000.)),
                 ],
                 cx,
             )

@@ -55,12 +55,15 @@ pub enum ResizableEvent {
     Change(Vec<f32>),
 }
 
-/// One panel's initial size and constraints, as fractions of the usable space.
+/// One panel's initial size and constraints, as fractions of the usable space,
+/// with optional pixel limits that apply once the group has been laid out.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ResizablePanel {
     default_size: f32,
     minimum: f32,
     maximum: f32,
+    pixel_minimum: Pixels,
+    pixel_maximum: Option<Pixels>,
     collapsed: Option<f32>,
 }
 
@@ -71,8 +74,46 @@ impl ResizablePanel {
             default_size,
             minimum: 0.,
             maximum: 1.,
+            pixel_minimum: px(0.),
+            pixel_maximum: None,
             collapsed: None,
         }
+    }
+
+    /// Bounds the panel's expanded size in logical pixels of usable space, in
+    /// addition to its fractional limits; the tighter bound wins. Pixel limits
+    /// follow the measured group, so a narrower window raises a pixel minimum's
+    /// share. When the measured space cannot satisfy every panel's pixel limits,
+    /// the group falls back to the fractional limits alone.
+    ///
+    /// # Panics
+    /// Bounds must be finite and satisfy `0 <= minimum <= maximum`.
+    pub fn pixel_limits(mut self, limits: RangeInclusive<Pixels>) -> Self {
+        let (minimum, maximum) = limits.into_inner();
+        assert!(
+            f32::from(minimum).is_finite()
+                && f32::from(maximum).is_finite()
+                && px(0.) <= minimum
+                && minimum <= maximum,
+            "Resizable pixel limits must satisfy 0 <= minimum <= maximum"
+        );
+        self.pixel_minimum = minimum;
+        self.pixel_maximum = Some(maximum);
+        self
+    }
+
+    /// The fractional limits for a measured usable length.
+    fn measured(mut self, usable: Pixels) -> Self {
+        if usable <= px(0.) {
+            return self;
+        }
+        self.minimum = self.minimum.max(self.pixel_minimum / usable).min(1.);
+        if let Some(maximum) = self.pixel_maximum {
+            self.maximum = self.maximum.min(maximum / usable);
+        }
+        // Raising the minimum keeps it above any collapsed size.
+        self.maximum = self.maximum.max(self.minimum);
+        self
     }
 
     /// Bounds the panel's expanded size.
@@ -149,11 +190,15 @@ struct Drag {
 /// Sizes divide the space remaining after the actual divider thicknesses, so
 /// they stay proportional when the application's window changes size. Moving a
 /// divider grows the adjacent panel and shrinks panels on the other side,
-/// nearest first, within their constraints. Persistence belongs to the
-/// application: restore a stored layout with [`Self::set_sizes`].
+/// nearest first, within their constraints. To persist a layout, store
+/// [`Self::sizes`] from [`ResizableEvent::Change`] in application storage and
+/// restore it with [`Self::set_sizes`].
 pub struct ResizableState {
     axis: Axis,
     panels: Vec<ResizablePanel>,
+    /// The panels' limits for the measured usable length.
+    effective: Vec<ResizablePanel>,
+    usable: Pixels,
     sizes: Vec<f32>,
     restore: Vec<f32>,
     disabled: bool,
@@ -214,6 +259,8 @@ impl ResizableState {
             handle_focus: (1..count).map(|_| cx.focus_handle()).collect(),
             panel_bounds: vec![Bounds::default(); count],
             handle_bounds: vec![Bounds::default(); count - 1],
+            effective: panels.clone(),
+            usable: px(0.),
             panels,
             grab: px(0.),
             drag: None,
@@ -253,12 +300,43 @@ impl ResizableState {
     /// # Panics
     /// The sizes must match the panel count, satisfy each panel's constraints,
     /// and sum to one.
+    /// A layout that satisfies the fractional limits is then fitted to any pixel
+    /// limits for the current size.
     pub fn set_sizes(&mut self, sizes: Vec<f32>, window: &mut Window, cx: &mut Context<Self>) {
         assert!(
             sizes.len() == self.panels.len() && valid_layout(&self.panels, &sizes),
             "Resizable sizes must match the panels, satisfy their limits and sum to one"
         );
+        let sizes = fit(&self.effective, &sizes).unwrap_or(sizes);
         self.apply(sizes, window, cx);
+    }
+
+    /// Records the measured usable length, refits the layout to pixel limits,
+    /// and reports whether the sizes changed.
+    fn measure(&mut self, usable: Pixels, window: &mut Window, cx: &mut Context<Self>) -> bool {
+        if (usable - self.usable).abs() < px(0.5) {
+            return false;
+        }
+        self.usable = usable;
+        let measured: Vec<_> = self
+            .panels
+            .iter()
+            .map(|panel| panel.measured(usable))
+            .collect();
+        let smallest: f32 = measured.iter().map(ResizablePanel::smallest).sum();
+        let largest: f32 = measured.iter().map(|panel| panel.maximum).sum();
+        self.effective = if smallest <= 1. + EPSILON && largest >= 1. - EPSILON {
+            measured
+        } else {
+            self.panels.clone()
+        };
+        match fit(&self.effective, &self.sizes) {
+            Some(sizes) if sizes != self.sizes => {
+                self.apply(sizes, window, cx);
+                true
+            }
+            _ => false,
+        }
     }
 
     /// Collapses a collapsible panel, giving its space to its neighbors.
@@ -321,9 +399,9 @@ impl ResizableState {
     ) {
         let delta = target - self.sizes[panel];
         let layout = if panel + 1 < self.panels.len() {
-            adjust(&self.panels, &self.sizes, panel, delta)
+            adjust(&self.effective, &self.sizes, panel, delta)
         } else {
-            adjust(&self.panels, &self.sizes, panel - 1, -delta)
+            adjust(&self.effective, &self.sizes, panel - 1, -delta)
         };
         if let Some(layout) = layout {
             self.apply(layout, window, cx);
@@ -341,8 +419,8 @@ impl ResizableState {
         } else {
             (handle + 1, handle)
         };
-        let grow_panel = &self.panels[grow];
-        let shrink_panel = &self.panels[shrink];
+        let grow_panel = &self.effective[grow];
+        let shrink_panel = &self.effective[shrink];
         let amount = if grow_panel.is_collapsed_size(self.sizes[grow]) {
             grow_panel.minimum - self.sizes[grow]
         } else if let Some(collapsed) = shrink_panel.collapsed
@@ -353,7 +431,7 @@ impl ResizableState {
             STEP
         };
         let delta = if forward { amount } else { -amount };
-        if let Some(layout) = adjust(&self.panels, &self.sizes, handle, delta) {
+        if let Some(layout) = adjust(&self.effective, &self.sizes, handle, delta) {
             self.apply(layout, window, cx);
         }
     }
@@ -364,7 +442,7 @@ impl ResizableState {
         if self.disabled {
             return;
         }
-        let panel = self.panels[handle];
+        let panel = self.effective[handle];
         let target = if last {
             panel.maximum
         } else {
@@ -375,7 +453,7 @@ impl ResizableState {
         // still moves as far as the remaining panels allow.
         let mut delta = target - self.sizes[handle];
         for _ in 0..32 {
-            layout = adjust(&self.panels, &self.sizes, handle, delta);
+            layout = adjust(&self.effective, &self.sizes, handle, delta);
             if layout.is_some() || delta.abs() < EPSILON {
                 break;
             }
@@ -441,7 +519,12 @@ impl ResizableState {
             return;
         }
         let moved = self.pointer_coordinate(position) - self.grab - drag.start;
-        if let Some(layout) = adjust(&self.panels, &drag.origin, drag.handle, moved / drag.usable) {
+        if let Some(layout) = adjust(
+            &self.effective,
+            &drag.origin,
+            drag.handle,
+            moved / drag.usable,
+        ) {
             self.apply(layout, window, cx);
         }
     }
@@ -457,6 +540,53 @@ fn valid_layout(panels: &[ResizablePanel], sizes: &[f32]) -> bool {
             .iter()
             .zip(sizes)
             .all(|(panel, size)| panel.accepts(*size))
+}
+
+/// The layout nearest `sizes` that satisfies `panels`: out-of-range panels are
+/// clamped and the difference is shared by panels with room, leaving collapsed
+/// panels collapsed. Returns `None` when no such layout exists.
+fn fit(panels: &[ResizablePanel], sizes: &[f32]) -> Option<Vec<f32>> {
+    let mut fitted: Vec<f32> = panels
+        .iter()
+        .zip(sizes)
+        .map(|(panel, &size)| {
+            if panel.is_collapsed_size(size) {
+                size
+            } else {
+                size.clamp(panel.minimum, panel.maximum)
+            }
+        })
+        .collect();
+    for _ in 0..=panels.len() {
+        let difference = 1. - fitted.iter().sum::<f32>();
+        if difference.abs() < EPSILON {
+            break;
+        }
+        let room: Vec<f32> = panels
+            .iter()
+            .zip(&fitted)
+            .map(|(panel, &size)| {
+                if panel.is_collapsed_size(size) {
+                    0.
+                } else if difference > 0. {
+                    panel.maximum - size
+                } else {
+                    size - panel.minimum
+                }
+            })
+            .collect();
+        let open = room.iter().filter(|room| **room > EPSILON).count();
+        if open == 0 {
+            break;
+        }
+        let share = difference.abs() / open as f32;
+        for (size, room) in fitted.iter_mut().zip(&room) {
+            if *room > EPSILON {
+                *size += share.min(*room).copysign(difference);
+            }
+        }
+    }
+    valid_layout(panels, &fitted).then_some(fitted)
 }
 
 /// Moves divider `handle` by `delta` from `base`. A positive delta grows the
@@ -610,8 +740,18 @@ impl RenderOnce for Resizable {
                     .flex_shrink_0()
                     .overflow_hidden()
                     .when(size > 0., |this| this.child(content))
-                    .on_prepaint(move |bounds, _, cx| {
-                        geometry.update(cx, |state, _| state.panel_bounds[index] = bounds);
+                    .on_prepaint(move |bounds, window, cx| {
+                        geometry.update(cx, |state, cx| {
+                            state.panel_bounds[index] = bounds;
+                            if index + 1 == state.panels.len() {
+                                // Panels share the usable space exactly.
+                                let usable = state
+                                    .panel_bounds
+                                    .iter()
+                                    .fold(px(0.), |total, bounds| total + state.length(*bounds));
+                                state.measure(usable, window, cx);
+                            }
+                        });
                     }),
             );
         }
@@ -683,7 +823,7 @@ impl RenderOnce for ResizableHandle {
         let axis = model.axis;
         let disabled = model.disabled;
         let focus = model.handle_focus[index].clone();
-        let panel = model.panels[index];
+        let panel = model.effective[index];
         let size = model.sizes[index];
         let entity_id = self.state.entity_id();
         let geometry = self.state.clone();
@@ -809,7 +949,7 @@ impl RenderOnce for ResizableHandle {
                             set_value.update(cx, |state, cx| {
                                 if !state.disabled {
                                     let target =
-                                        state.panels[index].constrain(*value as f32 / 100.);
+                                        state.effective[index].constrain(*value as f32 / 100.);
                                     state.resize_panel(index, target, window, cx);
                                 }
                             });
@@ -1209,5 +1349,66 @@ mod tests {
                 assert!((first / (first + second) - 0.8).abs() < 0.001);
             });
         }
+    }
+
+    #[gpui::test]
+    fn pixel_limits_follow_the_measured_group_and_refit_on_resize(cx: &mut TestAppContext) {
+        let (cx, view, changes) = harness(
+            cx,
+            Axis::Horizontal,
+            vec![
+                ResizablePanel::new(0.5).pixel_limits(px(116.)..=px(1000.)),
+                ResizablePanel::new(0.5).limits(0.2..=1.),
+            ],
+        );
+        // 320 px frame, 10 px padding each side and a 10 px divider: 290 usable.
+        assert_sizes(cx, &view, &[0.5, 0.5]);
+        assert!(
+            changes.borrow().is_empty(),
+            "a satisfied layout is not refitted"
+        );
+        view.update(cx, |view, cx| {
+            view.extent = px(220.);
+            cx.notify();
+        });
+        draw(cx);
+        draw(cx);
+        // 190 usable: the 116 px minimum is now a larger share.
+        assert_sizes(cx, &view, &[116. / 190., 74. / 190.]);
+        cx.update(|_, cx| {
+            let state = view.read(cx).state.read(cx);
+            assert!((state.length(state.panel_bounds[0]) - px(116.)).abs() < px(0.5));
+        });
+        assert_eq!(changes.borrow().len(), 1);
+        cx.update(|window, cx| {
+            view.read(cx)
+                .state
+                .read(cx)
+                .handle_focus(0)
+                .clone()
+                .focus(window, cx);
+        });
+        draw(cx);
+        cx.simulate_keystrokes("left");
+        draw(cx);
+        assert_sizes(cx, &view, &[116. / 190., 74. / 190.]);
+        cx.simulate_keystrokes("right");
+        draw(cx);
+        assert_sizes(cx, &view, &[116. / 190. + STEP, 74. / 190. - STEP]);
+        // A wider group keeps the layout instead of jumping back.
+        view.update(cx, |view, cx| {
+            view.extent = px(320.);
+            cx.notify();
+        });
+        draw(cx);
+        draw(cx);
+        assert_sizes(cx, &view, &[116. / 190. + STEP, 74. / 190. - STEP]);
+        // A stored layout below the pixel minimum is fitted on restore.
+        cx.update(|window, cx| {
+            view.read(cx).state.clone().update(cx, |state, cx| {
+                state.set_sizes(vec![0.3, 0.7], window, cx);
+            })
+        });
+        assert_sizes(cx, &view, &[116. / 290., 174. / 290.]);
     }
 }
