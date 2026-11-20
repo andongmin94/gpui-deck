@@ -151,16 +151,18 @@ documented. Platform observations are recorded separately from automated checks.
 | 4 | Source distribution and developer experience | A small complete starter, compilable public examples, explicit supported API boundary, and a source-copy workflow that resolves recipe dependencies and tokens | Starter, doctest gate, application tokens and dependency-aware source CLI implemented; supported input/control boundary and consumer test feature documented; unused ThemeAppearance removed |
 | 5 | Release validation | Existing formatting, lint, full behavior suite and native example builds pass; representative native IME, screen-reader, DPI, and visual flows have platform-specific observations | Not complete |
 
-The current Windows checkpoint passed 717 behavior/integration tests, five CLI
+The current Windows checkpoint passed 722 behavior/integration tests, five CLI
 tests, 15 doctests (two existing ignored), formatting, Clippy and all native
-example/CLI builds after ranked fuzzy Command/Combobox matching, measured pixel
-limits for Resizable panels, typed DatePicker dates and touch long press for
-ContextMenu and HoverCard were added. The
-[three-platform run for 23c86437](https://github.com/andongmin94/gpui-design/actions/runs/44644341735)
-passed for the preceding Chart, Carousel, Breadcrumb, Item and Tooltip work; the
-new commits run on Linux, macOS and Windows through the PR's CI. Recipe sources
-and CLI dependencies are unchanged by this change set; the earlier audit of 24
-copied recipe modules, assets and 59 local document links is not repeated.
+example/CLI builds after pausing Carousel autoplay, a Sidebar icon rail,
+ControlField for Checkbox/Switch/RadioGroup/Select and an AvatarGroup were
+added on top of fuzzy Command ranking, Resizable pixel limits, typed DatePicker
+dates and touch long press. The
+[three-platform run for 011fd63f](https://github.com/andongmin94/gpui-design/actions/runs/44647159361)
+covers the work through the native visual fixes; the newer commits run on Linux,
+macOS and Windows through the PR's CI. The avatar recipe now also exports
+`AvatarGroup` through the CLI; recipe dependencies are unchanged, and the
+earlier audit of copied recipe modules, assets and 59 local document links is
+not repeated.
 [Draft PR #1](https://github.com/andongmin94/gpui-design/pull/1) contains the
 implementation commits and current validation status.
 
@@ -168,7 +170,9 @@ The "not supplied" limits that shadcn's official examples cover are now
 implemented within explicit boundaries: typed dates accept ISO and a few English
 relative forms rather than arbitrary natural language, and layout storage stays
 with the application. Touch long press is exercised with simulated GPUI touch
-events only; it has not been tried on touch hardware.
+events only; it has not been tried on touch hardware. Carousel autoplay, the
+Sidebar rail, ControlField and AvatarGroup have headless and composition coverage
+only; their native appearance has not been observed.
 
 Existing tests cover the documented selection/overlay contracts, retained-value
 setters, unavailable Calendar days/RTL, table selection/visibility, Sidebar closure,
