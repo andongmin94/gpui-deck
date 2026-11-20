@@ -92,9 +92,13 @@ impl InteractiveElement for Toggle {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.button.interactivity()
     }
+
+    crate::button::forward_hover_styles!(button);
 }
 
-impl StatefulInteractiveElement for Toggle {}
+impl StatefulInteractiveElement for Toggle {
+    crate::button::forward_active_styles!(button);
+}
 
 impl RenderOnce for Toggle {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {

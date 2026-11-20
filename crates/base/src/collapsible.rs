@@ -195,9 +195,13 @@ impl InteractiveElement for CollapsibleTrigger {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.button.interactivity()
     }
+
+    crate::button::forward_hover_styles!(button);
 }
 
-impl StatefulInteractiveElement for CollapsibleTrigger {}
+impl StatefulInteractiveElement for CollapsibleTrigger {
+    crate::button::forward_active_styles!(button);
+}
 
 impl RenderOnce for CollapsibleTrigger {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
