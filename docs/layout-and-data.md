@@ -224,20 +224,26 @@ and pixel-unit constraints are not supplied.
 ## Carousel
 
 `CarouselState::new(labels, cx)` retains a fixed ordered collection and selected
-slide. Selection is bounded by default; `.looping(true)` permits wrapping.
-`Carousel::new(id, &state, label)` supplies a named focusable region, and
-`CarouselSlide::new(&state, index)` mounts only the active slide. The application
-retains slide data and supplies media, sizing, content and indicator presentation.
+(leading) slide. Selection is bounded by default; `.looping(true)` permits wrapping.
+`.slides_per_view(n)` or `set_slides_per_view(n, window, cx)` shows `n`
+consecutive slides, like shadcn's fractional item basis. Each step moves by one
+slide and the last view stays full, so `snap_count()` leading positions exist and
+`visible_range()` names the mounted slides; looping wraps between the last full
+view and the first. `Carousel::new(id, &state, label)` supplies a named focusable
+region, and `CarouselSlide::new(&state, index)` mounts only slides in the current
+view. The application retains slide data and supplies media, slide widths (for
+example equal `flex_1` slides in a row), content and indicator presentation.
 `CarouselControl::previous/next` compose Button with boundary disabled behavior.
 
 Left/Right act while the horizontal region itself holds focus, Up/Down for a
-vertical region; Home/End select the ends. Slide descendants keep their own keys.
-Configure axis and direction on `Carousel`; every slide uses that same state for
-swipes. Direction is inherited by default. A pointer drag of 40 logical pixels
-snaps once per gesture, including a single move followed immediately by release.
-Changing away from a slide containing focus returns focus to the carousel scope
-before unmounting it; external previous/next controls retain focus. There is no
-autoplay, inertia, animated motion or multi-slide sizing system.
+vertical region; Home/End select the first and last views. Slide descendants keep
+their own keys. Configure axis and direction on `Carousel`; every slide uses that
+same state for swipes. Direction is inherited by default. A pointer drag of 40
+logical pixels snaps once per gesture, including a single move followed
+immediately by release. Moving slides out of view, including by shrinking the
+view, returns focus inside them to the carousel scope before unmounting; focus in
+slides that stay visible and on external previous/next controls is kept. There is
+no autoplay, inertia, animated motion or free-scrolling between snaps.
 
 ## Chart
 

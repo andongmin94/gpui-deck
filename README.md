@@ -60,7 +60,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **NavigationMenu** | Coordinated disclosures, roving focus and destination Link activation | Destination callbacks, panel content and layout |
 | **Toast** | Retained lifetime, hover/focus/window pause, safe dismissal, and a stacking Toaster with a visible limit | Message, action controls, placement and appearance |
 | **Drawer** | Dialog lifecycle plus bottom drag-to-dismiss through a dedicated handle | Backdrop, grip, surface, scrolling body and confirmation |
-| **Carousel** | Active slide, bounded/looping navigation, discrete swipe, RTL and focus restoration | Slide content, viewport size, controls and indicators |
+| **Carousel** | Leading slide with one or more slides per view, bounded/looping navigation, discrete swipe, RTL and focus restoration | Slide content and widths, viewport size, controls and indicators |
 | **Chart** | Categorical series, grouped/stacked/pie/radar layouts, visible-series domain, linear or angular point inspection and exact native values | Copyable native line/bar/area, stacked, pie/donut and radar plots, axes, legend, readout and Table |
 | **MessageScroller** | Bottom following, keyed history anchoring, unread count and jump-to-latest | Stable message identities, content, dimensions and jump control |
 | **Questionnaire** | Linear question/review/complete flow, validated answers and Back | Editors, prompts, validation, focus and submission |
@@ -241,7 +241,7 @@ The separate [catalogue example](crates/base/examples/catalogue.rs) connects the
 remaining families into five retained views. Navigation demonstrates coordinated
 menus, destination links and collapsible grouped project navigation; Forms and feedback runs numeric code entry through
 a confirmation Drawer into a stacked, pausing Toast, plus help Sheets at all four edges; Media and data supplies RTL-aware
-Carousel slides and inspectable line/bar/area, stacked, pie/donut and radar charts with an exact data table;
+Carousel slides (one or two per view) and inspectable line/bar/area, stacked, pie/donut and radar charts with an exact data table;
 Conversation combines incoming/outgoing bubbles, anchored history/streaming,
 reactions and a validated question/review/complete flow. Selection combines date
 ranges, independent dates and grouped multiple recording targets. Its calendars

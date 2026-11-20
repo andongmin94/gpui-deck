@@ -1,4 +1,5 @@
-//! A single-slide carousel with native focus, discrete swiping, and logical navigation.
+//! A carousel showing one or more slides per view, with native focus, discrete
+//! swiping, and logical navigation.
 
 use gpui::{
     AnyElement, App, AppContext as _, Axis, Context, DragMoveEvent, ElementId, Empty, Entity,
@@ -29,11 +30,18 @@ pub enum CarouselEvent {
 }
 
 /// Retained state for a fixed ordered set of slides. Labels name each slide.
-/// Only the selected slide is mounted; application entities retain slide data.
-/// There is no autoplay, timer, or focus movement merely because data changes.
+///
+/// A view shows `slides_per_view` consecutive slides starting at the selected
+/// (leading) slide; one is the default. Only those slides are mounted, and the
+/// application sizes them, for example with `relative(1. / n)` widths. Each
+/// step moves by one slide, and the last view is always full: the leading index
+/// ranges over [`snap_count`](Self::snap_count) positions. Looping wraps between
+/// the last full view and the first. Application entities retain slide data;
+/// there is no autoplay, timer, or focus movement merely because data changes.
 pub struct CarouselState {
     labels: Vec<SharedString>,
     selected: Option<usize>,
+    per_view: usize,
     looping: bool,
     axis: Axis,
     direction: Direction,
@@ -53,6 +61,7 @@ impl CarouselState {
             selected: (!labels.is_empty()).then_some(0),
             slide_focus: labels.iter().map(|_| cx.focus_handle()).collect(),
             labels,
+            per_view: 1,
             looping: false,
             axis: Axis::Horizontal,
             direction: Direction::Ltr,
@@ -66,8 +75,57 @@ impl CarouselState {
         self.looping = looping;
         self
     }
+    /// Shows `count` slides per view; panics when `count` is zero.
+    pub fn slides_per_view(mut self, count: usize) -> Self {
+        assert!(count > 0, "A carousel view shows at least one slide");
+        self.per_view = count;
+        self.selected = self.selected.map(|index| index.min(self.last_start()));
+        self
+    }
+    /// Changes the view size, keeping the leading slide where possible and
+    /// moving focus out of slides that leave the view.
+    pub fn set_slides_per_view(
+        &mut self,
+        count: usize,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        assert!(count > 0, "A carousel view shows at least one slide");
+        if self.per_view == count {
+            return false;
+        }
+        let previous = self.visible_range();
+        self.per_view = count;
+        let Some(selected) = self.selected else {
+            return true;
+        };
+        let start = selected.min(self.last_start());
+        self.release_hidden_focus(previous, start, window, cx);
+        self.selected = Some(start);
+        if start != selected {
+            cx.emit(CarouselEvent::Change(start));
+        }
+        cx.notify();
+        window.refresh();
+        true
+    }
+    /// The leading visible slide.
     pub fn selected_index(&self) -> Option<usize> {
         self.selected
+    }
+    /// The slides currently mounted, in order.
+    pub fn visible_range(&self) -> std::ops::Range<usize> {
+        self.selected.map_or(0..0, |start| {
+            start..(start + self.per_view).min(self.labels.len())
+        })
+    }
+    /// The number of distinct leading positions, one per full view.
+    pub fn snap_count(&self) -> usize {
+        if self.labels.is_empty() {
+            0
+        } else {
+            self.last_start() + 1
+        }
     }
     pub fn labels(&self) -> &[SharedString] {
         &self.labels
@@ -76,27 +134,39 @@ impl CarouselState {
         &self.focus
     }
     pub fn can_previous(&self) -> bool {
-        self.labels.len() > 1 && (self.looping || self.selected.is_some_and(|index| index > 0))
+        self.snap_count() > 1 && (self.looping || self.selected.is_some_and(|index| index > 0))
     }
     pub fn can_next(&self) -> bool {
-        self.labels.len() > 1
-            && (self.looping
-                || self
-                    .selected
-                    .is_some_and(|index| index + 1 < self.labels.len()))
+        self.snap_count() > 1
+            && (self.looping || self.selected.is_some_and(|index| index < self.last_start()))
     }
-
-    /// Selects an existing slide. Focus inside the outgoing slide returns to the
-    /// carousel scope before that content is unmounted; external focus stays put.
-    pub fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) -> bool {
-        if index >= self.labels.len() || self.selected == Some(index) {
-            return false;
-        }
-        if let Some(previous) = self.selected
-            && self.slide_focus[previous].contains_focused(window, cx)
+    fn last_start(&self) -> usize {
+        self.labels.len().saturating_sub(self.per_view)
+    }
+    fn release_hidden_focus(
+        &self,
+        previous: std::ops::Range<usize>,
+        start: usize,
+        window: &mut Window,
+        cx: &mut App,
+    ) {
+        let next = start..start + self.per_view;
+        if previous
+            .filter(|index| !next.contains(index))
+            .any(|index| self.slide_focus[index].contains_focused(window, cx))
         {
             self.focus.focus(window, cx);
         }
+    }
+
+    /// Makes `index` the leading slide when it starts a full view. Focus inside
+    /// slides leaving the view returns to the carousel scope before that content
+    /// is unmounted; focus in slides that remain visible or outside stays put.
+    pub fn select(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) -> bool {
+        if index >= self.snap_count() || self.selected == Some(index) {
+            return false;
+        }
+        self.release_hidden_focus(self.visible_range(), index, window, cx);
         self.selected = Some(index);
         cx.emit(CarouselEvent::Change(index));
         cx.notify();
@@ -121,10 +191,11 @@ impl CarouselState {
         } {
             return false;
         }
+        let snaps = self.snap_count();
         let next = if forward {
-            (index + 1) % self.labels.len()
+            (index + 1) % snaps
         } else {
-            (index + self.labels.len() - 1) % self.labels.len()
+            (index + snaps - 1) % snaps
         };
         self.select(next, window, cx)
     }
@@ -165,7 +236,7 @@ impl CarouselState {
             return;
         }
         if !self.labels.is_empty() {
-            self.select(if last { self.labels.len() - 1 } else { 0 }, window, cx);
+            self.select(if last { self.last_start() } else { 0 }, window, cx);
         }
     }
 }
@@ -271,7 +342,8 @@ impl Render for DragCarousel {
     }
 }
 
-/// One active-only slide with position/count metadata and a stable focus scope.
+/// One slide, mounted only while in the current view, with position/count
+/// metadata and a stable focus scope.
 /// Dragging its content by 40 logical pixels snaps once per gesture. GPUI owns
 /// drag cancellation and suppresses click activation after a drag begins.
 /// Axis and direction come from the enclosing [`Carousel`]. There is no inertia or
@@ -313,7 +385,7 @@ impl RenderOnce for CarouselSlide {
             self.index < model.labels.len(),
             "CarouselSlide index must identify a slide"
         );
-        if model.selected != Some(self.index) {
+        if !model.visible_range().contains(&self.index) {
             return Empty.into_any_element();
         }
         let id = self.state.entity_id();
@@ -572,5 +644,107 @@ mod tests {
                 assert_eq!(state.selected, Some(0));
             });
         });
+    }
+
+    struct MultiHarness {
+        state: Entity<CarouselState>,
+        actions: Vec<FocusHandle>,
+        _subscription: Subscription,
+    }
+    impl Render for MultiHarness {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            Carousel::new("carousel", &self.state, "Albums")
+                .flex()
+                .w(px(300.))
+                .children(self.actions.iter().enumerate().map(|(index, action)| {
+                    CarouselSlide::new(&self.state, index)
+                        .w(px(100.))
+                        .h(px(80.))
+                        .child(
+                            Button::new(("open", index))
+                                .track_focus(action)
+                                .child("Open"),
+                        )
+                }))
+        }
+    }
+
+    #[gpui::test]
+    fn several_slides_per_view_snap_by_one_and_release_hidden_focus(cx: &mut TestAppContext) {
+        cx.update(crate::init);
+        let (root, cx) = cx.add_window_view(|window, cx| {
+            let view = cx.new(|cx| {
+                let state = cx
+                    .new(|cx| CarouselState::new(["A", "B", "C", "D", "E"], cx).slides_per_view(3));
+                let subscription = cx.observe(&state, |_, _, cx| cx.notify());
+                MultiHarness {
+                    state,
+                    actions: (0..5).map(|_| cx.focus_handle()).collect(),
+                    _subscription: subscription,
+                }
+            });
+            Root::new(view, window, cx)
+        });
+        let view = root
+            .read_with(cx, |root, _| root.view().clone())
+            .downcast::<MultiHarness>()
+            .unwrap();
+        let state = view.read_with(cx, |view, _| view.state.clone());
+        let mounted = |cx: &mut gpui::VisualTestContext| {
+            cx.update(|window, _| {
+                let mut slides: Vec<_> = crate::test_support::snapshots(window)
+                    .into_iter()
+                    .filter(|node| node.role() == Some(Role::Group))
+                    .map(|node| (node.bounds().left(), node.label().unwrap().to_owned()))
+                    .collect();
+                slides.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                slides
+                    .into_iter()
+                    .map(|(_, label)| label)
+                    .collect::<Vec<_>>()
+            })
+        };
+        cx.update(|window, cx| {
+            window.activate_window();
+            state.read(cx).focus.clone().focus(window, cx);
+            window.draw(cx).clear(cx);
+        });
+        assert_eq!(mounted(cx), ["A", "B", "C"]);
+        cx.update(|_, cx| {
+            let state = state.read(cx);
+            assert_eq!(state.snap_count(), 3);
+            assert!(!state.can_previous());
+        });
+        cx.simulate_keystrokes("end");
+        cx.run_until_parked();
+        assert_eq!(mounted(cx), ["C", "D", "E"], "the last view stays full");
+        cx.update(|window, cx| {
+            assert!(!state.read(cx).can_next());
+            // Focus in a slide that stays visible is kept.
+            let action = view.read(cx).actions[3].clone();
+            action.focus(window, cx);
+            state.update(cx, |state, cx| assert!(state.previous(window, cx)));
+            assert!(action.is_focused(window));
+            assert_eq!(state.read(cx).visible_range(), 1..4);
+            // Focus in a slide that leaves the view returns to the carousel.
+            state.update(cx, |state, cx| assert!(state.previous(window, cx)));
+            assert!(state.read(cx).focus.is_focused(window));
+            state.update(cx, |state, cx| {
+                state.looping = true;
+                assert!(
+                    state.previous(window, cx),
+                    "looping wraps to the last full view"
+                );
+                assert_eq!(state.selected_index(), Some(2));
+                assert!(state.set_slides_per_view(4, window, cx));
+                assert_eq!(
+                    state.visible_range(),
+                    1..5,
+                    "a larger view keeps the last one full"
+                );
+            });
+            window.draw(cx).clear(cx);
+        });
+        assert_eq!(mounted(cx), ["B", "C", "D", "E"]);
     }
 }

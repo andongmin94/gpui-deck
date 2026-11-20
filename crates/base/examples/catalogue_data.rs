@@ -185,17 +185,23 @@ impl DataCatalogue {
     }
 
     fn render_carousel(&self, cx: &mut Context<Self>) -> AnyElement {
-        let selected = self.carousel.read(cx).selected_index().unwrap();
-        let mut carousel = Carousel::new(
-            "data-carousel",
-            &self.carousel,
-            "Local media review previews",
-        )
-        .direction(self.direction)
-        .w_full()
-        .min_w_0()
-        .flex()
-        .flex_col();
+        let model = self.carousel.read(cx);
+        let selected = model.selected_index().unwrap();
+        let visible = model.visible_range();
+        let snaps = model.snap_count();
+        let per_view = visible.len();
+        // Visible slides share the row equally, like a 1/n flex basis.
+        let mut carousel = self.direction.row(
+            Carousel::new(
+                "data-carousel",
+                &self.carousel,
+                "Local media review previews",
+            )
+            .direction(self.direction)
+            .w_full()
+            .min_w_0()
+            .gap_3(),
+        );
         for index in 0..3 {
             let preview = canvas(
                 |_, _, _| (),
@@ -295,7 +301,7 @@ impl DataCatalogue {
             }));
             carousel = carousel.child(
                 CarouselSlide::new(&self.carousel, index)
-                    .w_full()
+                    .flex_1()
                     .min_w_0()
                     .flex()
                     .flex_col()
@@ -310,10 +316,10 @@ impl DataCatalogue {
             );
         }
         let mut pagination = self.direction.row(div()).gap_2();
-        for index in 0..3 {
+        for index in 0..snaps {
             pagination = pagination.child(
                 Self::button(("media-page", index), format!("{}", index + 1))
-                    .accessibility_label(format!("Show media slide {} of 3", index + 1))
+                    .accessibility_label(format!("Show media view {} of {snaps}", index + 1))
                     .selected(selected == index)
                     .on_click(cx.listener(move |this, _, window, cx| {
                         this.carousel.update(cx, |state, cx| {
@@ -325,12 +331,22 @@ impl DataCatalogue {
         div().flex().flex_col().gap_2()
             .child(div().font_weight(FontWeight::SEMIBOLD).child("Carousel · local media review"))
             .child("Focus the carousel for arrows/Home/End; swipe a slide or use the controls. Each slide keeps its application-owned review state.")
+            .child(Self::button("media-per-view", format!("Slides per view: {per_view}"))
+                .on_click(cx.listener(move |this, _, window, cx| {
+                    this.carousel.update(cx, |state, cx| {
+                        state.set_slides_per_view(if per_view == 1 { 2 } else { 1 }, window, cx);
+                    });
+                })))
             .child(carousel)
             .child(self.direction.row(div()).gap_2().items_center()
                 .child(CarouselControl::previous("media-previous", &self.carousel).px_3().py_2().rounded(px(6.)).border_1().border_color(rgb(0x64748b)).child("Previous"))
                 .child(pagination)
                 .child(CarouselControl::next("media-next", &self.carousel).px_3().py_2().rounded(px(6.)).border_1().border_color(rgb(0x64748b)).child("Next")))
-            .child(format!("Slide {} of 3 · {} reviewed", selected + 1, self.reviewed.iter().filter(|reviewed| **reviewed).count()))
+            .child(format!(
+                "{} of 3 · {} reviewed",
+                if per_view == 1 { format!("Slide {}", selected + 1) } else { format!("Slides {}–{}", visible.start + 1, visible.end) },
+                self.reviewed.iter().filter(|reviewed| **reviewed).count()
+            ))
             .into_any_element()
     }
 }
