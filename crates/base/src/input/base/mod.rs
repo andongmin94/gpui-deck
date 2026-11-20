@@ -1,5 +1,5 @@
 // Modified for GPUI Design: observe public input wrappers and update crate references.
-use crate::{StateStyle, StyledExt as _, TestSupportExt as _};
+use crate::{StateStyle, StyledExt as _, TestSupportExt as _, a11y_disabled::A11yDisabledExt as _};
 use gpui::{
     AnyElement, App, Div, ElementId, InteractiveElement, Interactivity, IntoElement, ParentElement,
     Refineable as _, RenderOnce, Role, SharedString, StatefulInteractiveElement, StyleRefinement,
@@ -272,6 +272,7 @@ impl RenderOnce for InputBase {
             })
             .children(self.children)
             .refine_style(&style)
+            .a11y_disabled(self.disabled)
     }
 }
 
@@ -291,6 +292,26 @@ mod tests {
             })
             .child("value")
             .opacity(0.8);
+    }
+
+    /// A disabled frame reports itself disabled on the text-input node it writes.
+    #[gpui::test]
+    fn a_disabled_frame_is_disabled_for_assistive_technology(cx: &mut gpui::TestAppContext) {
+        use gpui::Element as _;
+
+        let cx = cx.add_empty_window();
+        cx.update(|window, cx| {
+            for disabled in [false, true] {
+                let element = InputBase::new("input")
+                    .disabled(disabled)
+                    .render(window, cx)
+                    .into_element();
+                let mut node = gpui::accesskit::Node::new(element.a11y_role().unwrap());
+                element.write_a11y_info(&mut node);
+                assert_eq!(node.role(), Role::TextInput);
+                assert_eq!(node.is_disabled(), disabled);
+            }
+        });
     }
 
     #[test]

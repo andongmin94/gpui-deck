@@ -29,6 +29,7 @@ pub struct Button {
     current: bool,
     disabled: bool,
     focus_when_disabled: bool,
+    pointer_styles: PointerStyles,
     children: SmallVec<[AnyElement; 2]>,
     on_click: Option<ClickHandler>,
     accessibility_label: Option<SharedString>,
@@ -51,6 +52,7 @@ impl Button {
             current: false,
             disabled: false,
             focus_when_disabled: false,
+            pointer_styles: PointerStyles::default(),
             children: SmallVec::new(),
             on_click: None,
             accessibility_label: None,
@@ -67,6 +69,9 @@ impl Button {
     /// Disabled buttons are skipped during Tab traversal. If this button already
     /// owns focus when it becomes disabled, it retains the focus binding until
     /// focus moves away, so keyboard traversal can continue in either direction.
+    ///
+    /// While disabled, the `hover`, `active`, `group_hover`, and `group_active`
+    /// styles are not applied; use [`ButtonStyles::disabled`] for its look.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
@@ -224,13 +229,96 @@ impl ParentElement for Button {
     }
 }
 
+/// Pointer-state styles Button holds back so they never apply while disabled.
+#[derive(Default)]
+struct PointerStyles {
+    hover: Option<StyleRefinement>,
+    active: Option<StyleRefinement>,
+    group_hover: Option<(SharedString, StyleRefinement)>,
+    group_active: Option<(SharedString, StyleRefinement)>,
+}
+
 impl InteractiveElement for Button {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.base.interactivity()
     }
+
+    fn hover(mut self, f: impl FnOnce(StyleRefinement) -> StyleRefinement) -> Self {
+        self.pointer_styles.hover = Some(f(StyleRefinement::default()));
+        self
+    }
+
+    fn group_hover(
+        mut self,
+        group_name: impl Into<SharedString>,
+        f: impl FnOnce(StyleRefinement) -> StyleRefinement,
+    ) -> Self {
+        self.pointer_styles.group_hover = Some((group_name.into(), f(StyleRefinement::default())));
+        self
+    }
 }
 
-impl StatefulInteractiveElement for Button {}
+impl StatefulInteractiveElement for Button {
+    fn active(mut self, f: impl FnOnce(StyleRefinement) -> StyleRefinement) -> Self {
+        self.pointer_styles.active = Some(f(StyleRefinement::default()));
+        self
+    }
+
+    fn group_active(
+        mut self,
+        group_name: impl Into<SharedString>,
+        f: impl FnOnce(StyleRefinement) -> StyleRefinement,
+    ) -> Self {
+        self.pointer_styles.group_active = Some((group_name.into(), f(StyleRefinement::default())));
+        self
+    }
+}
+
+/// Forwards `hover` and `group_hover` from the `InteractiveElement` impl of a
+/// Button wrapper, so the wrapper keeps Button's disabled pointer handling.
+macro_rules! forward_hover_styles {
+    ($field:ident) => {
+        fn hover(mut self, f: impl FnOnce(gpui::StyleRefinement) -> gpui::StyleRefinement) -> Self {
+            self.$field = gpui::InteractiveElement::hover(self.$field, f);
+            self
+        }
+
+        fn group_hover(
+            mut self,
+            group_name: impl Into<gpui::SharedString>,
+            f: impl FnOnce(gpui::StyleRefinement) -> gpui::StyleRefinement,
+        ) -> Self {
+            self.$field = gpui::InteractiveElement::group_hover(self.$field, group_name, f);
+            self
+        }
+    };
+}
+
+/// Forwards `active` and `group_active` from the `StatefulInteractiveElement`
+/// impl of a Button wrapper.
+macro_rules! forward_active_styles {
+    ($field:ident) => {
+        fn active(
+            mut self,
+            f: impl FnOnce(gpui::StyleRefinement) -> gpui::StyleRefinement,
+        ) -> Self {
+            self.$field = gpui::StatefulInteractiveElement::active(self.$field, f);
+            self
+        }
+
+        fn group_active(
+            mut self,
+            group_name: impl Into<gpui::SharedString>,
+            f: impl FnOnce(gpui::StyleRefinement) -> gpui::StyleRefinement,
+        ) -> Self {
+            self.$field =
+                gpui::StatefulInteractiveElement::group_active(self.$field, group_name, f);
+            self
+        }
+    };
+}
+
+pub(crate) use {forward_active_styles, forward_hover_styles};
 
 impl RenderOnce for Button {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
@@ -238,6 +326,11 @@ impl RenderOnce for Button {
         let disabled = self.disabled;
         let style = self.resolved_style();
         let on_click = self.on_click;
+        let pointer_styles = if disabled {
+            PointerStyles::default()
+        } else {
+            self.pointer_styles
+        };
 
         let base = self
             .base
@@ -275,10 +368,27 @@ impl RenderOnce for Button {
                     )
                 },
             )
+            .when(self.focusable, |this| {
+                // Only a primary press moves focus here. Secondary and middle
+                // presses still reach the parent, for example a context menu.
+                this.on_any_mouse_down(|event, window, _| {
+                    if event.button != MouseButton::Left {
+                        window.prevent_default();
+                    }
+                })
+            })
             .when(disabled, |this| {
                 this.on_mouse_down(MouseButton::Left, |_, _, cx| {
                     cx.stop_propagation();
                 })
+            })
+            .when_some(pointer_styles.hover, |this, style| this.hover(|_| style))
+            .when_some(pointer_styles.active, |this, style| this.active(|_| style))
+            .when_some(pointer_styles.group_hover, |this, (group, style)| {
+                this.group_hover(group, |_| style)
+            })
+            .when_some(pointer_styles.group_active, |this, (group, style)| {
+                this.group_active(group, |_| style)
             })
             .when_some(
                 (!disabled).then_some(on_click).flatten(),
@@ -556,6 +666,136 @@ mod tests {
                 assert_eq!(window.focused(cx).as_ref(), Some(&handles[1]));
             });
         }
+    }
+
+    #[gpui::test]
+    fn disabled_button_and_wrappers_ignore_hover_and_active_styles(cx: &mut TestAppContext) {
+        struct PointerProbe {
+            disabled: bool,
+            toggle: bool,
+            text_color: Rc<Cell<Option<gpui::Hsla>>>,
+        }
+
+        impl Render for PointerProbe {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                let text_color = self.text_color.clone();
+                let probe = canvas(
+                    |_, _, _| {},
+                    move |_, _, window, _| text_color.set(Some(window.text_style().color)),
+                )
+                .size_full();
+                if self.toggle {
+                    crate::Toggle::new("pointer-probe")
+                        .size(px(40.))
+                        .text_color(gpui::red())
+                        .hover(|style| style.text_color(gpui::green()))
+                        .active(|style| style.text_color(gpui::blue()))
+                        .disabled(self.disabled)
+                        .child(probe)
+                        .into_any_element()
+                } else {
+                    Button::new("pointer-probe")
+                        .size(px(40.))
+                        .text_color(gpui::red())
+                        .hover(|style| style.text_color(gpui::green()))
+                        .active(|style| style.text_color(gpui::blue()))
+                        .disabled(self.disabled)
+                        .child(probe)
+                        .into_any_element()
+                }
+            }
+        }
+
+        for toggle in [false, true] {
+            let text_color = Rc::new(Cell::new(None));
+            let (view, cx) = cx.add_window_view({
+                let text_color = text_color.clone();
+                move |_, _| PointerProbe {
+                    disabled: true,
+                    toggle,
+                    text_color,
+                }
+            });
+            let redraw =
+                |cx: &mut VisualTestContext| cx.update(|window, cx| window.draw(cx).clear(cx));
+            let position = point(px(10.), px(10.));
+            redraw(cx);
+
+            cx.simulate_mouse_move(position, None, Modifiers::default());
+            redraw(cx);
+            assert_eq!(
+                text_color.get(),
+                Some(gpui::red()),
+                "disabled ignores hover"
+            );
+            cx.simulate_mouse_down(position, MouseButton::Left, Modifiers::default());
+            redraw(cx);
+            assert_eq!(
+                text_color.get(),
+                Some(gpui::red()),
+                "disabled ignores active"
+            );
+            cx.simulate_mouse_up(position, MouseButton::Left, Modifiers::default());
+
+            view.update(cx, |this, cx| {
+                this.disabled = false;
+                cx.notify();
+            });
+            redraw(cx);
+            assert_eq!(text_color.get(), Some(gpui::green()), "enabled shows hover");
+            cx.simulate_mouse_down(position, MouseButton::Left, Modifiers::default());
+            redraw(cx);
+            assert_eq!(text_color.get(), Some(gpui::blue()), "enabled shows active");
+            cx.simulate_mouse_up(position, MouseButton::Left, Modifiers::default());
+        }
+    }
+
+    #[gpui::test]
+    fn secondary_and_middle_presses_do_not_focus_but_reach_the_parent(cx: &mut TestAppContext) {
+        struct Harness {
+            focus_handle: FocusHandle,
+            parent_presses: Rc<Cell<usize>>,
+        }
+
+        impl Render for Harness {
+            fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+                let parent_presses = self.parent_presses.clone();
+                div()
+                    .size(px(100.))
+                    .on_any_mouse_down(move |_, _, _| parent_presses.set(parent_presses.get() + 1))
+                    .child(
+                        Button::new("non-primary")
+                            .size_full()
+                            .track_focus(&self.focus_handle),
+                    )
+            }
+        }
+
+        let parent_presses = Rc::new(Cell::new(0));
+        let (view, cx) = cx.add_window_view({
+            let parent_presses = parent_presses.clone();
+            move |_, cx| Harness {
+                focus_handle: cx.focus_handle(),
+                parent_presses,
+            }
+        });
+        let focus_handle = cx.update(|_, cx| view.read(cx).focus_handle.clone());
+        cx.update(|window, cx| window.draw(cx).clear(cx));
+
+        let position = point(px(10.), px(10.));
+        for button in [MouseButton::Right, MouseButton::Middle, MouseButton::Left] {
+            cx.simulate_mouse_down(position, button, Modifiers::default());
+            cx.simulate_mouse_up(position, button, Modifiers::default());
+            cx.update(|window, cx| {
+                window.draw(cx).clear(cx);
+                assert_eq!(
+                    focus_handle.is_focused(window),
+                    button == MouseButton::Left,
+                    "only a primary press focuses the button ({button:?})"
+                );
+            });
+        }
+        assert_eq!(parent_presses.get(), 3);
     }
 
     #[gpui::test]

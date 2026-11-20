@@ -358,6 +358,15 @@ native tooltip rendering with Button focus, hover timing, and dismissal behavior
 HoverCard reuses Popup for rich, noninteractive previews, adding delayed pointer
 transitions and focus-preserving dismissal without a second placement engine.
 
+Later fixes from GPUI Kit v0.9.1 and v0.10.0 were ported selectively, together
+with the gpui-pre 0.3.12 snapshot those releases use: Input IME composition and
+candidate placement, masked-input IME redaction, grapheme-cluster editing, text
+exposed to assistive technology, and smaller editing and layout fixes; Button
+pointer styles while disabled and secondary presses; Tab into a window with
+nothing focused; the macOS wheel edge stop; and an explicit reduced-motion
+preference. Upstream changes that depend on removed modules, styling, or GPUI
+Fast were not taken.
+
 Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gpui-design/blob/main/LICENSE-APACHE). The original
 Longbridge copyright and license notices are retained. Dependencies keep their
 respective licenses.

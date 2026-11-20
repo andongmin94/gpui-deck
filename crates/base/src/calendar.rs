@@ -770,9 +770,13 @@ impl InteractiveElement for CalendarDay {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.button.interactivity()
     }
+
+    crate::button::forward_hover_styles!(button);
 }
 
-impl StatefulInteractiveElement for CalendarDay {}
+impl StatefulInteractiveElement for CalendarDay {
+    crate::button::forward_active_styles!(button);
+}
 
 impl RenderOnce for CalendarDay {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
