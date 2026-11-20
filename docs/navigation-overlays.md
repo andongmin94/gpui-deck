@@ -526,7 +526,7 @@ handle execution in the application.
 render `CommandOption::new(&state, index)` for `visible_indices()`, in that order.
 For `.group(label)` items, wrap matching options in named `CommandGroup` parts;
 `visible_groups()` and `visible_group_indices(Some(label))` expose the filtered
-collection. Keep each group contiguous in source order; empty groups disappear.
+collection. Keep each group contiguous in the source; empty groups disappear.
 Group headings have no focus stop and do not affect keyboard navigation. Read `items()` for labels and
 `highlighted_index()` for application-owned active-row styling. The list uses
 the existing GPUI ScrollHandle; give it a height or maximum height so the active
@@ -534,14 +534,18 @@ result can scroll into view. Render an application-owned empty message when no
 items match.
 
 The existing InputState is the query's source of truth, exposed through `input()`.
-`set_query(text, window, cx)` updates it programmatically. Each whitespace-separated
-query term must appear, ignoring case, in the item's value, label, or keywords.
-Matching retains item order and includes disabled matches for display. A changed
+`set_query(text, window, cx)` updates it programmatically. The characters of each
+whitespace-separated query term must appear in order, ignoring case, in the item's
+value, label, or keywords, so `pnt` finds "Show pointer". Results rank a match at
+a word start above any other substring and those above looser in-order letters,
+summed over the terms. Groups stay contiguous, ordered by their best result;
+equal scores and an empty query keep source order.
+Matching includes disabled results for display. A changed
 query highlights its first enabled result; empty or all-disabled results have no
 active command. `set_items(items, window, cx)` replaces the collection while
 preserving the native query and focus; it retains an enabled matching highlight
 by value or picks the first enabled result. Applications own fetching and request
-ordering. Fuzzy ranking and a network controller are not provided.
+ordering. A network controller is not provided.
 
 | Input | Behavior |
 | --- | --- |

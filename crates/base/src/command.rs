@@ -94,6 +94,56 @@ fn collect_items(items: impl IntoIterator<Item = SearchItem>) -> Vec<SearchItem>
     items
 }
 
+/// Ranks one lowercase query term against an item's lowercase search text, or
+/// `None` when the term's characters do not appear in order. A match at a word
+/// start ranks above any other substring, which ranks above a subsequence; a
+/// tighter subsequence ranks above a looser one.
+fn term_score(text: &str, term: &str) -> Option<u32> {
+    if term.is_empty() {
+        return Some(0);
+    }
+    let mut substring = None;
+    for (start, _) in text.match_indices(term) {
+        let word_start = text[..start]
+            .chars()
+            .next_back()
+            .is_none_or(|previous| !previous.is_alphanumeric());
+        if word_start {
+            return Some(300);
+        }
+        substring = Some(200);
+    }
+    if substring.is_some() {
+        return substring;
+    }
+    let length = term.chars().count();
+    // The shortest window containing the term's characters in order.
+    let chars: Vec<char> = text.chars().collect();
+    let pattern: Vec<char> = term.chars().collect();
+    let mut shortest: Option<usize> = None;
+    for start in 0..chars.len() {
+        if chars[start] != pattern[0] {
+            continue;
+        }
+        let mut matched = 1;
+        let mut end = start;
+        while matched < pattern.len() {
+            end += 1;
+            if end >= chars.len() {
+                break;
+            }
+            if chars[end] == pattern[matched] {
+                matched += 1;
+            }
+        }
+        if matched == pattern.len() {
+            let span = end - start + 1;
+            shortest = Some(shortest.map_or(span, |current| current.min(span)));
+        }
+    }
+    shortest.map(|span| 1 + (99 * length / span) as u32)
+}
+
 /// An explicit command activation. The application decides what it does.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum CommandEvent {
@@ -102,9 +152,12 @@ pub enum CommandEvent {
 
 /// A query input and its fixed collection of searchable actions in one window.
 ///
-/// InputState is the query's source of truth. Each whitespace-separated query
-/// term must be a case-insensitive substring of the value, label, or keywords.
-/// Results retain item order; matching does not rank or fuzzy-match them.
+/// InputState is the query's source of truth. The characters of each
+/// whitespace-separated query term must appear in order, case-insensitively, in
+/// the value, label, or keywords. Results rank word-start matches above other
+/// substrings and those above looser in-order matches, summed over terms. Groups
+/// stay contiguous, ordered by their best result; equal scores and an empty
+/// query keep collection order.
 /// Query changes highlight the first enabled result. Arrows move that highlight
 /// without committing a value, and Enter or a pointer click emits an action.
 ///
@@ -270,17 +323,47 @@ impl CommandState {
 
     fn filter_query(&mut self, query: SharedString) {
         let terms: Vec<_> = query.split_whitespace().map(str::to_lowercase).collect();
-        self.visible = self
+        let scored: Vec<(usize, u32)> = self
             .items
             .iter()
             .enumerate()
-            .filter(|(_, item)| {
+            .filter_map(|(index, item)| {
                 terms
                     .iter()
-                    .all(|term| item.search_text.contains(term.as_str()))
+                    .map(|term| term_score(&item.search_text, term))
+                    .sum::<Option<u32>>()
+                    .map(|score| (index, score))
             })
-            .map(|(index, _)| index)
             .collect();
+        // Groups stay contiguous: they order by their best item, and items by
+        // score within their group. Equal scores keep collection order.
+        let best = |group: &Option<SharedString>| {
+            scored
+                .iter()
+                .filter(|(index, _)| &self.items[*index].group == group)
+                .map(|(_, score)| *score)
+                .max()
+                .unwrap_or(0)
+        };
+        let mut ranked: Vec<(u32, usize, u32, usize)> = scored
+            .iter()
+            .map(|&(index, score)| {
+                let group = &self.items[index].group;
+                let first = self
+                    .items
+                    .iter()
+                    .position(|item| &item.group == group)
+                    .unwrap_or(index);
+                (best(group), first, score, index)
+            })
+            .collect();
+        ranked.sort_by(|a, b| {
+            b.0.cmp(&a.0)
+                .then(a.1.cmp(&b.1))
+                .then(b.2.cmp(&a.2))
+                .then(a.3.cmp(&b.3))
+        });
+        self.visible = ranked.into_iter().map(|(_, _, _, index)| index).collect();
         self.highlighted = self
             .visible
             .iter()
@@ -1119,5 +1202,50 @@ mod tests {
                 assert_eq!(input.value(), "메모");
             });
         });
+    }
+
+    #[gpui::test]
+    fn fuzzy_terms_rank_word_starts_and_keep_groups_contiguous(cx: &mut TestAppContext) {
+        let (cx, view, _) = harness(
+            cx,
+            vec![
+                SearchItem::new("export", "Export recording").group("File"),
+                SearchItem::new("report", "Send report").group("File"),
+                SearchItem::new("present", "Present slides").group("View"),
+                SearchItem::new("pointer", "Show pointer").group("View"),
+            ],
+        );
+        let visible = |query: &str, cx: &mut VisualTestContext| {
+            cx.update(|window, cx| {
+                let command = view.read(cx).command.clone();
+                command.update(cx, |state, cx| {
+                    state.set_query(query.to_owned(), window, cx);
+                    state.visible_indices().to_vec()
+                })
+            })
+        };
+        assert_eq!(visible("", cx), [0, 1, 2, 3], "an empty query keeps order");
+        assert_eq!(
+            visible("rep", cx),
+            [1, 0, 2],
+            "a word start ranks above in-order letters"
+        );
+        assert_eq!(
+            visible("pnt", cx),
+            [3, 2, 1],
+            "tighter in-order matches rank first"
+        );
+        assert_eq!(
+            visible("po", cx),
+            [3, 0, 1],
+            "the best group leads, kept contiguous"
+        );
+        cx.update(|_, cx| {
+            let groups = view.read(cx).command.read(cx).visible_groups();
+            assert_eq!(groups, ["View", "File"]);
+            assert_eq!(view.read(cx).command.read(cx).highlighted_index(), Some(3));
+        });
+        assert_eq!(visible("re sl", cx), [2], "every term must match");
+        assert!(visible("xyz", cx).is_empty());
     }
 }

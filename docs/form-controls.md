@@ -228,7 +228,8 @@ request ordering and errors; no network controller is installed.
 Native semantics include the ComboBox query, expanded state, named groups,
 committed selected values and a multiselectable listbox in multiple mode. The
 pinned GPUI API cannot express an input-to-sibling-list active-descendant
-relationship. Free-form committed values and fuzzy ranking are not supplied.
+relationship. Free-form committed values are not supplied. Results use Command's
+ranked in-order matching.
 The settings example retains a single preset inside Dialog. The catalogue's
 Selection view demonstrates grouped multiple targets, chip removal and a local
 source update without a second input or selection engine.
