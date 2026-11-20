@@ -61,6 +61,7 @@ pub struct Checkbox {
     children: SmallVec<[AnyElement; 2]>,
     on_change: Option<ChangeHandler>,
     accessibility_label: Option<SharedString>,
+    field: crate::FieldMetadata,
     tab_index: isize,
     tab_stop: bool,
     provided_focus_handle: Option<FocusHandle>,
@@ -80,6 +81,7 @@ impl Checkbox {
             children: SmallVec::new(),
             on_change: None,
             accessibility_label: None,
+            field: crate::FieldMetadata::default(),
             tab_index: 0,
             tab_stop: true,
             provided_focus_handle: None,
@@ -122,6 +124,14 @@ impl Checkbox {
     /// whenever it is drawn without visible text.
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.accessibility_label = Some(label.into());
+        self
+    }
+
+    /// Applies a [`crate::ControlField`]'s label, description, required and
+    /// invalid metadata to this control's native node. The field label takes
+    /// precedence over `accessibility_label`.
+    pub fn field(mut self, metadata: crate::FieldMetadata) -> Self {
+        self.field = metadata;
         self
     }
 
@@ -240,11 +250,12 @@ impl RenderOnce for Checkbox {
         let next_state = self.state.activated();
         let style = self.resolved_style();
         let on_change = self.on_change;
+        let field = self.field;
 
         self.base
             .role(Role::CheckBox)
             .aria_toggled(self.state.toggled())
-            .when_some(self.accessibility_label, |this, label| {
+            .when_some(field.label.or(self.accessibility_label), |this, label| {
                 this.aria_label(label)
             })
             // Retain a currently focused control in the dispatch tree after it
@@ -271,7 +282,10 @@ impl RenderOnce for Checkbox {
             )
             .children(self.children)
             .refine_style(&style)
-            .a11y_disabled(disabled)
+            .when_some(field.description, |this, description| {
+                this.aria_description(description)
+            })
+            .a11y_form(disabled, field.required, field.invalid)
     }
 }
 

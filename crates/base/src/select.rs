@@ -426,6 +426,7 @@ pub struct Select {
     base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
     state: Entity<SelectState>,
     label: Option<SharedString>,
+    field: crate::FieldMetadata,
     trigger: Option<AnyElement>,
     content: Option<AnyElement>,
     style: StyleRefinement,
@@ -437,6 +438,7 @@ impl Select {
             base: div().id(id).test_support(),
             state: state.clone(),
             label: None,
+            field: crate::FieldMetadata::default(),
             trigger: None,
             content: None,
             style: StyleRefinement::default(),
@@ -445,6 +447,14 @@ impl Select {
 
     pub fn accessibility_label(mut self, label: impl Into<SharedString>) -> Self {
         self.label = Some(label.into());
+        self
+    }
+
+    /// Applies a [`crate::ControlField`]'s label, description, required and
+    /// invalid metadata to this control's native node. The field label takes
+    /// precedence over `accessibility_label`.
+    pub fn field(mut self, metadata: crate::FieldMetadata) -> Self {
+        self.field = metadata;
         self
     }
 
@@ -494,6 +504,7 @@ impl RenderOnce for Select {
         let outside_state = self.state.clone();
         let tab_state = self.state.clone();
         let tab_prev_state = self.state.clone();
+        let field = self.field;
 
         let trigger = div()
             .id("select-trigger")
@@ -536,7 +547,12 @@ impl RenderOnce for Select {
         self.base
             .role(Role::ComboBox)
             .aria_expanded(open)
-            .when_some(self.label, |this, label| this.aria_label(label))
+            .when_some(field.label.or(self.label), |this, label| {
+                this.aria_label(label)
+            })
+            .when_some(field.description, |this, description| {
+                this.aria_description(description)
+            })
             .when_some(value, |this, value| this.aria_value(value))
             .key_context(CONTEXT)
             .when(!disabled || focus.is_focused(window), |this| {
@@ -589,7 +605,7 @@ impl RenderOnce for Select {
             })
             .child(popup)
             .refine_style(&self.style)
-            .a11y_disabled(disabled)
+            .a11y_form(disabled, field.required, field.invalid)
     }
 }
 

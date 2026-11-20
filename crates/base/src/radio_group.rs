@@ -235,6 +235,7 @@ pub struct RadioGroup {
     base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
     state: Entity<RadioGroupState>,
     label: Option<SharedString>,
+    field: crate::FieldMetadata,
     axis: Axis,
     direction: Option<crate::Direction>,
     style: StyleRefinement,
@@ -247,6 +248,7 @@ impl RadioGroup {
             base: div().id(id).test_support(),
             state: state.clone(),
             label: None,
+            field: crate::FieldMetadata::default(),
             axis: Axis::Vertical,
             direction: None,
             style: StyleRefinement::default(),
@@ -264,6 +266,14 @@ impl RadioGroup {
     /// Overrides the inherited logical direction for horizontal arrows.
     pub fn direction(mut self, direction: crate::Direction) -> Self {
         self.direction = Some(direction);
+        self
+    }
+
+    /// Applies a [`crate::ControlField`]'s label, description, required and
+    /// invalid metadata to this control's native node. The field label takes
+    /// precedence over `accessibility_label`; required and invalid apply to the group.
+    pub fn field(mut self, metadata: crate::FieldMetadata) -> Self {
+        self.field = metadata;
         self
     }
 
@@ -303,6 +313,7 @@ impl RenderOnce for RadioGroup {
         let down_state = self.state.clone();
         let left_state = self.state.clone();
         let right_state = self.state;
+        let field = self.field;
 
         self.base
             .role(Role::RadioGroup)
@@ -310,7 +321,12 @@ impl RenderOnce for RadioGroup {
                 Axis::Horizontal => accesskit::Orientation::Horizontal,
                 Axis::Vertical => accesskit::Orientation::Vertical,
             })
-            .when_some(self.label, |this, label| this.aria_label(label))
+            .when_some(field.label.or(self.label), |this, label| {
+                this.aria_label(label)
+            })
+            .when_some(field.description, |this, description| {
+                this.aria_description(description)
+            })
             .key_context(CONTEXT)
             .on_action(move |_: &SelectUp, window, cx| {
                 up_state.update(cx, |state, cx| state.move_selection(false, window, cx));
@@ -330,7 +346,7 @@ impl RenderOnce for RadioGroup {
             })
             .children(self.children)
             .refine_style(&self.style)
-            .a11y_disabled(disabled)
+            .a11y_form(disabled, field.required, field.invalid)
     }
 }
 

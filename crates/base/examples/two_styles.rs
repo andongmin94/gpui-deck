@@ -15,16 +15,17 @@ use gpui_design::{
     Breadcrumb, BreadcrumbItem, BreadcrumbList, Button, Calendar, CalendarDay, CalendarSelection,
     CalendarState, Checkbox, CheckboxState, Collapsible, CollapsibleContent, CollapsibleState,
     CollapsibleTrigger, Combobox, ComboboxList, ComboboxOption, ComboboxState, Command,
-    CommandEvent, CommandInput, CommandList, CommandOption, CommandState, ContextMenu, DatePicker,
-    DatePickerState, Dialog, DialogBackdrop, DialogClose, DialogDescription, DialogPopup,
-    DialogState, DialogTitle, DropdownMenu, Field, HoverCard, HoverCardState, Input, InputBase,
-    Label, MenuEvent, MenuItem, MenuOption, MenuState, NaiveDate, Popover, PopoverState, Progress,
-    RadioGroup, RadioGroupState, RadioItem, RadioOption, Resizable, ResizablePanel, ResizableState,
-    ScrollArea, ScrollbarAxis, ScrollbarMode, SearchItem, Select, SelectItem, SelectOption,
-    SelectState, Separator, Slider, SliderState, SliderThumb, Switch, Tab, TabItem, TabList,
-    TabPanel, Table, TableCaption, TableCell, TableColumn, TableRow, TabsState,
-    TestSupportExt as _, TestTextExt as _, Textarea, TextareaState, Toggle, ToggleGroup,
-    ToggleGroupState, ToggleItem, ToggleOption, Tooltip, TooltipState,
+    CommandEvent, CommandInput, CommandList, CommandOption, CommandState, ContextMenu,
+    ControlField, DatePicker, DatePickerState, Dialog, DialogBackdrop, DialogClose,
+    DialogDescription, DialogPopup, DialogState, DialogTitle, DropdownMenu, Field, HoverCard,
+    HoverCardState, Input, InputBase, Label, MenuEvent, MenuItem, MenuOption, MenuState, NaiveDate,
+    Popover, PopoverState, Progress, RadioGroup, RadioGroupState, RadioItem, RadioOption,
+    Resizable, ResizablePanel, ResizableState, ScrollArea, ScrollbarAxis, ScrollbarMode,
+    SearchItem, Select, SelectItem, SelectOption, SelectState, Separator, Slider, SliderState,
+    SliderThumb, Switch, Tab, TabItem, TabList, TabPanel, Table, TableCaption, TableCell,
+    TableColumn, TableRow, TabsState, TestSupportExt as _, TestTextExt as _, Textarea,
+    TextareaState, Toggle, ToggleGroup, ToggleGroupState, ToggleItem, ToggleOption, Tooltip,
+    TooltipState,
     input::{InputAccessibility, InputEditorStyle, InputEvent, InputState},
     parse_date_text,
 };
@@ -2008,9 +2009,11 @@ impl Render for Demo {
             );
         let stroke_state = self.stroke.read(cx);
         let stroke_label = stroke_state.selected_item().unwrap().label().clone();
+        let stroke_focus = stroke_state
+            .option_focus_handle(stroke_state.selected_index().unwrap_or(0))
+            .clone();
         let stroke = RadioGroup::new("stroke-width", &self.stroke)
             .axis(Axis::Horizontal)
-            .accessibility_label("Stroke width")
             .flex()
             .flex_wrap()
             .gap_2()
@@ -2098,12 +2101,18 @@ impl Render for Demo {
                     .child(show_cursor)
                     .child(keep_toolbar)
                     .child(
-                        div()
+                        // The field label focuses the checked option, as a
+                        // label for a radio group does.
+                        ControlField::new("stroke-width-field", &stroke_focus, "Stroke width")
+                            .description("Applies to new strokes.")
+                            .styles(|styles| {
+                                styles
+                                    .description(|style| style.text_sm().text_color(palette.muted))
+                            })
+                            .control(move |metadata| stroke.field(metadata))
                             .flex()
                             .flex_col()
-                            .gap_1()
-                            .child("Stroke width")
-                            .child(stroke),
+                            .gap_1(),
                     )
                     .child(
                         Separator::new("notes-separator")

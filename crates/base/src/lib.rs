@@ -112,7 +112,7 @@ pub use drawer::{Drawer, DrawerState};
 pub use dropdown_menu::DropdownMenu;
 pub use element_ext::ElementExt;
 pub use event::{InteractiveElementExt, OngoingScrollExt};
-pub use field::{Field, FieldStyles};
+pub use field::{ControlField, Field, FieldMetadata, FieldStyles};
 pub use focus_trap::FocusTrapElement;
 pub(crate) use focus_trap::active_focus_trap;
 pub use geometry::*;

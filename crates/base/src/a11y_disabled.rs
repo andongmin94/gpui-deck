@@ -81,6 +81,9 @@ pub(crate) trait A11yDisabledExt: Sized {
 
     /// Sets the native sort direction on the existing column-header node.
     fn a11y_sort(self, direction: Option<accesskit::SortDirection>) -> Self::Output;
+
+    /// Marks disabled, required and invalid form-control state together.
+    fn a11y_form(self, disabled: bool, required: bool, invalid: bool) -> Self::Output;
 }
 
 #[cfg(not(feature = "test-support"))]
@@ -94,6 +97,10 @@ impl<E: Element + InteractiveElement> A11yDisabledExt for E {
     fn a11y_sort(self, direction: Option<accesskit::SortDirection>) -> Self::Output {
         A11yDisabled::new(self, false).with_sort_direction(direction)
     }
+
+    fn a11y_form(self, disabled: bool, required: bool, invalid: bool) -> Self::Output {
+        A11yDisabled::new(self, disabled).with_validation(required, invalid)
+    }
 }
 
 #[cfg(feature = "test-support")]
@@ -106,6 +113,10 @@ impl<E: Element + InteractiveElement> A11yDisabledExt for gpui::Stateful<E> {
 
     fn a11y_sort(self, direction: Option<accesskit::SortDirection>) -> Self::Output {
         A11yDisabled::new(self, false).with_sort_direction(direction)
+    }
+
+    fn a11y_form(self, disabled: bool, required: bool, invalid: bool) -> Self::Output {
+        A11yDisabled::new(self, disabled).with_validation(required, invalid)
     }
 }
 
@@ -123,6 +134,12 @@ impl<E: Element<PrepaintState = Option<gpui::Hitbox>> + InteractiveElement> A11y
 
     fn a11y_sort(self, direction: Option<accesskit::SortDirection>) -> Self::Output {
         self.map_inner(|inner| A11yDisabled::new(inner, false).with_sort_direction(direction))
+    }
+
+    fn a11y_form(self, disabled: bool, required: bool, invalid: bool) -> Self::Output {
+        self.map_inner(|inner| {
+            A11yDisabled::new(inner, disabled).with_validation(required, invalid)
+        })
     }
 }
 

@@ -30,7 +30,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **RadioGroup** | Single selection, programmatic set/clear, one Tab stop, arrow navigation, disabled options, and focus | Group layout and option rendering |
 | **Input** | Text editing state, selection, clipboard, focus, and the native text-input interface | Field container, text style, caret, and surrounding controls |
 | **Textarea** | Multiline editing over the same engine, retained text, wrapping, and normal form Tab traversal | Field container, dimensions, text style, and surrounding content |
-| **Field** | Label focus, help/error descriptions, and required/invalid metadata for existing Input/Textarea-based controls | Layout, label/help/error styles, control rendering, and validation rules |
+| **Field** | Label focus, help/error descriptions, and required/invalid metadata for Input/Textarea-based controls, plus ControlField for Checkbox, Switch, RadioGroup and Select | Layout, label/help/error styles, control rendering, and validation rules |
 | **Label** | Named native text label that focuses an existing control when clicked, with an explicit disabled flag and no extra Tab stop | Text, layout, styling, target accessible name, and matching disabled state |
 | **Select** | Fixed single selection, buffered typeahead, Home/End and arrow navigation, disabled options, commit, and focus | Trigger, popup content, and option rendering |
 | **Combobox** | Editable single/multiple selection, grouped search results, replaceable options, keyboard/pointer commit, and draft cancellation | Query frame, suggestion surface, result rows, selected chips, and empty state |
