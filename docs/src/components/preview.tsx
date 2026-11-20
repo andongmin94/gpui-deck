@@ -1,10 +1,30 @@
 "use client";
 
 import { useI18n } from "fumadocs-ui/contexts/i18n";
-import { useTheme } from "next-themes";
-import { type ReactNode, useState, useSyncExternalStore } from "react";
+import { type ReactNode, useState } from "react";
 
-const noSubscription = () => () => {};
+const labels = {
+  en: {
+    preview: "Preview",
+    code: "Code",
+    note: "Rendered by GPUI’s web backend from the real component. Requires a browser with WebGPU.",
+  },
+  ko: {
+    preview: "미리보기",
+    code: "코드",
+    note: "GPUI 웹 백엔드가 그리는 실제 컴포넌트입니다. WebGPU를 지원하는 브라우저가 필요합니다.",
+  },
+  ja: {
+    preview: "プレビュー",
+    code: "コード",
+    note: "GPUI の Web バックエンドが描画する実際のコンポーネントです。WebGPU 対応のブラウザが必要です。",
+  },
+  zh: {
+    preview: "预览",
+    code: "代码",
+    note: "由 GPUI 的 Web 后端渲染的真实组件。需要支持 WebGPU 的浏览器。",
+  },
+} as const;
 
 /**
  * A live GPUI Design component rendered by GPUI's web backend inside an
@@ -19,22 +39,14 @@ export function ComponentPreview({
   height?: number;
   children?: ReactNode;
 }) {
-  const { resolvedTheme } = useTheme();
   const { locale } = useI18n();
-  const ko = locale === "ko";
+  const t = labels[(locale ?? "en") as keyof typeof labels] ?? labels.en;
   const [tab, setTab] = useState<"preview" | "code">("preview");
-  // The theme is known only in the browser, so the frame waits for hydration.
-  const hydrated = useSyncExternalStore(
-    noSubscription,
-    () => true,
-    () => false,
-  );
-  const theme = hydrated ? (resolvedTheme === "dark" ? "dark" : "light") : undefined;
 
   const tabs = children
     ? [
-        { id: "preview" as const, label: ko ? "미리보기" : "Preview" },
-        { id: "code" as const, label: ko ? "코드" : "Code" },
+        { id: "preview" as const, label: t.preview },
+        { id: "code" as const, label: t.code },
       ]
     : [];
 
@@ -62,24 +74,16 @@ export function ComponentPreview({
       )}
       <div className={tab === "preview" ? (tabs.length > 0 ? "mt-4" : "") : "hidden"}>
         <div className="overflow-hidden rounded-lg border bg-fd-background">
-          {theme ? (
-            <iframe
-              key={theme}
-              title={`${name} preview`}
-              src={`/preview?c=${encodeURIComponent(name)}&theme=${theme}`}
-              loading="lazy"
-              className="block w-full"
-              style={{ height }}
-            />
-          ) : (
-            <div style={{ height }} />
-          )}
+          {/* The frame follows the page theme itself, so it starts before hydration. */}
+          <iframe
+            title={`${name} preview`}
+            src={`/preview?c=${encodeURIComponent(name)}`}
+            loading="lazy"
+            className="block w-full"
+            style={{ height }}
+          />
         </div>
-        <p className="mt-2 text-xs text-fd-muted-foreground">
-          {ko
-            ? "GPUI 웹 백엔드가 그리는 실제 컴포넌트입니다. WebGPU를 지원하는 브라우저가 필요합니다."
-            : "Rendered by GPUI’s web backend from the real component. Requires a browser with WebGPU."}
-        </p>
+        <p className="mt-2 text-xs text-fd-muted-foreground">{t.note}</p>
       </div>
       <div className={tab === "code" ? "mt-4 [&_figure]:my-0" : "hidden"}>{children}</div>
     </div>
