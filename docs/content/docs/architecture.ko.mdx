@@ -1,0 +1,66 @@
+---
+title: 아키텍처
+description: "렌더링 런타임, 헤드리스 동작, 애플리케이션 화면 표현 계층이 작업을 나누는 방식입니다."
+---
+
+| 계층 | 구현과 출처 | 책임 |
+| --- | --- | --- |
+| 렌더링과 애플리케이션 런타임 | 고정된 `gpui-pre` 스냅샷 패키지로 사용하는 Zed의 GPUI | 창, 레이아웃, 그리기, 텍스트, 이벤트, 엔티티, 포커스 인프라 |
+| 헤드리스 동작 | Longbridge의 `gpui-base` 0.9.0에서 추출한 이 저장소의 `gpui-design` 크레이트 | 컨트롤 상태, 상호작용 계약, 포커스 정책, 접근성 시맨틱 |
+| 화면 표현과 조합 | `two_styles`가 사용하는 복사 가능한 `examples/recipes` 모듈을 포함한 애플리케이션 코드 | 색상, 크기, 아이콘, 컴포넌트 배치, 애플리케이션 액션 |
+
+`crates/base`는 GPUI Kit에서 물려받은 디렉터리 이름입니다. 이 Cargo 패키지는
+이제 `gpui-design`이며, 선택한 소스는 이곳에서 유지 관리합니다. 원본
+[`gpui-base` README](https://github.com/longbridge/gpui-kit/blob/7591a35eced761e3613c01e71ff04c10129dae1a/crates/base/README.md)도
+스타일이 없는 동작 기반을 설명했습니다. GPUI Design은 그 작업 위에 더 좁은 공개
+표면과 독립적으로 유지 관리하는 상태 및 포커스 계약을 쌓습니다. 업스트림 소스 변경은
+검토한 뒤 명시적으로 도입합니다.
+
+[`gpui-pre`](https://gpui-kit.com/docs/installation/#why-the-dependency-is-named-gpui-pre)는
+Zed GPUI의 버전 정렬 스냅샷을 배포합니다. 고정된 0.3.11 패키지는 Zed 리비전
+`f816e1f9263e3a8ef63c4baaa02e1441ce1c6038`을 기록합니다.
+
+위에 나열한 컨트롤은 동작 계층에 속합니다. 복합 컨트롤은 이 계층을 재사용합니다.
+Toggle과 Collapsible 트리거는 Button을 조합하고, ToggleGroup은 Toggle을, AlertDialog는
+Dialog를 조합합니다. DropdownMenu와 ContextMenu는 MenuState, MenuItem, MenuOption,
+MenuEvent를 공유합니다. 공통 메뉴 동작은 Popover를 조합하며, 트리거 상호작용과 요청된
+배치만 다릅니다.
+`MenuOption::checked(bool)`, `check_state(CheckboxState)`, `radio_checked(bool)`은
+애플리케이션이 소유하는 상태를 네이티브 메뉴 시맨틱으로 투영합니다. `MenuSubmenu`는
+리프 활성화를 루트 MenuState로 전달하며, 별도의 선택 저장소를 추가하지 않습니다.
+Command는 쿼리에 Input을 재사용하며 Dialog 안에 둘 수 있습니다. Combobox는 Command의
+필터링, 결과 커서, 스크롤, 활성화를 재사용하고, 단일 또는 다중 확정 값과 Popup으로
+배치되는 제안 표면을 갖습니다. Textarea는 기존 여러 줄 편집 상태를 렌더링합니다.
+Field는 연결된 텍스트를 해당 네이티브 입력의 시맨틱으로 투영합니다. Label은 클릭 시
+포커스를 위해 대상의 기존 FocusHandle을 사용합니다. 고정된 GPUI API는 형제 요소 사이의
+네이티브 labelled-by 관계를 노출하지 않습니다. Tooltip은 Button과 GPUI의 네이티브 툴팁
+계층을 재사용하면서 호버/포커스 표시 상태를 유지합니다. HoverCard는 Button과 Popup 배치,
+유지되는 호버/포커스 생명주기를 결합하며 트리거의 포커스를 빼앗지 않습니다.
+Calendar는 날짜 활성화에 Button을 조합하고, 그레고리력 계산에는 이미 잠긴 Chrono
+날짜 타입을 사용합니다. DatePicker는 그 Calendar를 Popover의 포커스 및 닫기 생명주기와
+조정하며, 중복된 날짜 값이나 팝업 엔진이 없습니다. Resizable은 유지되는 다중 패널 그룹에
+GPUI flex 레이아웃과 네이티브 드래그를 사용합니다.
+Table은 공유 GPUI 열 트랙과 네이티브 테이블 시맨틱을 사용합니다. ScrollArea는
+GPUI의 ScrollHandle 뷰포트를 유지되는 Scrollbar 구현과 조합하며, 별도의 스크롤 엔진이
+없습니다.
+Breadcrumb은 네이티브 내비게이션/목록 구조와 현재 페이지 메타데이터를 제공합니다.
+소비자 애플리케이션은 일반 Button을 조합하고 그 이동 콜백을 소유합니다.
+외형은 애플리케이션에 속합니다. 로컬 `gpui-design-cli`는 선택한 화면 표현 레시피와
+그 의존성을 소비자가 소유하는 모듈로 복사합니다. 원격 레지스트리와 별도로 배포되는
+스타일 컴포넌트 패키지는 제공하지 않습니다.
+
+상태 소유권, 키보드 계약, 애플리케이션이 소유하는 스타일은
+[폼 컨트롤 가이드](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md)를
+참고합니다. Checkbox와 Switch는 다음 값을 콜백으로 알리며, 애플리케이션이 이를 저장하고
+뷰에 알립니다. RadioGroup은 선택과 옵션 포커스를 엔티티에 유지하고, 고유한 값을 가진
+고정된 순서의 옵션을 받으며, 화살표 탐색 시 즉시 선택을 바꿉니다.
+
+[내비게이션과 오버레이 가이드](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md)는 Breadcrumb, Tabs,
+Accordion, Collapsible, Popover, DropdownMenu, ContextMenu, Command, Tooltip,
+HoverCard, AlertDialog를 다룹니다. 비활성 패널은 레이아웃, 포커스, 접근성 노드에
+기여하지 않습니다. Popover는 기존 팝업 배치 프리미티브를 재사용하며, 키보드 포커스가
+둘러싼 창이나 대화상자 안에서 콘텐츠 밖으로 나갈 수 있게 합니다. 두 메뉴 트리거 모두
+이 생명주기를 사용하며 명령을 디스패치하기 전에 닫히므로, 명령이 새 포커스를 잃지 않고
+다른 표면을 열 수 있습니다.
+[레이아웃과 데이터 가이드](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md)는 공유 Table 열,
+ScrollArea 조합, Resizable 패널과 현재 한계를 설명합니다.

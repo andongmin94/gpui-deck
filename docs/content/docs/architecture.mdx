@@ -1,0 +1,67 @@
+---
+title: Architecture
+description: "How the rendering runtime, headless behavior and application presentation layers divide the work."
+---
+
+| Layer | Implementation and origin | Responsibility |
+| --- | --- | --- |
+| Rendering and application runtime | Zed's GPUI, consumed through the pinned `gpui-pre` snapshot packages | Windows, layout, drawing, text, events, entities, and focus infrastructure |
+| Headless behavior | This repository's `gpui-design` crate, extracted from Longbridge's `gpui-base` 0.9.0 | Control state, interaction contracts, focus policy, and accessibility semantics |
+| Presentation and composition | Application code, including the copyable `examples/recipes` modules used by `two_styles` | Colors, sizes, icons, component arrangement, and application actions |
+
+`crates/base` is the directory name inherited from GPUI Kit. Its Cargo package is
+now `gpui-design`; the selected source is maintained here. The original
+[`gpui-base` README](https://github.com/longbridge/gpui-kit/blob/7591a35eced761e3613c01e71ff04c10129dae1a/crates/base/README.md)
+already described an unstyled behavior foundation. GPUI Design builds on that
+work with a narrower public surface and independently maintained state and focus
+contracts. Upstream source changes are reviewed and adopted explicitly.
+
+[`gpui-pre`](https://gpui-kit.com/docs/installation/#why-the-dependency-is-named-gpui-pre)
+publishes version-aligned snapshots of Zed's GPUI. The pinned 0.3.11 package
+records Zed revision `f816e1f9263e3a8ef63c4baaa02e1441ce1c6038`.
+
+The controls listed above belong to the behavior layer. Compound controls reuse
+that layer: Toggle and Collapsible triggers compose Button, ToggleGroup composes
+Toggle, and AlertDialog composes Dialog. DropdownMenu and ContextMenu share
+MenuState, MenuItem, MenuOption, and MenuEvent. Their common menu behavior composes
+Popover; only the trigger interaction and requested placement differ.
+`MenuOption::checked(bool)`, `check_state(CheckboxState)` and `radio_checked(bool)`
+project application-owned state into native menu semantics. `MenuSubmenu` routes
+leaf activation through the root MenuState; it does not add another selection store.
+Command reuses Input for its query and can be hosted in Dialog. Combobox reuses
+Command's filtering, result cursor, scrolling, and activation, with single or
+multiple committed values and a suggestion surface positioned by Popup. Textarea renders the existing
+multiline editing state. Field projects associated text into that native input's
+semantics. Label uses the target's existing FocusHandle for click-to-focus;
+the pinned GPUI API does not expose a native labelled-by relationship between
+the sibling elements. Tooltip reuses Button and GPUI's native tooltip layer while retaining
+hover/focus visibility. HoverCard combines Button with Popup positioning and a
+retained hover/focus lifecycle without taking focus from the trigger.
+Calendar composes Button for day activation and uses the already locked Chrono
+date type for Gregorian arithmetic. DatePicker coordinates that Calendar with
+Popover's focus and dismissal lifecycle; it has no duplicate date value or popup
+engine. Resizable uses GPUI flex layout and native dragging for retained multi-panel groups.
+Table uses shared GPUI column tracks and
+native table semantics. ScrollArea composes GPUI's ScrollHandle viewport with the
+retained Scrollbar implementation, without another scrolling engine.
+Breadcrumb supplies native navigation/list structure and current-page metadata;
+the consumer composes ordinary Buttons and owns their destination callbacks.
+Appearance belongs in the application. The local `gpui-design-cli` copies selected
+presentation recipes and their dependencies into consumer-owned modules. A remote
+registry and separately published styled component package are not provided.
+
+See the [form control guide](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md) for state ownership, keyboard
+contracts, and application-owned styling. Checkbox and Switch report the next
+value through a callback; the application stores it and notifies its view.
+RadioGroup retains selection and option focus in an entity, accepts fixed ordered
+options with unique values, and changes selection immediately on arrow navigation.
+
+The [navigation and overlay guide](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md) covers Breadcrumb, Tabs,
+Accordion, Collapsible, Popover, DropdownMenu, ContextMenu, Command, Tooltip,
+HoverCard, and AlertDialog. Inactive panels do
+not contribute layout, focus, or accessibility nodes. Popover reuses the existing popup positioning
+primitive and lets keyboard focus leave its contents within the enclosing window
+or dialog. Both menu triggers use that lifecycle and close before dispatching a
+command, so a command can open another surface without losing its new focus.
+The [layout and data guide](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md) explains shared Table columns,
+ScrollArea composition, Resizable panes, and their current limits.

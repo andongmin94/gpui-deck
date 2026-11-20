@@ -1,0 +1,28 @@
+---
+title: Alert Dialog
+description: "Dialog's modal lifecycle with alert semantics and blocked backdrop dismissal."
+---
+
+<ComponentPreview name="alert-dialog" height={360} />
+
+`AlertDialog::new(&dialog_state)` composes the existing Dialog host for a short
+decision. Use the same retained `DialogState`, `DialogBackdrop`, `DialogPopup`,
+`DialogTitle`, `DialogDescription`, and `DialogClose` parts; there is no separate
+alert state or duplicated modal lifecycle. Keep the host mounted while closed.
+
+Give the host an `accessibility_label` and `accessibility_description`, and
+provide its backdrop and popup. The wrapper fixes the native role to AlertDialog
+and prevents backdrop presses from dismissing it. Escape still cancels through
+Dialog's existing close path. Tab containment and return focus also belong to
+Dialog and Root.
+
+Create a stable focus handle for the cancellation button and pass it to
+`DialogState::new(cx).with_initial_focus(&cancel_focus)`. Apply that same handle
+to the Button supplied by `DialogClose::trigger`. The confirmation is an ordinary
+Button whose application callback performs the action and closes the state.
+Closing the dialog by itself never implies confirmation; do not attach the
+confirmation action to a generic `DialogEvent::Closed` notification.
+
+The example's Reset preview menu command opens this host. Cancel initially owns
+focus and preserves the current preview. Only the explicit Reset preview button
+restores 40% known progress, then returns focus to the menu trigger.

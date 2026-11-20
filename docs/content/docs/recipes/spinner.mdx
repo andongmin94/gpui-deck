@@ -1,0 +1,35 @@
+---
+title: Spinner
+description: "Named indeterminate Progress with a rotating arc that respects GPUI's reduced-motion setting."
+---
+
+[`spinner.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/spinner.rs) adds a rotating arc to
+the existing indeterminate Progress. Supply the operation's accessible name:
+
+```rust
+Spinner::new("preview-progress", "Preview progress", palette)
+    .size(rems(1.25))
+    .text_color(palette.accent)
+```
+
+The default size is one rem and the default color is the consumer's accent.
+`Styled` controls the root; the arc follows its actual bounds and text color.
+Progress supplies the sole native ProgressIndicator role, label, and numeric
+range, with no current numeric value. The visual arc adds no separate role,
+accessible name, or Tab stop. This is an indeterminate progress indicator; it
+does not provide an automatic live announcement.
+
+GPUI's `AnimationExt` owns the one-second repeating animation. It renders a
+static arc without requesting animation frames when `App::reduce_motion()` is
+enabled. Applications can set that existing preference with
+`App::set_reduce_motion(bool)`; automatic synchronization with an operating
+system preference is outside this recipe. There is no recipe-specific animation
+controller, retained loading state, or timer.
+
+Mount Spinner while the application considers an operation pending and remove
+it when that operation finishes. In the example, the existing Unknown progress
+toggle replaces the determinate bar with Spinner and Skeleton in the same
+bounded row. Both progress presentations keep the `preview-progress` ID and
+accessible name. The Slider retains its known value while the unknown state is
+shown, and Reset preview returns to known progress at 40%. This remains a
+controlled preview; the recipe does not start a recording or a background task.

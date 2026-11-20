@@ -1,0 +1,66 @@
+---
+title: Field
+description: "Label focus, help/error descriptions, and required/invalid metadata for Input/Textarea-based controls, plus ControlField for Checkbox, Switch, RadioGroup and Select."
+---
+
+<ComponentPreview name="field" height={360} />
+
+`Field::new(id, &input_state, label)` associates a visible label, optional help,
+and validation feedback with one retained input. The same constructor accepts
+InputState and TextareaState; a Combobox exposes its query through `input()`.
+Keep that input's renderer among the Field's children. The label is clickable,
+focuses the live enabled input, and does not add another Tab stop.
+
+```rust
+Field::new("session-name-field", &self.input, "Session name")
+    .description("Choose a name to recognize this session.")
+    .required(true)
+    .error(name_invalid.then(|| "A session name is required.".into()))
+    .styles(|styles| {
+        styles
+            .description(|style| style.text_color(muted))
+            .error(|style| style.text_color(error_color))
+    })
+    .flex()
+    .flex_col()
+    .gap_1()
+    .child(input_frame)
+```
+
+The application owns validation and submission. In the native example, an empty
+name supplies the error and disables Done; typing a name clears both. Field
+renders label, control children, help, and error in order, with styles supplied
+through `FieldStyles`. It supplies no color palette, validation schema, or form
+controller. Its control association covers the retained text-input family;
+`ControlField` below covers choice controls.
+
+The actual native input receives the label, an error-before-help description,
+and required/invalid flags. Existing role, placeholder, accessibility identifier,
+value-exposure policy, and popup expanded state are preserved. Passing
+`error(None)` clears invalid state. The supporting `InputAccessibility` builders
+are `with_description`, `with_required`, and `with_invalid`; the input remains
+the only editing and focus owner.
+
+
+## ControlField for choice controls
+
+`ControlField::new(id, &focus, label)` gives a Checkbox, Switch, RadioGroup or
+Select the same label, help, error and required/invalid contract. Its
+`.control(|metadata| ...)` builder receives a `FieldMetadata`; pass it to the
+control's `.field(metadata)`, which names the control, describes it with the
+error before the help, and marks its existing native node required or invalid.
+The field label wins over the control's own `accessibility_label`.
+
+```rust
+ControlField::new("stroke-width-field", &checked_option_focus, "Stroke width")
+    .description("Applies to new strokes.")
+    .control(move |metadata| stroke_group.field(metadata))
+```
+
+Clicking the label focuses `focus` without adding a Tab stop. For a Checkbox or
+Switch, `.on_label_activate(...)` then toggles the application value, as an HTML
+`label` does; `.control_first(true)` draws the control before its label.
+`.disabled(true)` mirrors a disabled control so the label neither focuses nor
+activates it. For a RadioGroup, pass the checked option's focus handle. The
+Settings Preferences view wraps Stroke width this way. Layout and validation
+remain application-owned.

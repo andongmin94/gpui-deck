@@ -1,0 +1,54 @@
+---
+title: Toggle and Toggle Group
+description: "Controlled pressed state over Button's activation, focus, and disabled behavior."
+---
+
+<ComponentPreview name="toggle" height={360} />
+
+`Toggle::new(id).pressed(bool)` is a controlled toggle button. It composes the
+existing Button, reusing native click/Enter/Space activation, disabled behavior,
+and focus. Its added contract is the pressed accessibility state and
+`on_change(next_pressed, event, window, cx)`. The application stores that value,
+notifies its view, and supplies content and pressed-state styling. A stable label
+names the action while the pressed metadata describes its current state.
+
+Toggle accepts `accessibility_label`, `disabled`, `track_focus`, `tab_index`,
+and `tab_stop`, along with normal GPUI styling and children.
+
+For independent options that can be pressed together, create
+`ToggleGroupState::new(items, cx)` from fixed, ordered
+`ToggleItem::new(value, label)` entries with unique values. Mark unavailable items
+with `.disabled(true)` and optionally set `.default_values([values])`. Defaults
+must identify enabled items. Selection starts empty when no defaults are supplied.
+Use `.single_selection()` for optional exclusive choice. Activating another option
+replaces the previous value; activating the pressed option clears selection.
+Single-selection defaults may contain at most one distinct value, regardless of
+the order of `.single_selection()` and `.default_values(...)`.
+
+Render `ToggleGroup::new(id, &state).accessibility_label(...)` and one
+`ToggleOption::new(&state, index)` for each item. Each option composes Toggle.
+The group supplies a Group role and orientation; application code supplies layout
+separately. Read `items()`, `is_pressed(index)`, and `selected_values()` for the
+current presentation. Observe the entity and subscribe to
+`ToggleGroupEvent::Change(values)` for changes to the selected set; values follow
+the original item order.
+
+`set_selected_values(values, window, cx)` replaces the pressed set without a user
+event, focus change or cursor change. Duplicate values are deduplicated; an empty
+iterator clears it. Unknown/disabled values or multiple distinct values in single
+mode return false without changing anything. Application updates remain allowed
+while the group is disabled. The session example applies its initial radio and
+formatting values through these retained-state setters.
+
+The group has one Tab stop, at its last focused enabled option or initially its
+first enabled option. Horizontal Left/Right or vertical Up/Down move between
+enabled options and wrap. Home/End reach the first/last enabled option. The other
+axis propagates. Moving focus never changes the selected set; click, Enter, and
+Space toggle the focused option according to the selection mode. Tab leaves the group.
+
+`set_disabled(disabled, window, cx)` disables the whole group while preserving
+selection. `option_focus_handle(index)` exposes stable option focus. RadioGroup
+provides exclusive choice with immediate selection during arrow navigation;
+ToggleGroup keeps focus movement independent of selection in either mode.
+The session example uses independent bold/italic summary-text styling, and the
+catalogue uses single selection for optional Center/End document alignment.

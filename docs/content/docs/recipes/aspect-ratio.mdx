@@ -1,0 +1,36 @@
+---
+title: Aspect Ratio
+description: "Clipped media frame with a finite positive width/height ratio and application-owned content."
+---
+
+[`aspect_ratio.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/aspect_ratio.rs) provides a
+clipped media frame using GPUI's existing aspect-ratio layout:
+
+```rust
+AspectRatio::new("recording-frame", 16. / 9.)
+    .w(px(320.))
+    .rounded(palette.radius)
+    .bg(palette.field)
+    .child(media)
+```
+
+The ratio is width divided by height and must be finite and positive. The default
+width fills its parent; give that parent a definite width or set `.w(...)` on the
+frame. Leave height automatic so GPUI can derive it from the width. Explicit
+height or min/max constraints follow GPUI's ordinary layout rules and can
+override its preferred ratio.
+
+Children live in an absolute container that fills the frame, so their intrinsic
+sizes do not determine its height. Oversized content is clipped, including
+pointer interaction outside the frame. Supply `.size_full()` on an image or other
+child that should fill the container, and choose image object fit on that child.
+The frame adds no accessible role, name, focus stop, or retained state. Media
+children supply their own accessible descriptions and interaction. Background,
+rounding, and other presentation belong to the application through `Styled`.
+
+The preset HoverCard shows an illustrative recording frame containing the current
+session name. It uses 4:3 for Presentation and 16:9 for other presets or an empty
+selection. Changing the retained preset changes the ratio on the next render;
+editing the session name changes the displayed text. The supplied child has the
+native Image name describing the format. The preview creates no recording and
+does not add controls to HoverCard's noninteractive content.

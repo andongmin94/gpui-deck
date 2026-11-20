@@ -1,0 +1,80 @@
+---
+title: Tabs
+description: "Active panel, one tab-list stop, automatic or manual activation, orientation-aware keys, and disabled tabs."
+---
+
+<ComponentPreview name="tabs" height={360} />
+
+The tab family consists of `TabsState`, `TabList`, `Tab`, and `TabPanel`:
+
+1. Create `TabsState::new(items, cx)` with fixed ordered `TabItem::new(value, label)`
+   entries. Values must be unique. Mark unavailable entries with `.disabled(true)`.
+2. The first enabled tab starts selected. Use `.default_value(value)` to select
+   another enabled item; an unknown or disabled default is a configuration error
+   and panics. An empty or entirely disabled collection has no active panel.
+3. Render `TabList::new(id, &state)` with an accessible label and one
+   `Tab::new(&state, index)` for each item, in order.
+4. Render matching `TabPanel::new(&state, index)` elements beside the list. A plain
+   GPUI `div` can arrange the list and panels. There is no additional required root
+   wrapper or imposed layout.
+
+Each tab supplies its role, label, selected/disabled metadata, stable focus handle,
+and activation. The application supplies its visual content. The state exposes
+`items()`, `selected_index()`, `selected_item()`, `tab_focus_handle(index)`, and
+`panel_focus_handle(index)`. Observe the state to redraw the consuming view and
+subscribe to `TabsEvent::Change(value)` for changed selection. Selecting the
+current tab does not emit a duplicate event.
+
+`select_value(value, window, cx)` selects an enabled item without moving keyboard
+focus. It returns `true` and emits one `TabsEvent::Change` only when selection
+changes; unknown, disabled, and already-selected values return `false` without
+an event. Observe the state for the associated redraw. If selecting another
+item removes the currently focused content, the caller must move focus to a
+retained navigation entry or another valid target. This method does not choose
+that target or turn an ordinary navigation Button into a Tab.
+
+TabList activation is automatic by default: moving focus to an enabled tab also
+selects it, including programmatic and accessibility focus. Configure
+`TabsState::new(items, cx).manual_activation()` to keep focus and selection
+independent. In manual mode arrows and Home/End move focus while the current
+panel stays mounted; click, Enter, or Space commits the focused tab. Each list
+has one Tab stop: the selected tab in automatic mode, or the last focused tab
+(initially selected) in manual mode. `select_value` preserves manual focus entry.
+The catalogue uses manual activation; Compact's session tabs remain automatic.
+
+| Input | Horizontal list | Vertical list |
+| --- | --- | --- |
+| Left / Right | Previous / next enabled tab | Propagates without changing tabs |
+| Up / Down | Propagates without changing tabs | Previous / next enabled tab |
+| Home / End | First / last enabled tab | First / last enabled tab |
+| Enter / Space | Activate the focused tab | Activate the focused tab |
+| Tab / Shift-Tab | Leave the tab list | Leave the tab list |
+
+Arrow movement wraps at either end and skips disabled entries. Set the list's
+orientation with `.axis(Axis::Horizontal)` or `.axis(Axis::Vertical)` and arrange
+it with normal GPUI layout methods. Orientation does not choose a visual layout.
+
+Only the active panel is mounted. Inactive panels contribute no layout, focus
+stops, or accessibility nodes. Keep form data and retained input entities in the
+application view so values survive a panel being removed and rendered again.
+
+By default a panel is a focus scope without its own Tab stop; Tab can enter its
+interactive children. Use `.tab_stop(true)` for a panel that needs to receive
+focus itself, such as one containing only static text. The panel's accessible
+label comes from its tab. The pinned GPUI API exposes roles, labels, and selected
+state but not a public sibling-node relationship API, so explicit native
+tab-to-panel controls/labelled-by relationships are not emitted. Native screen
+reader behavior still needs desktop validation.
+
+The Sidebar recipe reuses the fixed items, selected value, and stable focus
+handles from a dedicated `TabsState`, with explicit Button activation instead
+of TabList's automatic selection. Create a fresh state for that use: TabList
+installs retained focus subscriptions, so a state previously bound to TabList
+must not be shared with or retargeted to Sidebar. Resizing the Settings example
+only rearranges its Sidebar and content; it never swaps them for TabList.
+
+`Button::current(true)` marks the selected navigation Button with native
+`AriaCurrent::Page`. Its default false value omits that property. The method
+leaves styling and focus unchanged; `Button::selected(...)` and the application's
+destination handler control those concerns separately. Sidebar keeps native
+Navigation/Button/Region semantics rather than the TabList/Tab/TabPanel roles.

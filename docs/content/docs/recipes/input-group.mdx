@@ -1,0 +1,45 @@
+---
+title: Input Group
+description: "Shared frame around an existing input, with leading/trailing addons and horizontal/vertical layout."
+---
+
+[`input_group.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/input_group.rs) supplies one
+frame around an existing control and optional leading/trailing elements. The
+constructor takes the control itself, so its native input renderer, value,
+selection, and input interface stay with the existing editor.
+
+```rust
+let control = InputBase::new("session-name")
+    .role(None::<Role>)
+    .semantic_owner::<Input>(input.entity_id())
+    .h(palette.control_height)
+    .w_full()
+    .child(Input::new(&input));
+
+InputGroup::new("session-name-group", control, palette)
+    .focused(input.focus_handle(cx).is_focused(window))
+    .invalid(name_invalid)
+    .trailing(default_name_button)
+```
+
+Place the group inside an existing `Field` to preserve the input's label, help,
+required state, and error metadata. Keep the native editor directly below its
+`InputBase` semantic owner; the group surrounds that complete control. Remove the
+control's old outer border and padding when the group supplies them. `CommandInput`
+can likewise be supplied directly, preserving its search and input semantics.
+
+Horizontal is the default. `.leading(element)` and `.trailing(element)` appear
+before and after the control. `.axis(Axis::Vertical)` places them above and below
+it; the example uses a trailing keyboard hint below the existing Textarea.
+Each slot accepts one element, which can be an application-owned container.
+Traversal follows the supplied leading/control/trailing order; put action buttons
+in the trailing slot when the input should precede them in the Tab sequence.
+
+The frame adds no Tab stop or click-to-focus handler. Supplied buttons retain
+their focus and callbacks. `focused` and `invalid` style the border only, with
+invalid taking precedence; native invalid metadata remains the Field's job.
+The application chooses which addons are enabled. In the example, Use default
+appears only for a missing session name and is disabled when the input is not
+editable. Its existing input state receives `MiniCast` and regains focus when the
+action runs. The recipe does not create a second text value or infer mutation
+permissions from its child elements. `Styled` can override the frame.

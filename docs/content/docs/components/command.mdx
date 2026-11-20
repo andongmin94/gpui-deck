@@ -1,0 +1,66 @@
+---
+title: Command
+description: "Ranked fuzzy text search, enabled-result navigation, pointer/Enter action dispatch, and highlighted-result scrolling."
+---
+
+<ComponentPreview name="command" height={360} />
+
+Create `CommandState::new(items, window, cx)` from ordered
+`SearchItem::new(value, label)` entries with unique values. Optional `.keywords`
+add search aliases; `.disabled(true)` makes an action unavailable. Observe the
+state for result rendering and subscribe to `CommandEvent::Action(value)` to
+handle execution in the application.
+
+`Command::new(id, &state)` hosts `CommandInput::new(id, &state)` and
+`CommandList::new(id, &state)`. Give the query and list accessible labels, and
+render `CommandOption::new(&state, index)` for `visible_indices()`, in that order.
+For `.group(label)` items, wrap matching options in named `CommandGroup` parts;
+`visible_groups()` and `visible_group_indices(Some(label))` expose the filtered
+collection. Keep each group contiguous in the source; empty groups disappear.
+Group headings have no focus stop and do not affect keyboard navigation. Read `items()` for labels and
+`highlighted_index()` for application-owned active-row styling. The list uses
+the existing GPUI ScrollHandle; give it a height or maximum height so the active
+result can scroll into view. Render an application-owned empty message when no
+items match.
+
+The existing InputState is the query's source of truth, exposed through `input()`.
+`set_query(text, window, cx)` updates it programmatically. The characters of each
+whitespace-separated query term must appear in order, ignoring case, in the item's
+value, label, or keywords, so `pnt` finds "Show pointer". Results rank a match at
+a word start above any other substring and those above looser in-order letters,
+summed over the terms. Groups stay contiguous, ordered by their best result;
+equal scores and an empty query keep source order.
+Matching includes disabled results for display. A changed
+query highlights its first enabled result; empty or all-disabled results have no
+active command. `set_items(items, window, cx)` replaces the collection while
+preserving the native query and focus; it retains an enabled matching highlight
+by value or picks the first enabled result. Applications own fetching and request
+ordering. A network controller is not provided.
+
+| Input | Behavior |
+| --- | --- |
+| Up / Down | Move among enabled matching results, wrapping at either end |
+| Enter | Execute the highlighted enabled result once |
+| Pointer hover / click | Highlight an enabled result / execute that result |
+| Space, Home, End, Left, Right | Remain ordinary query editing |
+| Tab / Shift-Tab | Follow normal container focus traversal; result rows are not Tab stops |
+| Escape | Remains available to the surrounding surface |
+
+Native focus stays in the query. While an IME has marked composition text,
+command navigation and execution leave that interaction to the input. Automated
+marked-text checks do not replace desktop Korean/CJK IME validation.
+
+The native tree exposes a named text input, listbox, and selected/disabled options.
+The pinned GPUI active-descendant API requires a focused ancestor; a sibling
+query/list cannot truthfully emit that relationship, so this implementation does
+not claim one or completed screen-reader validation.
+
+Command itself owns no popup lifecycle. To make a command palette, place it
+inside the existing Dialog and set the DialogState's initial focus to
+`focus_handle()`. The example closes that dialog before executing an action that
+may open another Dialog, preserving the menu trigger as the return target.
+Opening the palette clears its query in application code.
+
+SearchItem and the search implementation are also used by the editable
+[Combobox](./combobox.mdx). Combobox supplies its own committed value
+and popup lifecycle while Command remains an action list.

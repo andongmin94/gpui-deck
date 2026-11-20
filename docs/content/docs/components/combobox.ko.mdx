@@ -1,0 +1,62 @@
+---
+title: Combobox
+description: "편집 가능한 단일/다중 선택, 그룹으로 묶인 검색 결과, 교체 가능한 옵션, 키보드/포인터 확정, 초안 취소."
+---
+
+<ComponentPreview name="combobox" height={360} />
+
+순서가 있고 고유한 `SearchItem::new(value, label)` 항목으로
+`ComboboxState::new(items, window, cx)`를 생성합니다. `.keywords(...)`는 별칭을 추가하고,
+`.disabled(true)`는 사용할 수 없는 선택지를 표시하며, `.group(label)`은 이름 있는 결과
+그룹을 지정합니다. 각 그룹의 항목은 원본 순서에서 연속되게 둡니다.
+공유 Command 엔진이 네이티브 쿼리 편집, 필터링, 강조, 스크롤을 소유하고,
+Combobox는 확정된 선택과 팝업 수명 주기를 소유합니다.
+
+기본은 단일 선택입니다. `.multiple(true)`는 여러 값을 확정할 수 있게 합니다.
+`set_selected_values([values...], window, cx)`는 사용자 이벤트 없이 선택을 초기화하거나
+교체하며, 빈 반복자는 선택을 지웁니다. 알 수 없는 값이나 비활성화된 값, 단일 모드에서
+서로 다른 값을 둘 이상 지정하는 경우는 거부됩니다. 애플리케이션 화면 표현에는
+`selected_indices()`, `is_selected(index)`, `selected_items(cx)`,
+`selected_values(cx)`를 읽습니다. 사용자 활성화는 선택이 바뀔 때만 항목 순서대로
+`ComboboxEvent::Change(values)`를 내보냅니다.
+
+`Combobox::new(id, &state).input(|input| ...).content(surface)`를 렌더링합니다. input
+빌더는 프레임, 이름, 플레이스홀더, `InputStyles`를 소유합니다. 이름 있는
+`ComboboxList`는 `visible_indices(cx)` 순서의 `ComboboxOption` 자식을 담으며,
+선택적으로 `ComboboxGroup::new(id, &state, label)` 래퍼 안에 둘 수 있습니다. 그룹
+이름은 `visible_groups(cx)`로, 일치하는 항목 인덱스는
+`visible_group_indices(Some(label), cx)`로 얻습니다. `None`은 그룹이 없는 항목을 줍니다.
+각 그룹은 이름 있는 네이티브 Group과 Heading을 제공하며, `.heading(...)`은 제목의
+스타일을 지정합니다. 빈 그룹은 사라지고, 제목은 키보드 내비게이션에 들어가지 않습니다.
+목록에는 높이 제한을 두고, 빈 상태 텍스트는 목록 바깥에 둡니다.
+
+| 상호작용 | 결과 |
+| --- | --- |
+| 닫힌 입력을 포인터나 화살표로 엽니다 | 모든 옵션을 보여 주고, 첫 번째 선택된 항목 또는 활성화된 선택지를 강조합니다 |
+| 입력 | 확정된 값을 바꾸지 않고 제안을 필터링합니다 |
+| Up / Down | 그룹을 넘나들며 활성화된 결과 사이를 이동합니다 |
+| Enter / 결과 클릭, 단일 모드 | 선택지 하나를 확정하고 제안을 닫은 뒤 레이블을 복원합니다 |
+| Enter / 결과 클릭, 다중 모드 | 쿼리와 제안을 연 채로 해당 선택지를 토글합니다 |
+| Escape, Tab, 포커스 이탈 또는 바깥 누르기 | 초안을 끝냅니다. 단일 모드는 레이블을 복원하고, 다중 모드는 쿼리를 지웁니다 |
+
+이 컨트롤의 Tab 스톱은 쿼리뿐입니다. 선택된 칩은 일반 애플리케이션 Button으로
+렌더링하고, 사용자가 제거할 때 `remove_value(value, window, cx)` 또는
+`clear(window, cx)`를 호출합니다. 이 작업들은 바뀐 선택을 내보내고, 포커스를 쿼리로
+되돌리며, 비활성화된 컨트롤이나 진행 중인 IME 조합은 거부합니다.
+`set_disabled`는 팝업을 닫고 일반 진입을 막습니다. `set_query`는 포커스된 초안을
+시작합니다. 조합 중인 텍스트는 제안 내비게이션/확정보다 우선하며, Escape는 먼저
+조합을 해제합니다. 헤드리스 검사만으로 데스크톱 IME 동작이 확인되지는 않습니다.
+
+`set_items(items, window, cx)`는 Change 이벤트 없이 원본 항목을 교체합니다.
+현재 선택은 안정적인 값을 따르며, 없어지거나 새로 비활성화된 값은 제거됩니다.
+진행 중인 쿼리 텍스트, 포커스, 네이티브 조합은 유지됩니다. 닫힌 단일 선택은 표시
+레이블을 새로 고칩니다. 가져오기, 로딩, 요청 순서, 오류는 애플리케이션이 소유하며,
+네트워크 컨트롤러는 설치되지 않습니다.
+
+네이티브 의미 체계에는 ComboBox 쿼리, 펼침 상태, 이름 있는 그룹, 확정된 선택 값,
+다중 모드에서의 다중 선택 listbox가 포함됩니다. 고정된 GPUI API는 입력에서 형제
+목록으로의 active-descendant 관계를 표현할 수 없습니다. 자유 형식의 확정 값은
+제공하지 않습니다. 결과는 Command의 순위가 매겨지는 순서 기반 일치를 사용합니다.
+설정 예제는 Dialog 안에서 단일 프리셋을 유지합니다. 카탈로그의 Selection 뷰는
+두 번째 입력이나 선택 엔진 없이 그룹으로 묶인 다중 대상, 칩 제거, 로컬 원본 갱신을
+보여 줍니다.

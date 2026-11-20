@@ -1,0 +1,22 @@
+---
+title: Card
+description: "Named region with a heading, description, header action, body, and footer."
+---
+
+[`card.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/card.rs) supplies a named region with a
+level-two heading. The description accepts text; the header action, content,
+and footer each accept one element, so the application can compose several
+children in a `div()`.
+
+```rust
+Card::new("session-card", "Session", palette)
+    .description("Recording preferences")
+    .header_action(Badge::new("toolbar-status", "Toolbar pinned", palette).accent(true))
+    .content(session_summary)
+    .footer(session_controls)
+    .w_full()
+```
+
+The card adds no focus stop. Controls placed in its slots retain their own
+keyboard and pointer behavior. Its `Styled` implementation allows frame overrides;
+change the copied source to fit different heading levels or header/footer layouts.

@@ -1,0 +1,75 @@
+---
+title: Installation
+description: "Set up the toolchain, run the examples, depend on the crate and copy recipes into your application."
+---
+
+Install [Rust with rustup](https://rustup.rs/). The repository selects **Rust
+1.99.1**, including rustfmt and Clippy, through `rust-toolchain.toml`.
+
+On **Windows**, use the MSVC toolchain with the Visual Studio C++ build tools and
+a Windows SDK. On **macOS**, install Xcode Command Line Tools with
+`xcode-select --install`. On **Ubuntu 24.04**, install the native build dependencies:
+
+```sh
+sudo apt-get update
+sudo apt-get install --no-install-recommends -y \
+  build-essential pkg-config \
+  libfontconfig1-dev libfreetype6-dev libwayland-dev \
+  libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
+```
+
+Then clone and run from a native desktop session:
+
+```sh
+git clone https://github.com/andongmin94/gpui-design.git
+cd gpui-design
+cargo run -p gpui-design --example two_styles --locked -- compact
+cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-design --example catalogue --locked
+cargo run -p gpui-design --example starter --locked
+```
+
+`compact` is the default when no appearance argument is supplied. Both commands
+run the same session-settings interaction with application-owned styling.
+
+Start with [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) for a small complete
+application. It uses only public APIs: `init`, `Root`, a retained `InputState`,
+`Field`, and `Button`. The application keeps its observation and event subscriptions,
+owns the colors and layout, and handles both Enter and button activation. Copy
+its startup and view into a consumer before adding the larger compositions.
+
+In an existing Rust application, depend on the checked-out source and matching
+GPUI snapshots, replacing the path with your checkout:
+
+```toml
+[dependencies]
+gpui-design = { path = "../gpui-design/crates/base" }
+gpui = { package = "gpui-pre", version = "=0.3.11" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+
+[features]
+test-support = ["gpui-design/test-support"]
+```
+
+The feature declaration supports the test guards in copied recipe source;
+enable it when running those GPUI tests. Use the repository's pinned Rust toolchain and native prerequisites above. Copy
+the desired presentation recipes into the application using their
+[dependency and token instructions](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application).
+
+The GPUI snapshot family is pinned to **`=0.3.11`**. Update those pins and
+`Cargo.lock` together when changing the rendering dependency.
+
+Copy application-owned presentation source with its required recipe modules,
+light/dark tokens and license:
+
+```sh
+cargo run -p gpui-design-cli --locked -- list
+cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+```
+
+Declare `mod ui;` in the consumer. The tool preserves edits to previously installed
+recipe and palette files; modified generated module declarations or new-file
+conflicts stop before writing. It leaves Cargo dependencies to the consumer.
+See the [source-copy guide](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application).
+The catalogue's Selection section demonstrates range/multiple dates, grouped
+recording targets, removable selected chips and replaceable local option data.

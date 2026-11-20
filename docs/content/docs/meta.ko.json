@@ -1,0 +1,17 @@
+{
+  "pages": [
+    "---시작하기---",
+    "index",
+    "installation",
+    "architecture",
+    "---컴포넌트---",
+    "...components",
+    "---레시피---",
+    "...recipes",
+    "---가이드---",
+    "guides",
+    "---프로젝트---",
+    "coverage",
+    "contributing"
+  ]
+}

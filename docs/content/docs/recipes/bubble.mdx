@@ -1,0 +1,22 @@
+---
+title: Bubble
+description: "Incoming/outgoing surfaces, grouped author/time labels and supplied reactions."
+---
+
+The catalogue adds two independent source-owned presentations under
+`crates/base/examples/recipes`. `bubble.rs` is the Bubble catalogue entry:
+incoming/outgoing alignment, grouped author/time metadata, a wrapping message
+body and supplied reaction actions. Existing Buttons own activation and focus;
+message grouping and reaction values belong to the conversation view. It adds no
+transport, persistence or alternate message-state engine.
+
+`chart.rs` is the presentation for the public Chart family, and is not counted
+as a second catalogue entry. It supplies native canvas line/bar/area, stacked,
+pie/donut and radar paths, axes or spoke labels,
+series Toggles, an inspected-value readout and a same-data Table. Its color array,
+layout and formatting are application-owned. See the
+[layout and data guide](../guides/layout-data.mdx) for the shared Chart contract.
+
+Run `cargo run -p gpui-design --example catalogue --locked` to use these alongside
+MessageScroller/Questionnaire and Carousel/Direction respectively. The existing
+`two_styles` example continues to host the session-oriented recipes.

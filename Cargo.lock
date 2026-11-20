@@ -2109,6 +2109,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "gpui-design-web-preview"
+version = "0.1.0"
+dependencies = [
+ "gpui-design",
+ "gpui-pre",
+ "gpui-pre-platform",
+ "wasm-bindgen",
+ "web-sys",
+]
+
+[[package]]
 name = "gpui-pre"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"

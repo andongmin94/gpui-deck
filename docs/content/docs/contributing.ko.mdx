@@ -1,0 +1,43 @@
+---
+title: 기여하기
+description: "소스의 각 부분이 어디에 있는지, 변경 사항을 어떻게 검증하는지 설명합니다."
+---
+
+| 위치 | 책임 |
+| --- | --- |
+| `crates/cli/` | 소스 복사 CLI와 레시피 의존성 카탈로그 |
+| `crates/base/src/` | `gpui-design` 라이브러리와 동작 수준 테스트 |
+| `crates/base/tests/` | 공개 API를 사용하는 통합 테스트 |
+| `crates/base/examples/starter.rs` | 공개 API만 사용하는 작고 완전한 애플리케이션 |
+| `crates/base/examples/two_styles.rs` | 네이티브 예제와 애플리케이션이 소유하는 스타일 |
+| `crates/base/examples/presentation.rs` | 화면 표현 레시피가 사용하는 복사 가능한 라이트/다크 애플리케이션 토큰 |
+| `crates/base/examples/recipes/` | 스물세 개의 카탈로그 레시피와 Chart의 보조 화면 표현. 복사 가능한 애플리케이션 소유 소스 |
+| `crates/base/examples/assets/` | 프리셋 미리보기와 이미지 디코딩 회귀 테스트에 쓰이는 내장 예제 아트워크 |
+| `docs/` | 이 문서 사이트. Fumadocs 기반 Next.js이며 페이지는 `docs/content/docs`에 있음 |
+| `crates/web-preview/` | GPUI의 웹 백엔드로 WebAssembly에 컴파일한 라이브 문서 미리보기 |
+| `Cargo.toml` / `Cargo.lock` | 워크스페이스와 일치하는 의존성 집합 |
+
+`gpui_design::init(cx)`로 라이브러리를 초기화하고 애플리케이션 콘텐츠를
+`gpui_design::Root` 안에 둡니다. 작은 시작 참고 자료로는 starter를, 더 큰 조합에는
+다른 네이티브 예제를 사용합니다.
+소비자 애플리케이션은 이 소스를 직접 다루면서 동작 계층을 재사용하고 자체 화면
+표현을 제공할 수 있습니다.
+
+## 변경 사항 검증
+
+README의 [Verify changes](https://github.com/andongmin94/gpui-design#verify-changes)에
+나열된 포매팅, Clippy, 테스트, 빌드 명령을 실행합니다. Verify 워크플로는 같은 매트릭스를
+Linux, Windows, macOS에서 실행합니다.
+
+## 문서 사이트
+
+이 사이트는 `docs/`에 있는 Next.js와 Fumadocs 앱입니다. 페이지는
+`docs/content/docs`의 MDX 파일이며, 각 페이지 옆에 한국어 번역이 `name.ko.mdx`로
+있습니다. 라이브 미리보기는 WebAssembly로 빌드한 `crates/web-preview`에서 옵니다:
+
+```sh
+cd docs
+npm ci
+npm run preview:build   # cargo build for wasm32 + wasm-bindgen into public/preview
+npm run dev
+```

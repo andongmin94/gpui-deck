@@ -1,0 +1,27 @@
+---
+title: Pagination
+description: "Controlled previous/next buttons, current-page text, and empty/first/last-page boundaries."
+---
+
+[`pagination.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/pagination.rs) composes ordinary
+Buttons into named native navigation. The application supplies the zero-based
+page index, page count, and callback.
+
+```rust
+Pagination::new("preset-pages", "Recording preset pages", page, page_count, palette)
+    .on_change(move |page, _, cx| {
+        table_state.update(cx, |state, cx| state.set_page(page, cx));
+    })
+```
+
+For a nonempty collection, the page index must be less than the count. Empty
+results use index zero and count zero, display `No pages`, and disable both
+Previous and Next. Otherwise numbered buttons follow Previous: up to seven pages
+appear directly, and longer collections keep the first and last pages, the
+current page and its neighbors, with each elided run shown as a static
+`More pages` label. The entry count stays at seven while paging, so controls
+do not shift. The current page has native current-page metadata and selected
+styling and does not request a change. Previous is disabled on the first page
+and Next on the last. Buttons keep ordinary Tab and activation behavior,
+including focus on a button that becomes disabled after its action. The recipe
+owns no retained page or data; routing and fetching belong to the application.

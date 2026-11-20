@@ -1,0 +1,74 @@
+---
+title: Breadcrumb
+description: "이름이 있는 내비게이션, 순서가 있는 경로 항목, 네이티브 현재 페이지 메타데이터."
+---
+
+<ComponentPreview name="breadcrumb" height={360} />
+
+이 패밀리는 세 가지 구조 요소를 제공하며, 각각 일반적인 `Styled`와
+`ParentElement`를 지원합니다.
+
+| 부품 | 네이티브 계약 | 애플리케이션의 책임 |
+| --- | --- | --- |
+| `Breadcrumb::new(id)` | 내비게이션 랜드마크이며 기본 이름은 `Breadcrumb`입니다 | `.accessibility_label(...)`로 경로를 설명하거나 현지화합니다 |
+| `BreadcrumbList::new(id)` | 제공된 자식 순서대로의 List | 항목을 경로 순서대로 렌더링하고 방향, 줄바꿈, 간격을 정합니다 |
+| `BreadcrumbItem::new(id)` | ListItem이며, `.current(true)`는 네이티브 `aria_current(Page)`를 추가합니다 | 현재 항목을 표시하고 각 위치의 텍스트나 액션을 제공합니다 |
+
+상위 위치에는 일반 Button 컨트롤을, 현재 위치에는 네이티브 텍스트를 조합합니다.
+이 구조는 포커스 스톱, 선택 값, 내비게이션 이벤트, 라우터를 만들지 않습니다.
+제공된 Button은 평소의 포인터, Enter/Space, Tab 동작을 그대로 유지합니다.
+목적지와 포커스 변경 여부는 각 애플리케이션 콜백이 정합니다.
+
+```rust
+Breadcrumb::new("keyboard-guide-breadcrumb")
+    .accessibility_label("Keyboard guide location")
+    .child(
+        BreadcrumbList::new("keyboard-guide-path")
+            .flex()
+            .items_center()
+            .gap_1()
+            .child(BreadcrumbItem::new("settings-location").child(settings_button))
+            .child(BreadcrumbItem::new("help-location").child(help_button))
+            .child(
+                BreadcrumbItem::new("guide-location")
+                    .current(true)
+                    .child(gpui::text!(id = "keyboard-guide-current-text", "Keyboard guide")),
+            ),
+    )
+```
+
+`gpui::text!`는 비대화형 현재 위치에 네이티브 텍스트 의미 체계를 제공합니다.
+일반 `&str`나 `SharedString` 자식은 자체 네이티브 역할 없이 텍스트만 그리며,
+경로는 장식용 `›` 구분자에 이런 원시 텍스트를 사용합니다.
+상위 위치 Button은 이미 접근 가능한 이름을 제공합니다. 구분자, 경로 내용, 색상,
+타이포그래피, 레이아웃은 애플리케이션이 소유합니다.
+
+예제는 기존 Help Popover 안에 `Session settings > Help > Keyboard guide`를
+렌더링합니다. Session settings는 먼저 Popover를 닫고
+`TabsState::select_value("preferences", window, cx)`를 호출한 뒤, 인덱스 0의 기존
+내비게이션 핸들에 포커스를 줍니다. 명시적 선택은 Compact의 TabList와 Settings의
+Sidebar 모두에서 동작합니다. Sidebar는 포커스만으로는 섹션을 선택하지 않습니다.
+Help는 Help 선택을 유지한 채 Popover를 닫고 포커스를 트리거로 되돌립니다.
+Keyboard guide는 현재 위치를 나타내는 비대화형 마지막 항목입니다.
+이 콜백들은 두 번째 내비게이션 모델 대신 기존 Popover와 Tabs 상태를 사용합니다.
+
+`.current(true)`는 현재 경로 항목에만 설정합니다. 기본값 false는 현재 페이지
+메타데이터를 생략할 뿐이며, 제공된 자식을 비활성화하거나 동작을 바꾸지 않습니다.
+네이티브 속성은 ListItem 자체에 붙는 AccessKit의 `AriaCurrent::Page`입니다.
+이 계약만으로 특정 데스크톱 스크린리더가 경로를 어떻게 읽어 주는지가 정해지지는 않습니다.
+
+## 접힌 경로와 드롭다운 항목
+
+접힌 경로는 하나의 `BreadcrumbItem` 안에 일반
+[`DropdownMenu`](./dropdown-menu.mdx)를 두어 숨겨진 상위 위치에 계속 접근할 수 있게 합니다.
+이 패밀리는 줄임표 요소나 두 번째 메뉴 모델을 추가하지 않습니다. 트리거 Button에는
+"Show hidden locations"처럼 목적에 맞는 이름을 붙이고, `…` 글리프는 보이는 내용으로만
+사용합니다. 숨겨진 각 상위 위치는 `MenuItem`이며, 메뉴가 `MenuEvent::Action`을
+보고하면 애플리케이션이 그 값을 목적지에 대응시킵니다. 메뉴는 하나의 Tab 스톱,
+Down/Enter로 열기, 화살표와 한 글자 내비게이션을 제공하고, 활성화 후 포커스를
+트리거로 되돌립니다. 같은 조합으로 어떤 경로 항목에든 형제 위치 드롭다운을 붙일 수 있습니다.
+
+카탈로그의 Navigation 뷰는 `Home › … › <current page>`를 렌더링합니다. 줄임표는
+Documentation과 Components를 나열하며, 하나를 고르면 로컬 페이지와 현재 마지막
+항목이 바뀌고, Home은 Overview로 돌아갑니다. 상위 위치를 몇 개 접을지는 애플리케이션
+레이아웃에서 정합니다. 이 패밀리는 경로 너비를 측정하지 않습니다.

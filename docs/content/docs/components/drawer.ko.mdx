@@ -1,0 +1,19 @@
+---
+title: Drawer
+description: "Dialog 생명주기와 전용 핸들을 통한 아래쪽 끌어서 닫기."
+---
+
+<ComponentPreview name="drawer" height={360} />
+
+`DrawerState`는 `DialogState` 하나를 조합합니다. `new(window, cx)`로 만들거나
+`with_dialog`로 이미 구성된 Dialog를 받아들이고, 그 상태를 Drawer 하나에 마운트합니다.
+`open`/`close`, 초기 포커스, 포커스 가두기, Escape, 배경막 닫기, 포커스 복귀는 계속
+Dialog가 소유합니다. 상태는 `DialogEvent`를 전달하고, 일반 DialogClose 컨트롤을 위해
+`dialog()`를 노출합니다.
+
+`Drawer::new(id, &state)`는 뷰포트 크기로 제한된 모달 화면을 아래쪽에 배치합니다.
+`.handle(...)`, 선택적 `.backdrop(...)`, 스타일을 입힌 본문/액션을 제공합니다.
+끌기는 전용 핸들을 눌렀을 때만 시작되며, 본문에서 스크롤하거나 편집할 때는 시작되지
+않습니다. 이동 거리 임계값을 넘긴 뒤 놓으면 Dialog를 통해 닫히고, 더 짧거나 취소된
+끌기는 화면을 원래 위치로 되돌립니다. 창이 비활성화되면 진행 중인 끌기가 취소됩니다.
+이 계약에는 정지 위치가 하나뿐이며, 관성 물리나 스냅 지점 설정은 없습니다.

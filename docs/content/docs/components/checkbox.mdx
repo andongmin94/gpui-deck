@@ -1,0 +1,36 @@
+---
+title: Checkbox and Switch
+description: "Controlled unchecked/checked/mixed state, activation, disabled state, and focus."
+---
+
+<ComponentPreview name="checkbox" height={360} />
+
+Use `.checked(bool)` for a binary checkbox. For an aggregate selection, use
+`.state(CheckboxState::Indeterminate)` to expose a mixed state. Activating a mixed
+checkbox requests `CheckboxState::Checked`; the library does not infer or alter
+any child selections. Switch always uses a boolean state.
+
+Both controls accept `.disabled(bool)`, `.accessibility_label(...)`,
+`.track_focus(&handle)`, `.tab_index(...)`, and `.tab_stop(...)`. The change
+callback receives the next value, the native click event, the window, and the app
+context. For example, inside a view that stores a boolean `show_cursor`:
+
+```rust
+let owner = cx.entity();
+Checkbox::new("show-cursor")
+    .checked(self.show_cursor)
+    .accessibility_label("Show cursor")
+    .on_change(move |next, _, _, cx| {
+        owner.update(cx, |this, cx| {
+            this.show_cursor = next == CheckboxState::Checked;
+            cx.notify();
+        });
+    })
+    .child("Show cursor")
+```
+
+This is the behavior wiring. The application adds GPUI styling and an indicator
+as children. Checkbox supplies no checkmark, and Switch supplies no track or
+thumb. Their root `.styles(...)` builders expose checked/disabled refinements;
+Checkbox additionally exposes indeterminate styling. Keep a Switch's accessible
+label stable when it changes state: its checked metadata already describes on/off.

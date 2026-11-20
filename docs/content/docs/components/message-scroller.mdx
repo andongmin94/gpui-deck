@@ -1,0 +1,24 @@
+---
+title: Message Scroller
+description: "Bottom following, keyed history anchoring, unread count and jump-to-latest."
+---
+
+<ComponentPreview name="message-scroller" height={360} />
+
+`MessageScrollerState::new(cx)` owns the existing ScrollHandle plus the previous
+frame's stable message keys and reading position. Give
+`MessageScroller::new(id, &state, cx)` a bounded height and add each message with
+`.item(stable_id, content)`. IDs must be unique within a conversation and also
+scope each message's child controls, preserving their identity across reordering.
+Create a new state when changing to another conversation. Existing ScrollArea performs
+wheel/trackpad scrolling, clipping and scrollbar interaction.
+
+The first frame starts at the bottom. Appending messages, streaming edits and
+resize keep following while the reader is at the bottom. When the reader moves
+away, the first visible message keeps its pixel position as history is prepended
+or earlier items change height; correction happens in the same layout frame.
+Removing the anchor uses ordinary native offset clamping. Appends while
+away increase `unread_count`, and `jump_to_latest` resumes following without
+moving focus from the caller's control. Returning to the bottom clears unread,
+including when a resize or content removal reveals the bottom in the same frame.
+There is no virtualization or chat transport.

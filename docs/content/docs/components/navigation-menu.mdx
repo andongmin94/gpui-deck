@@ -1,0 +1,20 @@
+---
+title: Navigation Menu
+description: "Coordinated disclosures, roving focus and destination Link activation."
+---
+
+<ComponentPreview name="navigation-menu" height={360} />
+
+`NavigationMenuState` retains an ordered set of `NavigationMenuItem` values.
+A plain item is a destination; `.with_popup()` declares a disclosure. Render a
+named `NavigationMenu` with one `NavigationMenuEntry` per item. Popup contents
+are ordinary groups, not command menus or dialogs. Supply existing Links or
+Buttons and optional initial focus. `NavigationMenuLink` emits a destination
+through `NavigationMenuEvent::Navigate`; the application owns routing.
+
+The top row uses roving focus and logical Left/Right/Home/End keys. Activation
+or Down opens a disclosure. When one is already open, pointer travel switches
+between popup entries; mere hover over an otherwise closed bar does not open
+unrequested content. Popup controls retain normal Tab traversal and Popover's
+Escape/outside-dismissal/return-focus behavior. Destination links can mark the
+current page independently of the open disclosure.

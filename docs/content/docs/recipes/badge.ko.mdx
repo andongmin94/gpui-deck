@@ -1,0 +1,16 @@
+---
+title: Badge
+description: "secondary와 accent 모양을 갖는 정적 레이블입니다."
+---
+
+[`badge.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/badge.rs)는 이름 있는 정적 레이블입니다.
+기본 모양은 secondary이며, `.accent(true)`는 팔레트의 accent 색상을 사용합니다. 예제는
+실제 커서와 툴바 설정을 이 두 가지 모양으로 표시합니다.
+
+```rust
+Badge::new("cursor-status", "Cursor visible", palette).accent(true)
+```
+
+Badge는 Tab 스톱, 버튼 액션, 눌림 상태, 라이브 알림을 추가하지 않습니다. 텍스트는 색상과
+상관없이 상태를 설명해야 합니다. 상호작용하는 칩에는 애플리케이션 스타일을 적용한 기존
+Button이나 Toggle을 사용하세요.

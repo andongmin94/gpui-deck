@@ -1,0 +1,16 @@
+---
+title: Separator
+description: "Semantic or decorative separation, with horizontal/vertical orientation."
+---
+
+<ComponentPreview name="separator" height={360} />
+
+`Separator::new(id)` supplies a semantic horizontal separator.
+`.axis(Axis::Vertical)` changes its native orientation; `.decorative(true)` omits
+its accessibility node for purely visual division. The native semantic role is
+AccessKit's Splitter without focus or activation actions. This component is a
+static separator; Resizable pane-divider interaction is not implied.
+
+Use ordinary GPUI styles for its dimensions and color, such as
+`.h(px(1.)).w_full().bg(border)` for a horizontal line. Axis does not impose a
+visual layout. Separators have no children or Tab stop.

@@ -1,0 +1,45 @@
+---
+title: Label
+description: "클릭하면 기존 컨트롤에 포커스를 주는 이름 있는 네이티브 텍스트 레이블. 명시적인 비활성화 플래그가 있고 Tab 스톱을 추가하지 않습니다."
+---
+
+<ComponentPreview name="label" height={360} />
+
+`Label::new(id, &focus_handle, text)`는 네이티브 Label 시맨틱과 그 텍스트와 같은
+접근 가능한 이름을 가진 일반 텍스트를 렌더링합니다. 클릭하면 제공된 기존 컨트롤에
+포커스를 줍니다. Label에는 자체 포커스 핸들이나 Tab 스톱이 없으므로, 일반적인 키보드
+순회는 컨트롤에 그대로 남습니다. `Styled` 인터페이스로 애플리케이션이 소유하는 텍스트
+스타일과 레이아웃을 제공하며, 대화형 자식 내용이 아닌 텍스트를 받습니다.
+
+```rust
+let preview = self.preview.read(cx);
+let label = Label::new(
+    "preview-percentage-label",
+    preview.thumb_focus_handle(0),
+    "Preview percentage",
+)
+.disabled(preview.is_disabled())
+.text_color(muted);
+let slider = Slider::new("preview-percentage", &self.preview)
+    .accessibility_label("Preview percentage")
+    .child(SliderThumb::new(&self.preview, 0).accessibility_label("Preview percentage"));
+
+div().flex().flex_col().gap_1().child(label).child(slider)
+```
+
+참조하는 대상은 같은 창에 마운트해 두고, 렌더링할 때마다 `.disabled(bool)`로 대상의
+비활성화 상태를 반영합니다. 비활성화된 Label은 포커스를 옮기지 않습니다. 제공된
+FocusHandle은 대상을 식별할 뿐, 컨트롤이 활성 상태인지는 Label에 알려 주지 않습니다.
+그 정책은 애플리케이션이 소유하며, 바뀌면 다시 그립니다. Label은 별도의 컨트롤 상태를
+유지하지 않습니다.
+
+포커스 동작은 대상을 활성화하지 않습니다. Select를 열거나, Slider를 조정하거나,
+Checkbox/Switch를 토글하지 않습니다. 네이티브 예제는 Drawing tool과 Preview percentage
+위에 이를 사용합니다. 어느 레이블을 클릭해도 컨트롤이 일반 키보드 입력을 받기 전까지
+선택이나 값은 바뀌지 않습니다.
+
+대상의 `accessibility_label(...)`은 따로 설정합니다. 고정된 GPUI API는 이런 형제 요소
+사이의 공개 labelled-by 관계를 노출하지 않으므로, Label이 대상의 이름을 자동으로
+지정하지 않습니다. 네이티브 Label 역할과 텍스트 이름은 레이블 자체를 설명합니다.
+Input/Textarea의 레이블, 도움말, 검증 연결에는 Field를 사용합니다. Field는 유지되는
+입력에 메타데이터를 투영하고, 레이블을 클릭할 때 입력의 현재 비활성화 상태를 확인합니다.

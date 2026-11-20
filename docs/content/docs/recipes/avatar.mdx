@@ -1,0 +1,44 @@
+---
+title: Avatar
+description: "Named circular image with explicit fallback text, using GPUI's image loader and cache, plus an overlapping AvatarGroup with a named \"+N\" overflow."
+---
+
+[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs) presents a circular image
+with explicit alternative text and application-supplied fallback text:
+
+```rust
+Avatar::new("preset-avatar", "Balanced preset artwork", "BL", palette)
+    .image(preset_artwork)
+    .size(rems(2.5))
+```
+
+`image` accepts GPUI's existing `ImageSource` conversions. Omitting it shows the
+fallback immediately; an image error also shows the fallback. While an image is
+pending, GPUI's native 200 ms loading delay applies before showing the fallback.
+GPUI owns decoding, loading, caching, and redraws. The recipe adds no separate
+loading task, timer, cache, or retry policy.
+
+The root supplies one native Image role and the given accessible name in every
+state. The image and fallback add no separate name or focus stop. Supply a name
+that describes the image's meaning, rather than relying on the visible initials.
+The application chooses fallback text and any localization; this recipe does not
+derive initials from names. The default frame is 2.5 rem square, with palette
+colors and circular clipping. `Styled` can change its size and colors; keep width
+and height equal for a circle. Images use GPUI's cover fit. Status badges, avatar
+groups, and interactive actions remain application compositions.
+
+The example embeds [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)
+for the Balanced preset. Other presets use explicit text such as `PR` and `HQ`,
+and an empty selection uses `?`, with an accessible name derived from the current
+preset label. The source is selected while rendering the existing HoverCard from
+the retained Combobox state; there is no second selected-preset value. This
+bundled artwork requires no network request. Applications supply their own assets
+when copying the recipe.
+
+
+`AvatarGroup::new(id, "Team members", palette)` stacks `.avatar(...)` items like
+shadcn's avatar group. Each visible avatar sits in a surface-colored ring and
+overlaps the previous one. `.max_visible(n)` shows the first `n` and adds a
+"+N" chip whose Label name lists the hidden people ("2 more: Cy Lee, Di Cho"),
+so nobody is lost to assistive technology. The frame is a named Group with no
+focus stop. The preset preview shows five people with three visible.

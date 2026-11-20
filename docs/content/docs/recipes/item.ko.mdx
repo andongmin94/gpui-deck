@@ -1,0 +1,29 @@
+---
+title: Item
+description: "제목, 설명, 선택적인 미디어, 헤더, 푸터, 뒤쪽 액션을 갖는 이름 있는 콘텐츠 행입니다."
+---
+
+[`item.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/item.rs)는 제목, 선택적인 설명,
+앞쪽 미디어, 전체 너비 헤더와 푸터, 선택적인 뒤쪽 액션을 묶습니다.
+
+```rust
+Item::new("recording-preset-item", "Recording preset", palette)
+    .description(selected_preset_label)
+    .media(record_dot)
+    .header("Applies to new recordings")
+    .footer(recording_date)
+    .action(preset_preview_and_edit)
+```
+
+네이티브 Group의 이름은 제목에서, 설명은 description에서 옵니다. 텍스트 열은 줄어들 수
+있지만 미디어와 액션은 필요한 너비를 유지하며, 헤더와 푸터는 그 행의 위아래로 프레임 전체에
+걸칩니다. 예제는 장식용으로 그린 녹화 점, 흐린 범위 헤더, 푸터로 쓰는 선택된 녹화 날짜,
+그리고 기존 HoverCard 트리거를 제공합니다. 이 트리거는 호버/포커스 시 프리셋을 미리 보여
+주고, 일반 활성화 시 설정을 엽니다. 포커스 핸들, 버튼 이름, 포커스 복귀 동작은 유지됩니다.
+
+슬롯은 역할, 이름, 포커스 스톱을 추가하지 않으며, 콘텐츠의 시맨틱만 전달합니다. Avatar처럼
+정보를 담은 미디어에는 자체 이름을 주고, 장식용 도형은 이름 없이 두세요. 설치된 글꼴에
+의존하는 기호 글리프보다 직접 그린 도형을 권장합니다. 행에는 행 전체 클릭, Tab 스톱, 선택
+값, 목록 내비게이션이 없습니다. 전달된 컨트롤이 자신의 시맨틱과 액션을 소유합니다. 연결된
+입력 레이블과 유효성 검사에는 Field를 사용하세요. 별도의 ItemGroup은 현재 레시피의 범위
+밖입니다. `Styled`로 프레임과 간격을 바꿀 수 있습니다.

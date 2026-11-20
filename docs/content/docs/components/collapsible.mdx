@@ -1,0 +1,37 @@
+---
+title: Collapsible
+description: "One disclosure, active-only content, disabled trigger, and focus on content closure."
+---
+
+<ComponentPreview name="collapsible" height={360} />
+
+Create `CollapsibleState::new(cx)` once for a single disclosure. It starts closed;
+`.default_open(true)` opens it initially without emitting an event. Observe the
+state for rendering, and keep child entities in the application view so their
+values survive the content being removed and mounted again.
+
+Render `Collapsible::new(id, &state)` around one
+`CollapsibleTrigger::new(&state)` and one `CollapsibleContent::new(&state)`.
+Keep the root and trigger mounted while closed. Supply an `accessibility_label`
+on both the trigger and content, and application-owned styling and children.
+The trigger composes Button and exposes expanded/disabled state. The open
+content is a named Region; closed content has no layout, focus stops, or
+accessibility nodes. Explicit native trigger-to-content relationships are not
+emitted by the pinned GPUI API.
+
+Click, Enter, and Space toggle the disclosure. Opening leaves focus on the
+trigger, and normal Tab traversal enters its children. The component introduces
+no heading or arrow/Home/End key handling. Use content `.tab_stop(true)` when
+static content should itself receive focus.
+
+State methods include `is_open`, `is_disabled`, `trigger_focus_handle`,
+`content_focus_handle`, `set_open(open, window, cx)`, `toggle(window, cx)`, and
+`set_disabled(disabled, window, cx)`. `CollapsibleEvent::Change(bool)` reports an
+actual change; repeated requests emit no event. Disabling prevents user toggling
+but preserves the current visibility and does not disable the content.
+Programmatic `set_open` remains available while disabled.
+
+Closing content that owns focus moves focus to its still-mounted trigger. If
+that trigger is disabled, the existing non-Tab root scope receives focus so Tab
+can leave. Focus outside the disclosure is preserved. As with Accordion, removing
+the whole host requires the application to focus a surviving control first.

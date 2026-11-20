@@ -1,0 +1,20 @@
+---
+title: Navigation Menu
+description: "조정되는 펼침 영역, 로빙 포커스, 목적지 Link 활성화."
+---
+
+<ComponentPreview name="navigation-menu" height={360} />
+
+`NavigationMenuState`는 순서 있는 `NavigationMenuItem` 값 집합을 유지합니다. 일반
+항목은 목적지이고, `.with_popup()`은 펼침 영역을 선언합니다. 항목마다
+`NavigationMenuEntry` 하나를 두어 이름 있는 `NavigationMenu`를 렌더링합니다. 팝업
+내용은 명령 메뉴나 대화상자가 아닌 일반 그룹입니다. 기존 Link나 Button과 선택적 초기
+포커스를 제공합니다. `NavigationMenuLink`는 `NavigationMenuEvent::Navigate`로 목적지를
+내보내며, 라우팅은 애플리케이션이 소유합니다.
+
+맨 위 행은 로빙 포커스와 논리적 Left/Right/Home/End 키를 사용합니다. 활성화하거나
+Down을 누르면 펼침 영역이 열립니다. 이미 하나가 열려 있으면 포인터 이동으로 팝업 항목
+사이를 전환하지만, 닫혀 있는 바 위에서 단순히 호버하는 것만으로는 요청하지 않은 내용이
+열리지 않습니다. 팝업 컨트롤은 일반 Tab 순회와 Popover의 Escape/바깥 닫기/포커스 복귀
+동작을 유지합니다. 목적지 링크는 열린 펼침 영역과 관계없이 현재 페이지를 표시할 수
+있습니다.

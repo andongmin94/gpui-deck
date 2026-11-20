@@ -1,0 +1,31 @@
+---
+title: Alert
+description: "인라인 제목과 설명을 표시하며, destructive 스타일과 긴급성을 각각 명시적으로 지정합니다."
+---
+
+[`alert.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/alert.rs)는 인라인 제목과
+설명을 표시합니다. 일반 콘텐츠는 네이티브 `Note` 역할을 사용하고, `.urgent(true)`는
+네이티브 `Alert` 역할을 선택합니다. `.destructive(true)`는 이 긴급성 결정과 별개로
+색상을 바꿉니다.
+
+```rust
+Alert::new(
+    "session-name-alert",
+    "Session name is missing",
+    "Open Edit session and enter a name or use the default name.",
+    palette,
+)
+.destructive(true)
+.urgent(true)
+```
+
+Schedule 패널은 기본 정보 형태를 사용합니다. 이름이 비어 있는 상태로 설정을 닫으면
+요약에 긴급 형태가 표시됩니다. 설정을 다시 열면 이 경고가 사라지고 Field가 입력의
+유효성 검사 세부 정보를 제공하므로, 같은 오류가 화면에 두 번 보이지 않습니다. 이름이
+복원되면 요약의 경고도 사라집니다.
+
+Alert는 포커스를 옮기거나, 모달을 열거나, 닫기 상태를 소유하거나, 반복 알림을 예약하지
+않습니다. 역할이 어떻게 전달되는지는 네이티브 접근성 어댑터가 결정합니다. 역할을
+노출했다고 해서 네이티브 스크린리더로 전달된다는 증거가 되지는 않습니다. 명시적인
+확인이 필요한 모달 결정에는 AlertDialog를 사용하세요. 현재 인라인 레시피에는 액션이나
+미디어 슬롯이 없으며, `Styled`가 프레임을 제어합니다.

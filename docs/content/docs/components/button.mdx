@@ -1,0 +1,46 @@
+---
+title: Button
+description: "Pointer and keyboard activation, disabled state, focus, accessible name and role, and optional current-page metadata."
+---
+
+<ComponentPreview name="button" height={360} />
+
+`Button` is the activation primitive the other controls build on. It owns
+pointer and Enter/Space activation, focus, the disabled state and the native
+Button role; its content, spacing, shape and state styling belong to the
+application.
+
+```rust
+Button::new("save")
+    .accessibility_label("Save session")
+    .px_3()
+    .py_2()
+    .rounded(px(6.))
+    .bg(palette.accent)
+    .text_color(palette.accent_foreground)
+    .focus_visible(|style| style.border_color(palette.ring))
+    .styles(|styles| styles.disabled(|style| style.opacity(0.5)))
+    .on_click(|_, window, cx| {
+        // The application decides what activation does.
+    })
+    .child("Save")
+```
+
+## Activation and focus
+
+A click, Enter or Space activates the button once. `.disabled(true)` ignores
+activation and removes the Tab stop; a button disabled while focused keeps its
+focus binding until focus leaves, so Tab can continue in either direction.
+`.track_focus(&handle)` uses an application-owned focus handle, for example to
+restore focus after a dialog closes. `.tab_index(...)` and `.tab_stop(...)`
+adjust traversal.
+
+## Accessibility
+
+Name the button with `.accessibility_label(...)` whenever its children are not
+plain text, such as an icon-only button. `.selected(true)` drives selected
+styling only; `.current(true)` separately exposes `aria-current="page"` for
+navigation entries, so a selected look never implies the current page.
+
+Toggle, the Collapsible and Tooltip triggers, CarouselControl and the menu
+triggers compose Button, so they share this activation and focus contract.

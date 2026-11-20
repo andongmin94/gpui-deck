@@ -1,0 +1,18 @@
+---
+title: Menubar
+description: "One top-level focus entry, menu switching, opening and shared command trees."
+---
+
+<ComponentPreview name="menubar" height={360} />
+
+Build `MenubarState` from ordered `MenubarItem` values referring to existing
+`MenuState` entities. Render `Menubar` with one `MenubarMenu` per item. Each menu
+entry supplies its trigger and content while retaining the shared Menu command
+contract, including nested submenus and controlled check/radio values.
+
+Only one top-level item is a Tab stop. Left/Right move in logical order and
+Home/End reach the ends, skipping disabled entries. Down/Up open the first/last
+enabled command. While a menu is open, arrows and pointer travel can switch to
+another top-level menu; only one branch remains open. Escape returns to the
+corresponding entry. The catalogue Navigation view demonstrates these transitions
+and routes leaf commands to retained application state.
