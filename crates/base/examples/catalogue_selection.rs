@@ -1,6 +1,5 @@
 //! Date ranges, independent dates, and grouped recording targets in one local plan.
 
-use chrono::Datelike as _;
 use gpui::{
     AnyElement, App, AppContext as _, Context, ElementId, Entity, FontWeight,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, Role,
@@ -9,8 +8,8 @@ use gpui::{
 };
 use gpui_design::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Combobox, ComboboxGroup,
-    ComboboxList, ComboboxOption, ComboboxState, DatePicker, DatePickerState, Direction,
-    DirectionProvider, InputEditorStyle, NaiveDate, SearchItem, TestSupportExt as _, Weekday,
+    ComboboxList, ComboboxOption, ComboboxState, Date, DatePicker, DatePickerState, Direction,
+    DirectionProvider, InputEditorStyle, SearchItem, TestSupportExt as _, Weekday,
 };
 
 pub(crate) struct SelectionCatalogue {
@@ -23,17 +22,32 @@ pub(crate) struct SelectionCatalogue {
     _subscriptions: Vec<Subscription>,
 }
 
-fn date(day: u32) -> NaiveDate {
-    NaiveDate::from_ymd_opt(2026, 11, day).unwrap()
+/// The application owns weekday labels; Calendar exposes only the order.
+fn short_weekday(day: Weekday) -> &'static str {
+    match day {
+        Weekday::Monday => "Mon",
+        Weekday::Tuesday => "Tue",
+        Weekday::Wednesday => "Wed",
+        Weekday::Thursday => "Thu",
+        Weekday::Friday => "Fri",
+        Weekday::Saturday => "Sat",
+        Weekday::Sunday => "Sun",
+    }
+}
+
+fn date(day: i8) -> Date {
+    Date::new(2026, 11, day).unwrap()
 }
 
 impl SelectionCatalogue {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
         let range = cx.new(|cx| {
             CalendarState::new(date(11), cx)
-                .bounds(date(1), NaiveDate::from_ymd_opt(2027, 12, 31).unwrap())
-                .week_starts_on(Weekday::Sun)
-                .disabled_dates(|date| matches!(date.weekday(), Weekday::Sat | Weekday::Sun))
+                .bounds(date(1), Date::new(2027, 12, 31).unwrap())
+                .week_starts_on(Weekday::Sunday)
+                .disabled_dates(|date| {
+                    matches!(date.weekday(), Weekday::Saturday | Weekday::Sunday)
+                })
                 .default_selection(CalendarSelection::Range {
                     start: None,
                     end: None,
@@ -42,9 +56,11 @@ impl SelectionCatalogue {
         let picker = cx.new(|cx| DatePickerState::new(&range, window, cx));
         let availability = cx.new(|cx| {
             CalendarState::new(date(11), cx)
-                .bounds(date(1), NaiveDate::from_ymd_opt(2027, 12, 31).unwrap())
-                .week_starts_on(Weekday::Sun)
-                .disabled_dates(|date| matches!(date.weekday(), Weekday::Sat | Weekday::Sun))
+                .bounds(date(1), Date::new(2027, 12, 31).unwrap())
+                .week_starts_on(Weekday::Sunday)
+                .disabled_dates(|date| {
+                    matches!(date.weekday(), Weekday::Saturday | Weekday::Sunday)
+                })
                 .default_selection(CalendarSelection::Multiple(vec![date(11), date(13)]))
         });
         let targets = cx.new(|cx| {
@@ -132,7 +148,7 @@ impl SelectionCatalogue {
             .child(
                 div()
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child(month.format("%B %Y").to_string()),
+                    .child(month.strftime("%B %Y").to_string()),
             )
             .child(
                 Self::button(Button::new((ElementId::from(id), "next")))
@@ -144,7 +160,7 @@ impl SelectionCatalogue {
                     }),
             );
         let grid = Calendar::new(id, state)
-            .accessibility_label(format!("{id}, {}", month.format("%B %Y")))
+            .accessibility_label(format!("{id}, {}", month.strftime("%B %Y")))
             .w_full()
             .flex()
             .flex_col()
@@ -163,7 +179,7 @@ impl SelectionCatalogue {
                             .into_iter()
                             .enumerate()
                             .map(|(column, day)| {
-                                let label = day.to_string();
+                                let label = short_weekday(day);
                                 div()
                                     .id(("weekday", column))
                                     .test_support()
@@ -173,7 +189,7 @@ impl SelectionCatalogue {
                                     } else {
                                         column
                                     })
-                                    .aria_label(label.clone())
+                                    .aria_label(label)
                                     .flex_1()
                                     .min_w_0()
                                     .text_sm()
@@ -188,7 +204,7 @@ impl SelectionCatalogue {
                     .row(div().id((id, row)).role(Role::Row).aria_row_index(row + 1))
                     .children(week.iter().map(|&day| {
                         CalendarDay::new(state, day)
-                            .accessibility_label(day.format("%A, %B %-d, %Y").to_string())
+                            .accessibility_label(day.strftime("%A, %B %-d, %Y").to_string())
                             .flex_1()
                             .min_w_0()
                             .h(px(36.))
@@ -230,11 +246,15 @@ impl SelectionCatalogue {
             CalendarSelection::Range {
                 start: Some(start),
                 end: Some(end),
-            } => format!("{} – {}", start.format("%b %-d"), end.format("%b %-d, %Y")),
+            } => format!(
+                "{} – {}",
+                start.strftime("%b %-d"),
+                end.strftime("%b %-d, %Y")
+            ),
             CalendarSelection::Range {
                 start: Some(start),
                 end: None,
-            } => format!("{} → Choose an end date", start.format("%b %-d")),
+            } => format!("{} → Choose an end date", start.strftime("%b %-d")),
             _ => "Choose recording dates".into(),
         }
     }
@@ -341,7 +361,7 @@ impl Render for SelectionCatalogue {
         let selected_days = match self.availability.read(cx).selection() {
             CalendarSelection::Multiple(dates) => dates
                 .iter()
-                .map(|date| date.format("%b %-d").to_string())
+                .map(|date| date.strftime("%b %-d").to_string())
                 .collect::<Vec<_>>()
                 .join(", "),
             _ => String::new(),

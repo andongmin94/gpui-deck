@@ -23,7 +23,7 @@ use gpui::{
     VisualTestContext, point, px,
 };
 use gpui_design::{
-    CalendarSelection, ComboboxEvent, CommandEvent, MenuEvent, NaiveDate, RadioGroupEvent, Root,
+    CalendarSelection, ComboboxEvent, CommandEvent, Date, MenuEvent, RadioGroupEvent, Root,
     SelectEvent, TabsEvent, test_support,
 };
 use two_styles::{Appearance, Demo};
@@ -3128,7 +3128,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         assert!(calendar.focus_handle().is_focused(window));
         assert_eq!(
             calendar.selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 11, 9)
+            Date::new(2026, 11, 9).ok()
         );
         let day = test_support::snapshots(window)
             .into_iter()
@@ -3156,7 +3156,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     cx.update(|_, cx| {
         assert_eq!(
             demo.read(cx).calendar.read(cx).month(),
-            NaiveDate::from_ymd_opt(2026, 10, 1).unwrap()
+            Date::new(2026, 10, 1).unwrap()
         );
     });
     cx.simulate_keystrokes("tab");
@@ -3165,10 +3165,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     draw(cx);
     cx.update(|window, cx| {
         let calendar = demo.read(cx).calendar.read(cx);
-        assert_eq!(
-            calendar.month(),
-            NaiveDate::from_ymd_opt(2026, 11, 1).unwrap()
-        );
+        assert_eq!(calendar.month(), Date::new(2026, 11, 1).unwrap());
         assert!(calendar.focus_handle().is_focused(window));
     });
 
@@ -3177,13 +3174,10 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     draw(cx);
     cx.update(|window, cx| {
         let calendar = demo.read(cx).calendar.read(cx);
-        assert_eq!(
-            calendar.focused_date(),
-            NaiveDate::from_ymd_opt(2026, 12, 10).unwrap()
-        );
+        assert_eq!(calendar.focused_date(), Date::new(2026, 12, 10).unwrap());
         assert_eq!(
             calendar.selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 11, 9)
+            Date::new(2026, 11, 9).ok()
         );
         let grid = test_support::find(window, &[], &"recording-calendar".into()).unwrap();
         assert_eq!(grid.role(), Some(Role::Grid));
@@ -3216,7 +3210,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         assert!(demo.date_picker.read(cx).focus_handle().is_focused(window));
         assert_eq!(
             demo.calendar.read(cx).selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 11, 9)
+            Date::new(2026, 11, 9).ok()
         );
         assert_eq!(
             test_support::find(window, &[], &marker_label_id)
@@ -3228,10 +3222,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     activate_key(cx, "enter");
     cx.update(|window, cx| {
         let calendar = demo.read(cx).calendar.read(cx);
-        assert_eq!(
-            calendar.focused_date(),
-            NaiveDate::from_ymd_opt(2026, 11, 9).unwrap()
-        );
+        assert_eq!(calendar.focused_date(), Date::new(2026, 11, 9).unwrap());
         assert!(calendar.focus_handle().is_focused(window));
     });
     cx.simulate_keystrokes("right pagedown");
@@ -3241,7 +3232,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
     cx.update(|window, cx| {
         assert_eq!(
             demo.read(cx).calendar.read(cx).selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 12, 10)
+            Date::new(2026, 12, 10).ok()
         );
         let demo = demo.read(cx);
         assert!(!demo.date_picker.read(cx).is_open(cx));
@@ -3273,7 +3264,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         assert!(demo.typed_date_invalid);
         assert_eq!(
             demo.calendar.read(cx).selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 12, 10)
+            Date::new(2026, 12, 10).ok()
         );
     });
     for _ in 0.."2026-02-30".len() {
@@ -3294,7 +3285,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         assert_eq!(demo.typed_date.read(cx).value().as_ref(), "2026-12-14");
         assert_eq!(
             demo.calendar.read(cx).selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 12, 14)
+            Date::new(2026, 12, 14).ok()
         );
     });
     cx.simulate_input("x");
@@ -3309,7 +3300,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         assert!(!demo.typed_date_invalid);
         assert_eq!(
             demo.calendar.read(cx).selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 12, 10)
+            Date::new(2026, 12, 10).ok()
         );
     });
     cx.simulate_keystrokes("tab");
@@ -3412,7 +3403,7 @@ fn date_picker_and_split_panes_preserve_nested_form_state(cx: &mut TestAppContex
         assert_eq!(demo.tabs.read(cx).selected_index(), Some(3));
         assert_eq!(
             demo.calendar.read(cx).selection().first_date(),
-            NaiveDate::from_ymd_opt(2026, 12, 10)
+            Date::new(2026, 12, 10).ok()
         );
         assert!(!demo.date_picker.read(cx).is_open(cx));
         assert!((demo.schedule_split.read(cx).sizes()[0] - 0.52).abs() < 0.001);
@@ -3454,7 +3445,7 @@ fn schedule_marker_tracks_selection_at_narrow_widths_without_adding_focus(cx: &m
             (320., None, "No date selected"),
             (
                 280.,
-                NaiveDate::from_ymd_opt(2026, 12, 31),
+                Date::new(2026, 12, 31).ok(),
                 "Selected date · 2026-12-31",
             ),
         ] {
@@ -3665,7 +3656,7 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
                 test_support::find(window, &[], &text_id).unwrap().label(),
                 Some(edited)
             );
-            let expected = format!("Edited {}", edited_at.format("%Y-%m-%d %H:%M:%S UTC"));
+            let expected = format!("Edited {}", edited_at.strftime("%Y-%m-%d %H:%M:%S UTC"));
             assert_eq!(
                 test_support::find(window, &[], &time_id).unwrap().label(),
                 Some(expected.as_str())
@@ -3678,7 +3669,7 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
             let calendar = demo.read(cx).calendar.clone();
             calendar.update(cx, |state, cx| {
                 assert!(state.set_selection(
-                    CalendarSelection::Single(NaiveDate::from_ymd_opt(2026, 12, 24)),
+                    CalendarSelection::Single(Date::new(2026, 12, 24).ok()),
                     window,
                     cx
                 ));
@@ -3777,7 +3768,7 @@ fn schedule_message_reuses_notes_and_preserves_metadata_focus_and_parent_scroll(
             assert_eq!(demo.notes_edited_at, time);
             assert_eq!(
                 demo.calendar.read(cx).selection().first_date(),
-                NaiveDate::from_ymd_opt(2026, 12, 24)
+                Date::new(2026, 12, 24).ok()
             );
             assert_eq!(
                 test_support::find(window, &[], &text_id).unwrap().label(),

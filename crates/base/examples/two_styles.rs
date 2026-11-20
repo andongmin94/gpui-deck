@@ -3,7 +3,6 @@
 
 use std::sync::Arc;
 
-use chrono::Datelike as _;
 use gpui::{
     AppContext as _, Axis, Context, Entity, FocusHandle, Focusable as _, FontWeight, Image,
     ImageFormat, InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render, Role,
@@ -16,16 +15,15 @@ use gpui_design::{
     CalendarState, Checkbox, CheckboxState, Collapsible, CollapsibleContent, CollapsibleState,
     CollapsibleTrigger, Combobox, ComboboxList, ComboboxOption, ComboboxState, Command,
     CommandEvent, CommandInput, CommandList, CommandOption, CommandState, ContextMenu,
-    ControlField, DatePicker, DatePickerState, Dialog, DialogBackdrop, DialogClose,
+    ControlField, Date, DatePicker, DatePickerState, Dialog, DialogBackdrop, DialogClose,
     DialogDescription, DialogPopup, DialogState, DialogTitle, DropdownMenu, Field, HoverCard,
-    HoverCardState, Input, InputBase, Label, MenuEvent, MenuItem, MenuOption, MenuState, NaiveDate,
-    Popover, PopoverState, Progress, RadioGroup, RadioGroupState, RadioItem, RadioOption,
-    Resizable, ResizablePanel, ResizableState, ScrollArea, ScrollbarAxis, ScrollbarMode,
-    SearchItem, Select, SelectItem, SelectOption, SelectState, Separator, Slider, SliderState,
-    SliderThumb, Switch, Tab, TabItem, TabList, TabPanel, Table, TableCaption, TableCell,
-    TableColumn, TableRow, TabsState, TestSupportExt as _, TestTextExt as _, Textarea,
-    TextareaState, Toggle, ToggleGroup, ToggleGroupState, ToggleItem, ToggleOption, Tooltip,
-    TooltipState,
+    HoverCardState, Input, InputBase, Label, MenuEvent, MenuItem, MenuOption, MenuState, Popover,
+    PopoverState, Progress, RadioGroup, RadioGroupState, RadioItem, RadioOption, Resizable,
+    ResizablePanel, ResizableState, ScrollArea, ScrollbarAxis, ScrollbarMode, SearchItem, Select,
+    SelectItem, SelectOption, SelectState, Separator, Slider, SliderState, SliderThumb, Switch,
+    Tab, TabItem, TabList, TabPanel, Table, TableCaption, TableCell, TableColumn, TableRow,
+    TabsState, TestSupportExt as _, TestTextExt as _, Textarea, TextareaState, Toggle, ToggleGroup,
+    ToggleGroupState, ToggleItem, ToggleOption, Tooltip, TooltipState,
     input::{InputAccessibility, InputEditorStyle, InputEvent, InputState},
     parse_date_text,
 };
@@ -47,7 +45,7 @@ pub(crate) struct Demo {
     appearance: Appearance,
     pub(crate) input: Entity<InputState>,
     pub(crate) notes: Entity<TextareaState>,
-    pub(crate) notes_edited_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub(crate) notes_edited_at: Option<jiff::Timestamp>,
     pub(crate) preset: Entity<ComboboxState>,
     pub(crate) preset_table: Entity<DataTableState>,
     pub(crate) edit_hint: Entity<TooltipState>,
@@ -158,7 +156,7 @@ impl Demo {
                         DataTableCell::text(item.label().clone()),
                         DataTableCell::text(Self::preset_description(item.value())),
                         DataTableCell::number(format!("{megabits} Mbps"), megabits.into()),
-                        DataTableCell::date(updated.format("%b %-d, %Y").to_string(), updated),
+                        DataTableCell::date(updated.strftime("%b %-d, %Y").to_string(), updated),
                     ]
                 })
                 .disabled(item.is_disabled())
@@ -228,11 +226,11 @@ impl Demo {
             .default_value("preferences")
         });
         let calendar = cx.new(|cx| {
-            let initial = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+            let initial = Date::new(2026, 11, 9).unwrap();
             CalendarState::new(initial, cx)
                 .bounds(
-                    NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-                    NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
+                    Date::new(2026, 1, 1).unwrap(),
+                    Date::new(2027, 12, 31).unwrap(),
                 )
                 .default_selection(CalendarSelection::Single(Some(initial)))
         });
@@ -305,7 +303,7 @@ impl Demo {
             cx.observe(&notes, |_, _, cx| cx.notify()),
             cx.subscribe(&notes, |this, _, event, cx| {
                 if matches!(event, InputEvent::Change) {
-                    this.notes_edited_at = Some(std::time::SystemTime::now().into());
+                    this.notes_edited_at = Some(jiff::Timestamp::now());
                     cx.notify();
                 }
             }),
@@ -317,7 +315,7 @@ impl Demo {
                         shift: false,
                     } => {
                         // The example treats its initial Calendar date as today.
-                        let today = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+                        let today = Date::new(2026, 11, 9).unwrap();
                         let date = parse_date_text(&input.read(cx).value(), today);
                         let applied = date.is_some_and(|date| {
                             this.calendar.read(cx).selection().first_date() == Some(date)
@@ -332,7 +330,7 @@ impl Demo {
                         this.typed_date_invalid = !applied;
                         if let (true, Some(date)) = (applied, date) {
                             input.update(cx, |input, cx| {
-                                input.set_value(date.format("%Y-%m-%d").to_string(), window, cx)
+                                input.set_value(date.strftime("%Y-%m-%d").to_string(), window, cx)
                             });
                         }
                         cx.notify();
@@ -438,7 +436,7 @@ impl Demo {
     }
 
     /// Illustrative bitrate and last-change date for each preset.
-    fn preset_metrics(value: &str) -> (u32, NaiveDate) {
+    fn preset_metrics(value: &str) -> (u32, Date) {
         let (megabits, month, day) = match value {
             "balanced" => (8, 11, 2),
             "broadcast" => (12, 9, 18),
@@ -446,7 +444,7 @@ impl Demo {
             "quality" => (20, 11, 14),
             _ => (0, 1, 1),
         };
-        (megabits, NaiveDate::from_ymd_opt(2026, month, day).unwrap())
+        (megabits, Date::new(2026, month, day).unwrap())
     }
 
     fn input_style(palette: Palette) -> InputEditorStyle {
@@ -543,7 +541,7 @@ impl Demo {
         let month = state.month();
 
         let calendar = Calendar::new("recording-calendar", &self.calendar)
-            .accessibility_label(format!("Recording date, {}", month.format("%B %Y")))
+            .accessibility_label(format!("Recording date, {}", month.strftime("%B %Y")))
             .flex()
             .flex_col()
             .gap_1()
@@ -581,7 +579,7 @@ impl Demo {
                     .flex()
                     .children(week.iter().map(|&date| {
                         CalendarDay::new(&self.calendar, date)
-                            .accessibility_label(date.format("%A, %B %-d, %Y").to_string())
+                            .accessibility_label(date.strftime("%A, %B %-d, %Y").to_string())
                             .flex_1()
                             .min_w_0()
                             .h(palette.control_height)
@@ -619,7 +617,7 @@ impl Demo {
                     })
                     .child("‹"),
             )
-            .text(month.format("%B %Y").to_string())
+            .text(month.strftime("%B %Y").to_string())
             .button(
                 Button::new("next-month")
                     .accessibility_label("Next month")
@@ -658,7 +656,7 @@ impl Demo {
     ) -> impl IntoElement + use<> {
         let selected_date = self.calendar.read(cx).selection().first_date();
         let date_label = selected_date
-            .map(|date| date.format("%Y-%m-%d").to_string())
+            .map(|date| date.strftime("%Y-%m-%d").to_string())
             .unwrap_or_else(|| "Pick a date".to_string());
         let marker_label = if selected_date.is_some() {
             format!("Selected date · {date_label}")
@@ -852,7 +850,7 @@ impl Demo {
         }
         let time = self
             .notes_edited_at
-            .map(|time| format!("Edited {}", time.format("%Y-%m-%d %H:%M:%S UTC")))
+            .map(|time| format!("Edited {}", time.strftime("%Y-%m-%d %H:%M:%S UTC")))
             .unwrap_or_else(|| "Edit time not recorded".to_string());
         let notes = self.notes.clone();
         Message::new("session-note-message", "You", time, body, palette)
@@ -1000,7 +998,7 @@ impl Demo {
                         self.calendar
                             .read(cx)
                             .selection().first_date()
-                            .map(|date| date.format("%Y-%m-%d").to_string())
+                            .map(|date| date.strftime("%Y-%m-%d").to_string())
                             .unwrap_or_else(|| "Not scheduled".to_string())
                     )))
                     .child(div().text_sm().text_color(palette.muted).child(
@@ -1353,7 +1351,7 @@ impl Demo {
             .read(cx)
             .selection()
             .first_date()
-            .map(|date| date.format("%Y-%m-%d").to_string())
+            .map(|date| date.strftime("%Y-%m-%d").to_string())
             .unwrap_or_else(|| "Not selected".to_string());
         let preset = self
             .preset
@@ -2379,7 +2377,7 @@ impl Render for Demo {
                                         .read(cx)
                                         .selection()
                                         .first_date()
-                                        .map(|date| date.format("%Y-%m-%d").to_string())
+                                        .map(|date| date.strftime("%Y-%m-%d").to_string())
                                         .unwrap_or_else(|| "Not scheduled".to_string())
                                 )))
                                 .action(preset_preview),

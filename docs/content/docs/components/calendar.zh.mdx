@@ -6,29 +6,29 @@ description: "单选/多选/范围日期选择、独立的焦点、日期禁用�
 <ComponentPreview name="calendar" height={360} />
 
 `CalendarState` 保留一个 `CalendarSelection`、获得焦点的日期，以及
-可见的月份。`NaiveDate` 从 Chrono 重新导出；不引入第二套日期模型或
+可见的月份。`Date` 重新导出自 jiff 的民用日期（`jiff::civil::Date`）；不引入第二套日期模型或
 时区转换。只需创建一次状态：
 
 ```rust
 let calendar = cx.new(|cx| {
-    let initial = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+    let initial = Date::new(2026, 11, 9).unwrap();
     CalendarState::new(initial, cx)
         .bounds(
-            NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
+            Date::new(2026, 1, 1).unwrap(),
+            Date::new(2027, 12, 31).unwrap(),
         )
         .default_selection(CalendarSelection::Single(Some(initial)))
 });
 ```
 
 不设置 `default_selection` 时，选择状态初始为 `CalendarSelection::Single(None)`。默认边界涵盖
-1–9999 年；`bounds` 会在挂载前收窄包含两端的可选范围。
+1–9998 年（9998 年 12 月的六周网格仍在 jiff 的范围内）；`bounds` 会在挂载前收窄包含两端的可选范围。
 网格通过 `days()` 提供六个完整的周，默认以周一开头。相邻月份的
 日期仍然可见；超出所配置边界的日期会被禁用。
 
 在挂载前，`.week_starts_on(Weekday::Sun)` 会改变网格以及 Home/End
 的边界。使用 `weekdays()` 获得与之匹配的表头顺序；`Weekday` 与
-`NaiveDate` 一同重新导出。`.disabled_dates(|date| ...)` 提供应用规则，
+`Date` 一同重新导出。`.disabled_dates(|date| ...)` 提供应用规则，
 例如周末或已预订的日期。它会过滤已有的单选/多选值，并
 清除端点不可用的范围。默认值和程序化设置方法会拒绝
 不可用的日期/端点；范围内部可以包含不可用的日期。
@@ -78,8 +78,8 @@ Calendar 继承 `DirectionProvider`，或接受 `.direction(Direction::Rtl)`。
 和水平键盘方向。标签和文本
 格式仍由应用负责；Selection 目录展示了这种布局。
 
-`CalendarSelection` 还支持 `Multiple(Vec<NaiveDate>)` 和
-`Range { start: Option<NaiveDate>, end: Option<NaiveDate> }`。使用
+`CalendarSelection` 还支持 `Multiple(Vec<Date>)` 和
+`Range { start: Option<Date>, end: Option<Date> }`。使用
 `.default_selection(CalendarSelection::Range { start: None, end: None })` 配置空
 范围。第一次激活选择其起点；第二次激活完成包含两端的有序
 端点，包括反向或同一天的选择。激活已完成的范围会

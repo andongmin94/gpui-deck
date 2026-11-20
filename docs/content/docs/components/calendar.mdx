@@ -6,29 +6,29 @@ description: "Single/multiple/range date selection, separate focus, date-disable
 <ComponentPreview name="calendar" height={360} />
 
 `CalendarState` retains a `CalendarSelection`, the focused date, and the
-visible month. `NaiveDate` is re-exported from Chrono; no second date model or
-timezone conversion is introduced. Create the state once:
+visible month. `Date` is jiff's civil date (`jiff::civil::Date`), re-exported; no second date
+model or timezone conversion is introduced. Create the state once:
 
 ```rust
 let calendar = cx.new(|cx| {
-    let initial = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
+    let initial = Date::new(2026, 11, 9).unwrap();
     CalendarState::new(initial, cx)
         .bounds(
-            NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-            NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
+            Date::new(2026, 1, 1).unwrap(),
+            Date::new(2027, 12, 31).unwrap(),
         )
         .default_selection(CalendarSelection::Single(Some(initial)))
 });
 ```
 
 Without `default_selection`, selection starts as `CalendarSelection::Single(None)`. Default bounds cover years
-1–9999; `bounds` narrows the inclusive selectable range before mounting. The
+1–9998 (the six-week grid of December 9998 still fits jiff's range); `bounds` narrows the inclusive selectable range before mounting. The
 grid exposes six complete weeks through `days()`, Monday-first by default. Adjacent-month
 dates remain visible; dates outside the configured bounds are disabled.
 
 Before mounting, `.week_starts_on(Weekday::Sun)` changes the grid and Home/End
 boundaries. Use `weekdays()` for matching header order; `Weekday` is re-exported
-alongside `NaiveDate`. `.disabled_dates(|date| ...)` supplies application rules
+alongside `Date`. `.disabled_dates(|date| ...)` supplies application rules
 such as weekends or booked dates. It filters existing single/multiple values and
 clears ranges with unavailable endpoints. Default and programmatic setters reject
 unavailable dates/endpoints; a range may include unavailable interior days.
@@ -78,8 +78,8 @@ mirror weekday header column indices. CalendarDay projects physical columns and
 horizontal keyboard direction from its enclosing Calendar. Labels and text
 formatting remain application-owned; the Selection catalogue shows this layout.
 
-`CalendarSelection` also supports `Multiple(Vec<NaiveDate>)` and
-`Range { start: Option<NaiveDate>, end: Option<NaiveDate> }`. Configure an empty
+`CalendarSelection` also supports `Multiple(Vec<Date>)` and
+`Range { start: Option<Date>, end: Option<Date> }`. Configure an empty
 range with `.default_selection(CalendarSelection::Range { start: None, end: None })`.
 The first activation chooses its start; the second completes inclusive ordered
 endpoints, including reverse or same-day selection. Activating a completed range

@@ -37,8 +37,8 @@ the pinned GPUI API does not expose a native labelled-by relationship between
 the sibling elements. Tooltip reuses Button and GPUI's native tooltip layer while retaining
 hover/focus visibility. HoverCard combines Button with Popup positioning and a
 retained hover/focus lifecycle without taking focus from the trigger.
-Calendar composes Button for day activation and uses the already locked Chrono
-date type for Gregorian arithmetic. DatePicker coordinates that Calendar with
+Calendar composes Button for day activation and uses jiff's civil date type for
+Gregorian arithmetic. DatePicker coordinates that Calendar with
 Popover's focus and dismissal lifecycle; it has no duplicate date value or popup
 engine. Resizable uses GPUI flex layout and native dragging for retained multi-panel groups.
 Table uses shared GPUI column tracks and

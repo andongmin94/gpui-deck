@@ -10,13 +10,13 @@ use gpui::{
 use gpui_design::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Carousel, CarouselControl,
     CarouselSlide, CarouselState, Chart, ChartSeries, ChartState, Combobox, ComboboxList,
-    ComboboxOption, ComboboxState, DatePicker, DatePickerState, Direction, DirectionProvider,
+    ComboboxOption, ComboboxState, Date, DatePicker, DatePickerState, Direction, DirectionProvider,
     Field, Input, InputAccessibility, InputBase, InputEditorStyle, InputOtp, InputOtpEvent,
-    InputOtpState, InputState, Label, MessageScroller, MessageScrollerState, NaiveDate,
-    Questionnaire, QuestionnaireStage, QuestionnaireState, Resizable, ResizablePanel,
-    ResizableState, ScrollArea, ScrollbarMode, SearchItem, Select, SelectItem, SelectOption,
-    SelectState, Table, TableCaption, TableCell, TableColumn, TableRow, Textarea, TextareaState,
-    Toggle, ToggleGroup, ToggleGroupState, ToggleItem, ToggleOption, input::InputEvent,
+    InputOtpState, InputState, Label, MessageScroller, MessageScrollerState, Questionnaire,
+    QuestionnaireStage, QuestionnaireState, Resizable, ResizablePanel, ResizableState, ScrollArea,
+    ScrollbarMode, SearchItem, Select, SelectItem, SelectOption, SelectState, Table, TableCaption,
+    TableCell, TableColumn, TableRow, Textarea, TextareaState, Toggle, ToggleGroup,
+    ToggleGroupState, ToggleItem, ToggleOption, input::InputEvent,
 };
 
 use super::{frame, outline, primary};
@@ -66,8 +66,8 @@ pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> Opti
 
 // Shared pieces
 
-fn today() -> NaiveDate {
-    NaiveDate::from_ymd_opt(2026, 11, 20).unwrap()
+fn today() -> Date {
+    Date::new(2026, 11, 20).unwrap()
 }
 
 /// Readable editing colors for an input on the given theme.
@@ -661,12 +661,12 @@ fn input_otp(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
 
 // Calendar and DatePicker
 
-fn calendar_state(selected: Option<NaiveDate>, cx: &mut App) -> Entity<CalendarState> {
+fn calendar_state(selected: Option<Date>, cx: &mut App) -> Entity<CalendarState> {
     cx.new(|cx| {
         CalendarState::new(today(), cx)
             .bounds(
-                NaiveDate::from_ymd_opt(2026, 1, 1).unwrap(),
-                NaiveDate::from_ymd_opt(2027, 12, 31).unwrap(),
+                Date::new(2026, 1, 1).unwrap(),
+                Date::new(2027, 12, 31).unwrap(),
             )
             .default_selection(CalendarSelection::Single(selected))
     })
@@ -689,8 +689,8 @@ fn month_button(
 fn calendar_card(theme: Theme, state: &Entity<CalendarState>, cx: &App) -> Div {
     let model = state.read(cx);
     let month = model.month();
-    let month_key = month.format("%Y-%m").to_string();
-    let title = month.format("%B %Y").to_string();
+    let month_key = month.strftime("%Y-%m").to_string();
+    let title = month.strftime("%B %Y").to_string();
     let previous = state.clone();
     let next = state.clone();
     let grid = Calendar::new("calendar", state)
@@ -730,9 +730,9 @@ fn calendar_card(theme: Theme, state: &Entity<CalendarState>, cx: &App) -> Div {
                 .flex()
                 .children(week.iter().map(|&date| {
                     let selected = model.is_selected(date);
-                    let outside = date.format("%Y-%m").to_string() != month_key;
+                    let outside = date.strftime("%Y-%m").to_string() != month_key;
                     CalendarDay::new(state, date)
-                        .accessibility_label(date.format("%A, %B %-d, %Y").to_string())
+                        .accessibility_label(date.strftime("%A, %B %-d, %Y").to_string())
                         .size(px(32.))
                         .flex()
                         .items_center()
@@ -748,7 +748,7 @@ fn calendar_card(theme: Theme, state: &Entity<CalendarState>, cx: &App) -> Div {
                         .when(selected, |day| {
                             day.bg(theme.primary).text_color(theme.primary_foreground)
                         })
-                        .child(date.format("%-d").to_string())
+                        .child(date.strftime("%-d").to_string())
                 }))
         }));
     popup(theme)
@@ -794,7 +794,7 @@ impl Render for CalendarDemo {
             .read(cx)
             .selection()
             .first_date()
-            .map(|date| date.format("Selected %A, %B %-d").to_string())
+            .map(|date| date.strftime("Selected %A, %B %-d").to_string())
             .unwrap_or_else(|| "No date selected".into());
         frame(theme)
             .flex_col()
@@ -829,7 +829,7 @@ impl Render for DatePickerDemo {
         let theme = self.theme;
         let date = self.picker.read(cx).selection(cx).first_date();
         let text = date
-            .map(|date| date.format("%B %-d, %Y").to_string())
+            .map(|date| date.strftime("%B %-d, %Y").to_string())
             .unwrap_or_else(|| "Pick a date".into());
         let trigger_label = format!("Date, {text}");
         frame(theme).items_start().pt(px(12.)).child(
