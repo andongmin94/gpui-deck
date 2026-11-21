@@ -1,9 +1,9 @@
 ---
 title: Coverage and status
-description: "Reference catalogue checked **2026-11-11**: shadcn/ui All Components."
+description: "Reference catalogue checked **2026-11-21**: shadcn/ui All Components."
 ---
 
-Reference catalogue checked **2026-11-11**:
+Reference catalogue checked **2026-11-21**:
 [shadcn/ui All Components](https://ui.shadcn.com/docs/components).
 Its main catalogue contains **66 entries**, each listed once below. The separate
 AI Elements catalogue is outside this comparison; conversation components already
@@ -64,14 +64,14 @@ in the [form guide](./guides/forms.mdx),
 | Input OTP | Available | One retained numeric editor with application-rendered slots, selection, clipboard, deletion, undo, disabled/read-only states and completion events. Full resulting pasted value must fit and contain ASCII digits; no transport or code verification. |
 | Label | Available | Named native plain-text label with click-to-focus through a supplied existing FocusHandle, an explicit disabled flag, and no additional Tab stop. The application keeps the target mounted and supplies its accessible name and matching disabled state. No activation forwarding or native labelled-by relationship; Field retains its richer text-input association. |
 | Menubar | Available | Coordinated top-level menus with one Tab entry, logical Left/Right and Home/End movement, Down/Up opening, open-menu pointer switching and shared Menu command semantics. |
-| Native Select | Mapped | Use the existing GPUI `Select` for one value from fixed options, keyboard selection, disabled options and native accessibility metadata. HTML form submission, optgroup markup and browser/OS picker UI are not GPUI contracts. No duplicate NativeSelect export. |
+| Native Select | Mapped | Use the GPUI `Select` to choose one value from application-supplied options, with keyboard input, disabled options and native accessibility metadata. Browser form submission and the OS picker UI remain platform-specific. |
 | Navigation Menu | Available | Named navigation with destination Links, explicit disclosure entries, coordinated popups, roving focus, logical arrows and open-menu pointer switching. Popup contents remain ordinary groups with normal Tab traversal; navigation destinations are application-owned. |
 | Popover | Available | Non-modal content with corner or collision-aware side/alignment placement, retained open state, dismissal, normal focus traversal, and return focus. |
 | Progress | Available | Controlled known progress or an indeterminate state; the application owns fill geometry and animation. |
 | Radio Group | Available | Fixed items, exclusive selection, roving Tab entry, and immediate arrow selection. |
 | Resizable | Available | Two or more panels, horizontal/vertical arrangement, per-panel fractional and measured pixel limits with refitting on resize, cascading pointer/keyboard resizing, collapsible panels with snap, Enter toggle and size restore, programmatic layout restore for application-stored sizes, and native splitter values. The storage location is application-owned. |
 | Scroll Area | Available | Native viewport with existing overlay scrollbar, vertical/horizontal/both axes, retained offsets, and scoped descendant reveal. No virtualization, streaming anchoring, or separate keyboard scroll focus. |
-| Select | Available | Fixed ordered options, one committed value, separate popup cursor, Home/End, buffered Unicode label typeahead and atomic programmatic set/clear. Closed typing commits; open typing only highlights. Editable query, item replacement and multiple selection are not included. Keyboard navigation reveals the active option in a bounded, scrollable list. |
+| Select | Available | The ordered list can be replaced while mounted. Selection and the open cursor follow surviving enabled values. Home/End, arrows and typeahead reveal the active row. Enter commits, and Escape returns to the trigger. |
 | Separator | Available | Horizontal/vertical, semantic or decorative separation; the application supplies its visual style. |
 | Slider | Available | Ordered single/range/multiple values with per-thumb focus and numeric semantics, nearest-thumb pointer adjustment, noncrossing steps, vertical and RTL geometry. |
 | Switch | Available | Controlled boolean state, native activation, disabled state, and focus; the application supplies track and thumb. |
@@ -131,7 +131,7 @@ popup, focus, and scrolling machinery.
 | Message | Recipe | Read-only native Comment with application-supplied author/time Labels, a wrapping Paragraph body, and an optional existing action. Schedule presents the retained session note and its local edit time, with a Button returning focus to the shared Textarea. No message focus stop, delivery state, transport, history, streaming, or automatic live announcement. |
 | Message Scroller | Available | Existing ScrollArea with stable message keys, initial/append/stream bottom following, same-frame preservation of a visible history anchor, unread count and jump-to-latest. No virtualization, transport or forced focus changes. |
 | Questionnaire | Available | Typed application-owned answers with a linear question/review/complete state, validation-gated advance, Back and retained answers. The example connects real Input editors and app-owned focus changes; no schema interpreter or conditional branching. |
-| Sidebar | Recipe | Named navigation with ordinary Buttons, explicit activation and current-page metadata over dedicated TabsState; static groups and optional whole/group Collapsible state preserve selection and restore focus when entries unmount; an optional icon rail keeps named, current, focused entries mounted as icon-only Buttons with hover tooltips. Settings and the catalogue stack navigation above content below 640 px. No routing, arbitrary nested menu tree or reuse of a state previously bound by TabList. |
+| Sidebar | Recipe | Named navigation with ordinary Buttons, explicit activation and current-page metadata over dedicated TabsState; static groups and optional whole/group Collapsible state preserve selection and restore focus when entries unmount; an optional icon rail keeps named, current, focused entries mounted as icon-only Buttons with hover tooltips. Below 640 px, Settings stacks its navigation above the content and the Projects catalogue offers a navigation Sheet. No routing, arbitrary nested menu tree or reuse of a state previously bound by TabList. |
 | Trace | Recipe | Application-supplied summary, named read-only Paragraph details, and an optional existing action over retained Collapsible state. Shared Button activation, expanded/disabled metadata, active-only content, and focus on closure are preserved. Help presents current form values rather than recorded operations. No execution history, streaming, parser, separate disclosure state, or scroll controller. |
 
 ## Completion criteria and current work

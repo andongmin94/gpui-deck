@@ -34,7 +34,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Textarea** | Multiline editing over the same engine, retained text, wrapping, and normal form Tab traversal | Field container, dimensions, text style, and surrounding content |
 | **Field** | Label focus, help/error descriptions, and required/invalid metadata for Input/Textarea-based controls, plus ControlField for Checkbox, Switch, RadioGroup and Select | Layout, label/help/error styles, control rendering, and validation rules |
 | **Label** | Named native text label that focuses an existing control when clicked, with an explicit disabled flag and no extra Tab stop | Text, layout, styling, target accessible name, and matching disabled state |
-| **Select** | Single selection, buffered typeahead, Home/End and arrow navigation, disabled options, and automatic scrolling to the active option | Trigger, popup height limit, content and option rendering |
+| **Select** | Single selection, replaceable options keyed by value, buffered typeahead, Home/End and arrow navigation, and scrolling to the active option | Trigger, popup height limit, content and option rendering |
 | **Combobox** | Editable single/multiple selection, grouped search results, replaceable options, keyboard/pointer commit, and draft cancellation | Query frame, suggestion surface, result rows, selected chips, and empty state |
 | **Calendar** | Single/multiple/range date selection, separate focus, disabled dates, configurable week start, direct month/year navigation, bounds and RTL | Month controls, weekday/date labels, grid layout, and day styling |
 | **DatePicker** | Calendar selection inside Popover, selected-date or retained-cursor initial focus, single/complete-range closing, dismissal, disabled state, and typed ISO/relative date parsing | Formatted trigger, calendar/month controls, presets, and popup surface |
@@ -47,7 +47,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Tooltip** | Plain-text native description with optional noninteractive rich content on Button hover/focus, delayed hover, Escape dismissal, and native tooltip positioning | Button styling, tooltip surface styling and rich content |
 | **HoverCard** | Delayed rich preview on hover, touch long-press preview, trigger-to-card pointer travel, focus preview without moving focus, and dismissal | Button action, preview content, surface, and placement |
 | **Popover** | Non-modal open/close state, corner or collision-aware side/alignment placement, focus, outside dismissal, and Escape | Trigger, popup contents, and surface styling |
-| **DropdownMenu** | Plain, checked/mixed/radio and nested submenu semantics, navigation, leaf dispatch, dismissal, and focus | Trigger, menu surface, command rendering, and controlled checked values |
+| **DropdownMenu** | Plain, checked/mixed/radio and nested commands, keyboard navigation that scrolls the active row into view, leaf dispatch, dismissal and focus | Trigger, menu surface, command rendering, and controlled checked values |
 | **ContextMenu** | Secondary-click, touch long-press or keyboard opening, pointer placement, and the shared menu tree's commands, navigation, dismissal, and focus | Focusable target, menu surface, command rendering, and controlled checked values |
 | **Command** | Ranked fuzzy text search, enabled-result navigation, pointer/Enter action dispatch, and highlighted-result scrolling | Query frame, result rows, empty state, and optional Dialog composition |
 | **Dialog** | Open/close state, native modal metadata, background input isolation, initial focus, dismissal, and focus restoration | Backdrop, popup, title, description, and close control |
@@ -105,7 +105,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Avatar** | Named circular image with explicit fallback text, using GPUI's image loader and cache, plus an overlapping AvatarGroup with a named "+N" overflow | Preset artwork or initials and a people group in the existing HoverCard preview |
 | **AspectRatio** | Clipped media frame with a finite positive width/height ratio and application-owned content | A recording-frame illustration driven by the retained preset and session name |
 | **Sheet** | Four-edge modal presentation over Dialog, viewport-limited size, fixed header/footer, and one scrolling body | Session settings and catalogue help panels, using retained state |
-| **Sidebar** | Named grouped navigation, ordinary Buttons, current-page metadata, optional whole/group Collapsible state, and an optional icon rail | Grouped Settings sections with an icon rail and the catalogue's collapsible project navigation |
+| **Sidebar** | Grouped navigation with current-page metadata, collapsible groups, an optional icon rail and an optional navigation Sheet for narrow windows | Settings sections with an icon rail and the catalogue's responsive project navigation |
 | **Typography** | Named headings with explicit levels, paragraphs with native inline-code text runs, and independently named code elements | Help headings, state-ownership explanations, and the example's source identifier |
 | **CodeBlock** | Read-only multiline code, an exact full-text Copy action, and bounded two-axis scrolling with keyboard access | A JSON snapshot of the retained session settings in Help |
 | **Marker** | One named date/status label between decorative separators, with wrapping text and no focus stop | The currently selected Calendar date above Schedule's notes and recording plan |
@@ -128,8 +128,9 @@ Input provides a small, readable baseline for unset text, caret, and selection
 colors. Explicit `InputEditorStyle` values take precedence. Applications own the
 controls' frame borders, radii, layout, design palette, and sizing scales.
 
-Select accepts a fixed, ordered collection when `SelectState` is created. Each
-option has a unique value; the state owns the selected value and keyboard cursor.
+Select options have unique values. `SelectState::set_items` replaces them in a
+mounted control, preserving the selection and pending cursor by value while
+their options remain enabled.
 Typing selects an enabled prefix match while closed and highlights it while open.
 Home/End highlight the first/last enabled option in an open popup without committing.
 Command and Combobox share `SearchItem` values, labels, aliases, and disabled
