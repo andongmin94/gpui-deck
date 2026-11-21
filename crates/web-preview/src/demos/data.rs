@@ -401,6 +401,7 @@ fn label(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
 struct SelectDemo {
     theme: Theme,
     state: Entity<SelectState>,
+    asia_only: bool,
     _observe: Subscription,
 }
 
@@ -428,64 +429,87 @@ impl Render for SelectDemo {
                 .child(item.label().clone())
                 .when(selected == Some(index), |option| option.child("✓"))
         });
-        frame(theme).items_start().pt(px(48.)).child(
-            Select::new("time-zone", &self.state)
-                .accessibility_label("Time zone")
-                .list_max_height(px(144.))
-                .w(px(200.))
-                .rounded(px(6.))
-                .border_1()
-                .border_color(theme.border)
-                .bg(theme.background)
-                .focus_visible(|style| style.border_color(theme.ring))
-                .trigger(
-                    div()
-                        .h(px(36.))
-                        .px(px(12.))
-                        .flex()
-                        .items_center()
-                        .justify_between()
-                        .child(
-                            div()
-                                .when(!has_value, |text| text.text_color(theme.muted_foreground))
-                                .child(current),
-                        )
-                        .child(
-                            div()
-                                .text_size(px(10.))
-                                .text_color(theme.muted_foreground)
-                                .child("▼"),
-                        ),
-                )
-                .content(popup(theme).w(px(200.)).children(options)),
-        )
+        let filter = if self.asia_only {
+            "Show all time zones"
+        } else {
+            "Show Asia only"
+        };
+        frame(theme)
+            .flex_col()
+            .justify_start()
+            .pt(px(32.))
+            .child(
+                Select::new("time-zone", &self.state)
+                    .accessibility_label("Time zone")
+                    .list_max_height(px(144.))
+                    .w(px(200.))
+                    .rounded(px(6.))
+                    .border_1()
+                    .border_color(theme.border)
+                    .bg(theme.background)
+                    .focus_visible(|style| style.border_color(theme.ring))
+                    .trigger(
+                        div()
+                            .h(px(36.))
+                            .px(px(12.))
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .child(
+                                div()
+                                    .when(!has_value, |text| {
+                                        text.text_color(theme.muted_foreground)
+                                    })
+                                    .child(current),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(10.))
+                                    .text_color(theme.muted_foreground)
+                                    .child("▼"),
+                            ),
+                    )
+                    .content(popup(theme).w(px(200.)).children(options)),
+            )
+            .child(
+                outline(theme, Button::new("filter-time-zones"))
+                    .accessibility_label(filter)
+                    .child(filter)
+                    .on_click(cx.listener(|this, _, window, cx| {
+                        this.asia_only = !this.asia_only;
+                        this.state.update(cx, |state, cx| {
+                            state.set_items(time_zones(this.asia_only), window, cx)
+                        });
+                    })),
+            )
     }
 }
 
+fn time_zones(asia_only: bool) -> impl Iterator<Item = SelectItem> {
+    [
+        SelectItem::new("America/Los_Angeles", "Los Angeles"),
+        SelectItem::new("America/Denver", "Denver"),
+        SelectItem::new("America/Chicago", "Chicago"),
+        SelectItem::new("America/New_York", "New York"),
+        SelectItem::new("Europe/London", "London"),
+        SelectItem::new("Europe/Paris", "Paris").disabled(true),
+        SelectItem::new("Asia/Kolkata", "Kolkata"),
+        SelectItem::new("Asia/Seoul", "Seoul"),
+        SelectItem::new("Asia/Tokyo", "Tokyo"),
+        SelectItem::new("Australia/Sydney", "Sydney"),
+    ]
+    .into_iter()
+    .filter(move |item| !asia_only || item.value().starts_with("Asia/"))
+}
+
 fn select(theme: Theme, cx: &mut App) -> AnyView {
-    let state = cx.new(|cx| {
-        SelectState::new(
-            [
-                SelectItem::new("America/Los_Angeles", "Los Angeles"),
-                SelectItem::new("America/Denver", "Denver"),
-                SelectItem::new("America/Chicago", "Chicago"),
-                SelectItem::new("America/New_York", "New York"),
-                SelectItem::new("Europe/London", "London"),
-                SelectItem::new("Europe/Paris", "Paris").disabled(true),
-                SelectItem::new("Asia/Kolkata", "Kolkata"),
-                SelectItem::new("Asia/Seoul", "Seoul"),
-                SelectItem::new("Asia/Tokyo", "Tokyo"),
-                SelectItem::new("Australia/Sydney", "Sydney"),
-            ],
-            cx,
-        )
-        .default_value("Asia/Seoul")
-    });
+    let state = cx.new(|cx| SelectState::new(time_zones(false), cx).default_value("Asia/Seoul"));
     cx.new(|cx| {
         let observe = cx.observe(&state, |_, _, cx| cx.notify());
         SelectDemo {
             theme,
             state,
+            asia_only: false,
             _observe: observe,
         }
     })

@@ -191,18 +191,8 @@ impl Demo {
         let edit_hint = cx.new(|cx| TooltipState::new(&trigger_focus, window, cx));
         let preview_focus = cx.focus_handle().tab_stop(true);
         let preset_preview = cx.new(|cx| HoverCardState::new(&preview_focus, window, cx));
-        let select = cx.new(|cx| {
-            SelectState::new(
-                [
-                    SelectItem::new("pen", "Pen"),
-                    SelectItem::new("laser", "Laser (unavailable)").disabled(true),
-                    SelectItem::new("rectangle", "Rectangle"),
-                    SelectItem::new("arrow", "Arrow"),
-                ],
-                cx,
-            )
-            .default_value("pen")
-        });
+        let select =
+            cx.new(|cx| SelectState::new(Self::drawing_tools(false), cx).default_value("pen"));
         let stroke = cx.new(|cx| {
             let mut state = RadioGroupState::new(
                 [
@@ -346,7 +336,24 @@ impl Demo {
                     _ => {}
                 }
             }),
-            cx.observe(&preset, |_, _, cx| cx.notify()),
+            cx.observe_in(&preset, window, |this, preset, window, cx| {
+                let presentation = preset
+                    .read(cx)
+                    .selected_items(cx)
+                    .any(|item| item.value().as_ref() == "presentation");
+                let laser_enabled = this
+                    .select
+                    .read(cx)
+                    .items()
+                    .iter()
+                    .any(|item| item.value().as_ref() == "laser" && !item.is_disabled());
+                if presentation != laser_enabled {
+                    this.select.update(cx, |state, cx| {
+                        state.set_items(Self::drawing_tools(presentation), window, cx)
+                    });
+                }
+                cx.notify();
+            }),
             cx.observe(&preset_table, |_, _, cx| cx.notify()),
             cx.observe(&edit_hint, |_, _, cx| cx.notify()),
             cx.observe(&preset_preview, |_, _, cx| cx.notify()),
@@ -440,6 +447,20 @@ impl Demo {
     }
 
     /// Illustrative bitrate and last-change date for each preset.
+    fn drawing_tools(presentation: bool) -> [SelectItem; 4] {
+        let laser = if presentation {
+            "Laser"
+        } else {
+            "Laser (Presentation only)"
+        };
+        [
+            SelectItem::new("pen", "Pen"),
+            SelectItem::new("laser", laser).disabled(!presentation),
+            SelectItem::new("rectangle", "Rectangle"),
+            SelectItem::new("arrow", "Arrow"),
+        ]
+    }
+
     fn preset_metrics(value: &str) -> (u32, Date) {
         let (megabits, month, day) = match value {
             "balanced" => (8, 11, 2),

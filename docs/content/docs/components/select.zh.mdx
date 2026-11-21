@@ -1,6 +1,6 @@
 ---
 title: Select
-description: "固定的单选、带缓冲的输入定位、Home/End 与方向键导航、禁用选项、提交和焦点。"
+description: "支持更新选项的单选、带缓冲的输入定位、Home/End 与方向键导航、禁用选项、提交和焦点。"
 ---
 
 <ComponentPreview name="select" height={360} />
@@ -10,7 +10,9 @@ description: "固定的单选、带缓冲的输入定位、Home/End 与方向键
 较短的列表按内容确定高度；使用 `Select::list_max_height(px(144.))`
 可以在窗口允许的范围内设置一个更小的高度上限。
 
-`SelectState::new(items, cx)` 持有一组固定有序的唯一值、一个
+点击 **Show Asia only** 可将时区列表缩小到亚洲。已选的首尔会保留，已选的亚洲以外城市则会被清除。原生录制示例使用同一 API，在选择 Presentation 预设时启用激光笔工具。
+
+`SelectState::new(items, cx)` 持有一组有序的唯一值、一个
 已提交的值以及一个独立的弹出层打开状态光标。已禁用的选项会被跳过。
 观察该状态以进行呈现，并订阅 `SelectEvent::Change` 以获知
 用户提交的变更。`set_selected_value(Some(value), window, cx)` 设置一个
@@ -18,6 +20,8 @@ description: "固定的单选、带缓冲的输入定位、Home/End 与方向键
 事件，并使用其正常的焦点恢复。未知/已禁用的值返回 false，
 且不会改变值、待定的光标或弹出层。当
 整个控件被禁用时，应用更新仍然可用。
+
+`set_items(items, window, cx)` 按唯一值保留已选项和高亮项。列表打开时会保留键盘焦点。如果高亮项被移除或禁用，光标将移至仍可用的已选项或第一个可用选项。所有选项均不可用时，列表会关闭。更新列表不会触发 `SelectEvent::Change`。
 
 | 输入 | 结果 |
 | --- | --- |

@@ -4056,6 +4056,14 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             Some("presentation")
         );
         assert_eq!(preset.input().read(cx).value(), "Presentation");
+        assert!(
+            demo.read(cx)
+                .select
+                .read(cx)
+                .items()
+                .iter()
+                .any(|item| { item.value().as_ref() == "laser" && !item.is_disabled() })
+        );
         let action = test_support::find(window, &[], &action).unwrap();
         assert_eq!(action.disabled(), Some(true));
         assert_eq!(action.focused(), Some(true));

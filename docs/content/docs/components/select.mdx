@@ -1,6 +1,6 @@
 ---
 title: Select
-description: "Fixed single selection, buffered typeahead, Home/End and arrow navigation, disabled options, commit, and focus."
+description: "Single selection with replaceable options, buffered typeahead, Home/End and arrow navigation, disabled options, commit, and focus."
 ---
 
 <ComponentPreview name="select" height={360} />
@@ -10,7 +10,9 @@ a city. The list scrolls the highlighted option into view. Enter commits it.
 Wheel scrolling lets you inspect other options. Short lists use their natural
 height; `Select::list_max_height(px(144.))` sets a smaller limit within the window.
 
-`SelectState::new(items, cx)` owns a fixed ordered set of unique values, one
+Choose **Show Asia only** to narrow the list. Seoul remains selected, while a selected city outside Asia is cleared. The native recording example uses the same API to enable the Laser tool for the Presentation preset.
+
+`SelectState::new(items, cx)` owns an ordered set of unique values, one
 committed value and a separate open-popup cursor. Disabled options are skipped.
 Observe the state for presentation and subscribe to `SelectEvent::Change` for
 committed user changes. `set_selected_value(Some(value), window, cx)` sets an
@@ -18,6 +20,8 @@ enabled value; `None` clears it. Accepted updates close the popup without a user
 event, using its normal focus restoration. Unknown/disabled values return false
 without changing the value, pending cursor or popup. App updates remain available
 while the whole control is disabled.
+
+`set_items(items, window, cx)` matches both the committed and highlighted options by their unique values when the list changes. An open list keeps keyboard focus. If its highlighted option is removed or disabled, the cursor moves to the surviving selection or first enabled option. With no enabled options, the list closes. Updating the list emits no `SelectEvent::Change`.
 
 | Input | Result |
 | --- | --- |

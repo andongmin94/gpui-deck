@@ -1,7 +1,7 @@
 //! Selection behavior and composable, unstyled trigger/listbox parts.
 //! Modified for GPUI Design: retained option navigation and focus lifecycle.
 
-use std::time::Duration;
+use std::{collections::HashSet, time::Duration};
 
 use gpui::{
     AccessibleAction, AnyElement, App, ClickEvent, Context, ElementId, Entity, EventEmitter,
@@ -34,7 +34,7 @@ pub(crate) fn init(cx: &mut App) {
     ]);
 }
 
-/// One value in a select's fixed collection. Values must be unique.
+/// One option in a select. Its unique value identifies it across list updates.
 #[derive(Clone, Debug)]
 pub struct SelectItem {
     value: SharedString,
@@ -69,6 +69,22 @@ impl SelectItem {
     }
 }
 
+fn collect_items(items: impl IntoIterator<Item = SelectItem>) -> Vec<SelectItem> {
+    let items: Vec<_> = items.into_iter().collect();
+    let mut values = HashSet::with_capacity(items.len());
+    assert!(
+        items.iter().all(|item| values.insert(&item.value)),
+        "SelectItem values must be unique"
+    );
+    items
+}
+
+fn enabled_index(items: &[SelectItem], value: &str) -> Option<usize> {
+    items
+        .iter()
+        .position(|item| !item.disabled && item.value.as_ref() == value)
+}
+
 /// Emitted once when a user commits a different value.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SelectEvent {
@@ -77,7 +93,7 @@ pub enum SelectEvent {
 
 /// Retained selection, keyboard cursor, disabled state and popup focus.
 ///
-/// The first release accepts a fixed, ordered collection. Arrow keys wrap and
+/// Applications can replace the ordered options with [`Self::set_items`]. Arrow keys wrap and
 /// skip disabled items; opening highlights the committed item or first enabled
 /// item. Enter/Space commits, Escape discards the pending cursor and restores
 /// trigger focus. Home/End highlight an enabled edge while open. Typing searches
@@ -103,15 +119,8 @@ pub struct SelectState {
 
 impl SelectState {
     pub fn new(items: impl IntoIterator<Item = SelectItem>, cx: &mut Context<Self>) -> Self {
-        let items: Vec<_> = items.into_iter().collect();
-        for (ix, item) in items.iter().enumerate() {
-            assert!(
-                items[..ix].iter().all(|other| other.value != item.value),
-                "SelectItem values must be unique"
-            );
-        }
         Self {
-            items,
+            items: collect_items(items),
             selected: None,
             highlighted: None,
             open: false,
@@ -129,15 +138,44 @@ impl SelectState {
     }
 
     pub fn default_value(mut self, value: impl AsRef<str>) -> Self {
-        self.selected = self
-            .items
-            .iter()
-            .position(|item| item.value.as_ref() == value.as_ref() && !item.disabled);
+        self.selected = enabled_index(&self.items, value.as_ref());
         self
     }
 
     pub fn items(&self) -> &[SelectItem] {
         &self.items
+    }
+
+    /// Replaces the options without emitting [`SelectEvent::Change`]. A committed
+    /// value survives while enabled. An open list keeps its highlighted value,
+    /// then prefers the committed value or first enabled option if it disappeared.
+    /// With no enabled options the popup closes using its normal focus policy.
+    pub fn set_items(
+        &mut self,
+        items: impl IntoIterator<Item = SelectItem>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let items = collect_items(items);
+        let remap = |index: usize| enabled_index(&items, &self.items[index].value);
+        self.selected = self.selected.and_then(remap);
+        self.highlighted = self.highlighted.and_then(remap);
+        self.items = items;
+        self.search.clear();
+        self.searched_at = None;
+        if self.open {
+            self.highlighted = self
+                .highlighted
+                .or(self.selected)
+                .or_else(|| self.items.iter().position(|item| !item.disabled));
+            if self.highlighted.is_none() {
+                self.close(window, cx);
+                return;
+            }
+            self.reveal_highlight = true;
+        }
+        cx.notify();
+        window.refresh();
     }
 
     pub fn selected_index(&self) -> Option<usize> {
@@ -167,11 +205,7 @@ impl SelectState {
     ) -> bool {
         let selected = match value {
             Some(value) => {
-                let Some(index) = self
-                    .items
-                    .iter()
-                    .position(|item| item.value.as_ref() == value && !item.disabled)
-                else {
+                let Some(index) = enabled_index(&self.items, value) else {
                     return false;
                 };
                 Some(index)
@@ -653,7 +687,7 @@ pub struct SelectOption {
 }
 
 impl SelectOption {
-    /// `index` must refer to an item in this state's fixed collection.
+    /// Use the option's index in the current [`SelectState::items`] at render time.
     pub fn new(state: &Entity<SelectState>, index: usize) -> Self {
         Self {
             state: state.clone(),
@@ -688,13 +722,14 @@ impl RenderOnce for SelectOption {
         let highlighted = model.highlighted == Some(self.index);
         let reveal = highlighted && model.reveal_highlight;
         let label = item.label.clone();
-        let index = self.index;
+        let value = item.value.clone();
+        let hover_value = value.clone();
         let hover_state = self.state.clone();
         let reveal_state = self.state.clone();
         let click_state = self.state;
 
         div()
-            .id(("select-option", index))
+            .id((ElementId::from("select-option"), value.clone()))
             .test_support()
             .role(Role::ListBoxOption)
             .aria_label(label)
@@ -703,12 +738,19 @@ impl RenderOnce for SelectOption {
             .when(!disabled, |this| {
                 this.on_hover(move |hovered, window, cx| {
                     if *hovered {
-                        hover_state
-                            .update(cx, |state, cx| state.highlight(index, false, window, cx));
+                        hover_state.update(cx, |state, cx| {
+                            if let Some(index) = enabled_index(&state.items, &hover_value) {
+                                state.highlight(index, false, window, cx);
+                            }
+                        });
                     }
                 })
                 .on_click(move |_, window, cx| {
-                    click_state.update(cx, |state, cx| state.commit(index, window, cx));
+                    click_state.update(cx, |state, cx| {
+                        if let Some(index) = enabled_index(&state.items, &value) {
+                            state.commit(index, window, cx);
+                        }
+                    });
                 })
             })
             .children(self.children)
@@ -846,9 +888,24 @@ mod tests {
         });
         assert!(cx.debug_bounds("option-0").unwrap().bottom() <= scroll.bounds().top());
 
-        cx.simulate_keystrokes("end enter");
+        cx.simulate_keystrokes("end");
         cx.update(|window, cx| {
-            assert_eq!(select.read(cx).selected_index(), Some(25));
+            select.update(cx, |state, cx| {
+                let items = state.items().iter().rev().cloned().collect::<Vec<_>>();
+                state.set_items(items, window, cx);
+            });
+            window.draw(cx).clear(cx);
+            window.simulate_next_frame(cx);
+            window.draw(cx).clear(cx);
+        });
+        let moved = cx.debug_bounds("option-0").unwrap();
+        assert!(moved.top() >= scroll.bounds().top() && moved.bottom() <= scroll.bounds().bottom());
+        cx.simulate_keystrokes("enter");
+        cx.update(|window, cx| {
+            assert_eq!(
+                select.read(cx).selected_item().unwrap().value().as_ref(),
+                "Z"
+            );
             assert!(select.read(cx).focus_handle().is_focused(window));
         });
     }
@@ -1049,6 +1106,135 @@ mod tests {
             5,
             "application updates emit no Change"
         );
+    }
+
+    #[gpui::test]
+    fn refreshing_items_preserves_value_and_pending_focus(cx: &mut TestAppContext) {
+        cx.update(crate::init);
+        let changes = Rc::new(RefCell::new(Vec::new()));
+        let recorded = changes.clone();
+        let (root, cx) = cx.add_window_view(|window, cx| {
+            let view = cx.new(|cx| {
+                let select = cx.new(|cx| {
+                    SelectState::new(
+                        [
+                            SelectItem::new("en", "English"),
+                            SelectItem::new("ko", "Korean"),
+                        ],
+                        cx,
+                    )
+                    .default_value("en")
+                });
+                cx.subscribe(&select, move |_, _, event: &SelectEvent, _| {
+                    recorded.borrow_mut().push(event.clone());
+                })
+                .detach();
+                let observation = cx.observe(&select, |_, _, cx| cx.notify());
+                Harness {
+                    select,
+                    shown: true,
+                    _observation: observation,
+                }
+            });
+            Root::new(view, window, cx)
+        });
+        let view = root
+            .read_with(cx, |root, _| root.view().clone())
+            .downcast::<Harness>()
+            .unwrap();
+        let select = view.read_with(cx, |view, _| view.select.clone());
+        cx.update(|window, cx| {
+            window.activate_window();
+            select.read(cx).focus_handle().clone().focus(window, cx);
+            window.draw(cx).clear(cx);
+        });
+        cx.simulate_keystrokes("enter end");
+        cx.update(|window, cx| {
+            select.update(cx, |state, cx| {
+                state.set_items(
+                    [
+                        SelectItem::new("ko", "한국어"),
+                        SelectItem::new("en", "English"),
+                        SelectItem::new("ja", "Japanese"),
+                    ],
+                    window,
+                    cx,
+                );
+                assert_eq!(state.selected_index(), Some(1));
+                assert_eq!(state.highlighted_index(), Some(0));
+                assert!(state.content_focus_handle().is_focused(window));
+            });
+            window.draw(cx).clear(cx);
+        });
+        cx.simulate_keystrokes("enter");
+        cx.update(|window, cx| {
+            select.update(cx, |state, cx| {
+                assert_eq!(state.selected_item().unwrap().label().as_ref(), "한국어");
+                state.open(window, cx);
+            });
+        });
+        cx.simulate_keystrokes("end");
+        cx.update(|window, cx| {
+            select.update(cx, |state, cx| {
+                state.set_items(
+                    [
+                        SelectItem::new("en", "English"),
+                        SelectItem::new("ko", "Korean"),
+                        SelectItem::new("ja", "Japanese").disabled(true),
+                    ],
+                    window,
+                    cx,
+                );
+                assert_eq!(state.highlighted_index(), state.selected_index());
+                assert_eq!(state.highlighted_index(), Some(1));
+                state.set_items([SelectItem::new("en", "English")], window, cx);
+                assert!(state.selected_item().is_none());
+                assert_eq!(state.highlighted_index(), Some(0));
+                state.set_items(
+                    [SelectItem::new("en", "English").disabled(true)],
+                    window,
+                    cx,
+                );
+                assert!(!state.is_open());
+                assert!(state.focus_handle().is_focused(window));
+                state.set_items([], window, cx);
+                state.open(window, cx);
+                assert!(!state.is_open());
+                state.set_items(
+                    [
+                        SelectItem::new("en", "English"),
+                        SelectItem::new("ko", "Korean"),
+                    ],
+                    window,
+                    cx,
+                );
+                state.open(window, cx);
+            });
+            window.draw(cx).clear(cx);
+        });
+        // A press that starts on Korean cannot commit a different row that
+        // replaces it before the pointer is released at the same coordinates.
+        let option = cx.debug_bounds("option-1").unwrap().center();
+        cx.simulate_mouse_down(option, MouseButton::Left, Modifiers::default());
+        cx.update(|window, cx| {
+            select.update(cx, |state, cx| {
+                state.set_items(
+                    [
+                        SelectItem::new("en", "English"),
+                        SelectItem::new("ja", "Japanese"),
+                    ],
+                    window,
+                    cx,
+                );
+            });
+            window.draw(cx).clear(cx);
+        });
+        cx.simulate_mouse_up(option, MouseButton::Left, Modifiers::default());
+        cx.update(|_, cx| {
+            assert!(select.read(cx).selected_item().is_none());
+            assert!(select.read(cx).is_open());
+        });
+        assert_eq!(*changes.borrow(), [SelectEvent::Change("ko".into())]);
     }
 
     #[gpui::test]
