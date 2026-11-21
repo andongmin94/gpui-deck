@@ -5,6 +5,11 @@ description: "단일/다중/범위 날짜 선택, 분리된 포커스, 날짜 �
 
 <ComponentPreview name="calendar" height={360} />
 
+카탈로그의 녹화 기간 달력은 월·연도를 직접 고를 수 있습니다.
+`display_month(date, window, cx)`로 다른 달을 표시하면 선택값을 유지하면서
+커서의 날짜를 해당 달의 일수와 지정된 범위에 맞춥니다. 날짜에 포커스가 있었다면
+커서와 함께 이동하고, 외부 월 선택기를 사용했다면 그 선택기에 포커스가 남습니다.
+
 `CalendarState`는 `CalendarSelection`, 포커스된 날짜, 보이는 월을 유지합니다.
 `Date`는 jiff의 달력 날짜(`jiff::civil::Date`)를 다시 내보낸 것이며, 두 번째 날짜 모델이나 시간대 변환은
 도입하지 않습니다. 상태는 한 번만 생성합니다.
@@ -26,7 +31,7 @@ let calendar = cx.new(|cx| {
 그리드는 `days()`를 통해 완전한 6주를 노출하며, 기본적으로 월요일부터 시작합니다.
 인접한 달의 날짜도 계속 보이고, 설정된 범위를 벗어난 날짜는 비활성화됩니다.
 
-마운트 전에 `.week_starts_on(Weekday::Sun)`을 쓰면 그리드와 Home/End 경계가 바뀝니다.
+마운트 전에 `.week_starts_on(Weekday::Sunday)`을 쓰면 그리드와 Home/End 경계가 바뀝니다.
 헤더 순서를 맞추려면 `weekdays()`를 사용합니다. `Weekday`는 `Date`와 함께
 다시 내보내집니다. `.disabled_dates(|date| ...)`는 주말이나 예약된 날짜 같은
 애플리케이션 규칙을 제공합니다. 이 규칙은 기존 단일/다중 값을 걸러 내고, 사용할 수 없는

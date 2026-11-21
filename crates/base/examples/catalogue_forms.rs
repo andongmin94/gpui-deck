@@ -39,7 +39,8 @@ impl CatalogueForms {
         let otp = cx.new(|cx| InputOtpState::new(6, window, cx));
         let confirm_focus = cx.focus_handle();
         let dialog = cx.new(|cx| DialogState::new(cx).with_initial_focus(&confirm_focus));
-        let drawer = cx.new(|cx| DrawerState::with_dialog(dialog, window, cx));
+        let drawer =
+            cx.new(|cx| DrawerState::with_dialog(dialog, window, cx).snap_points([0.5, 0.85]));
         let toasts = cx.new(|_| ToasterState::new());
         let sheet_close = cx.focus_handle();
         let sheet = cx.new(|cx| DialogState::new(cx).with_initial_focus(&sheet_close));
@@ -104,6 +105,7 @@ impl Render for CatalogueForms {
         let complete = self.otp.read(cx).is_complete(cx);
         let code = self.otp.read(cx).value(cx);
         let dialog = self.drawer.read(cx).dialog().clone();
+        let expanded_drawer = self.drawer.read(cx).snap_index() == Some(1);
         let palette = super::Appearance::Compact.palette();
         let close_focus = self.sheet_close.clone();
         let help = Sheet::new("session-help", &self.sheet, &self.sheet_scroll, "Session help", palette)
@@ -232,7 +234,9 @@ impl Render for CatalogueForms {
             .child(
                 Drawer::new("session-confirmation", &self.drawer)
                     .accessibility_label("Confirm this local session")
-                    .accessibility_description("Drag the handle down to cancel, or choose Confirm.")
+                    .accessibility_description(
+                        "Drag the handle to resize or dismiss, or choose Confirm.",
+                    )
                     .max_w(px(560.))
                     .bg(rgb(0x1c293c))
                     .text_color(rgb(0xf1f5f9))
@@ -251,7 +255,8 @@ impl Render for CatalogueForms {
                     )
                     .child(
                         ScrollArea::new("session-review-body", &self.body_scroll)
-                            .h(px(180.))
+                            .min_h_0()
+                            .flex_1()
                             .content_styles(|style| style.flex().flex_col().gap_3().p_4())
                             .child(div().text_lg().child("Ready to confirm?"))
                             .child(format!("The entered code is {code}."))
@@ -264,9 +269,33 @@ impl Render for CatalogueForms {
                     .child(
                         div()
                             .flex()
+                            .flex_wrap()
                             .justify_end()
                             .gap_2()
                             .p_4()
+                            .child({
+                                let label = if expanded_drawer {
+                                    "Reduce height"
+                                } else {
+                                    "Expand"
+                                };
+                                Button::new("resize-review")
+                                    .accessibility_label(label)
+                                    .child(label)
+                                    .px_3()
+                                    .py_2()
+                                    .rounded_md()
+                                    .focus_visible(|style| style.bg(rgb(0x334155)))
+                                    .on_click(cx.listener(move |this, _, window, cx| {
+                                        this.drawer.update(cx, |state, cx| {
+                                            state.set_snap_index(
+                                                usize::from(!expanded_drawer),
+                                                window,
+                                                cx,
+                                            )
+                                        });
+                                    }))
+                            })
                             .child(DialogClose::new(&dialog).trigger(|button| {
                                 button
                                     .accessibility_label("Cancel")

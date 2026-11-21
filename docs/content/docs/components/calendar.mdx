@@ -5,6 +5,12 @@ description: "Single/multiple/range date selection, separate focus, date-disable
 
 <ComponentPreview name="calendar" height={360} />
 
+The Selection catalogue has a month-and-year selector for the recording range. Use
+`display_month(date, window, cx)` to jump directly to a different month. The
+calendar keeps its selection and clamps the cursor day to the month's length
+and configured bounds. A focused day follows the jump. An external month
+selector retains focus.
+
 `CalendarState` retains a `CalendarSelection`, the focused date, and the
 visible month. `Date` is jiff's civil date (`jiff::civil::Date`), re-exported; no second date
 model or timezone conversion is introduced. Create the state once:
@@ -26,7 +32,7 @@ Without `default_selection`, selection starts as `CalendarSelection::Single(None
 grid exposes six complete weeks through `days()`, Monday-first by default. Adjacent-month
 dates remain visible; dates outside the configured bounds are disabled.
 
-Before mounting, `.week_starts_on(Weekday::Sun)` changes the grid and Home/End
+Before mounting, `.week_starts_on(Weekday::Sunday)` changes the grid and Home/End
 boundaries. Use `weekdays()` for matching header order; `Weekday` is re-exported
 alongside `Date`. `.disabled_dates(|date| ...)` supplies application rules
 such as weekends or booked dates. It filters existing single/multiple values and

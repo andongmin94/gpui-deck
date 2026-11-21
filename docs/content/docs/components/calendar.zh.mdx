@@ -5,6 +5,10 @@ description: "单选/多选/范围日期选择、独立的焦点、日期禁用�
 
 <ComponentPreview name="calendar" height={360} />
 
+目录中的录制日期范围日历支持直接选择月份和年份。调用 `display_month(date, window, cx)`
+可以跳转到指定月份，保留所选日期，并按该月天数与日历边界调整光标日期。
+日期单元格的焦点随光标移动，通过外部月份选择器跳转时焦点则留在选择器上。
+
 `CalendarState` 保留一个 `CalendarSelection`、获得焦点的日期，以及
 可见的月份。`Date` 重新导出自 jiff 的民用日期（`jiff::civil::Date`）；不引入第二套日期模型或
 时区转换。只需创建一次状态：
@@ -26,7 +30,7 @@ let calendar = cx.new(|cx| {
 网格通过 `days()` 提供六个完整的周，默认以周一开头。相邻月份的
 日期仍然可见；超出所配置边界的日期会被禁用。
 
-在挂载前，`.week_starts_on(Weekday::Sun)` 会改变网格以及 Home/End
+在挂载前，`.week_starts_on(Weekday::Sunday)` 会改变网格以及 Home/End
 的边界。使用 `weekdays()` 获得与之匹配的表头顺序；`Weekday` 与
 `Date` 一同重新导出。`.disabled_dates(|date| ...)` 提供应用规则，
 例如周末或已预订的日期。它会过滤已有的单选/多选值，并

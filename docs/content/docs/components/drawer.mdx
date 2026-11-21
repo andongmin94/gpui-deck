@@ -1,6 +1,6 @@
 ---
 title: Drawer
-description: "Dialog lifecycle plus bottom drag-to-dismiss through a dedicated handle."
+description: "Edge placement, drag-to-dismiss and optional vertical snap heights over Dialog."
 ---
 
 <ComponentPreview name="drawer" height={360} />
@@ -11,10 +11,16 @@ adopt a configured Dialog through `with_dialog`; mount that state in one Drawer.
 focus remain owned by Dialog. The state forwards `DialogEvent` and exposes
 `dialog()` for ordinary DialogClose controls.
 
-`Drawer::new(id, &state)` places a viewport-limited modal surface at the bottom.
-Supply its `.handle(...)`, optional `.backdrop(...)` and styled body/actions.
-Only a press on the dedicated handle starts a downward drag; scrolling or editing
-in the body does not. Releasing after the displacement threshold closes through
-Dialog; a shorter or cancelled drag returns the surface to its resting position.
-Window deactivation cancels an active drag. This contract has one resting point,
-with no inertial physics or snap-point configuration.
+The default drawer opens at the bottom. Set `.side(Placement::Left)` on
+`DrawerState` before mounting to attach it to another edge. All four edges
+support outward dragging from the supplied `.handle(...)`. The body keeps its
+own scrolling and editing. Without snap points, dragging a third of the panel
+towards its edge closes the drawer. A shorter drag returns it to rest.
+
+For a top or bottom drawer, `.snap_points([0.5, 0.85])` starts at half the
+window height. Dragging the handle resizes the panel and releasing it settles
+at the nearest height, including closed. Supply strictly increasing fractions
+above zero and up to one. The points control the panel height as the window
+resizes. Use `snap_index()` and `set_snap_index(index, window, cx)` for a
+keyboard-accessible size button, as in the catalogue's session review.
+Window deactivation cancels a drag. Reopening retains the last resting height.

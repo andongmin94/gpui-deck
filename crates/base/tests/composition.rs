@@ -4595,6 +4595,35 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
             Some("Recording date range: Nov 11 – Nov 13, 2026")
         );
     });
+    // Jump across the year from the range picker's month selector without
+    // changing either committed endpoint or closing the enclosing picker.
+    activate_key(cx, "enter");
+    let month_selector = cx.update(|window, _| {
+        test_support::find(window, &[], &"range-month".into())
+            .unwrap()
+            .bounds()
+            .center()
+    });
+    cx.simulate_click(month_selector, gpui::Modifiers::default());
+    cx.simulate_keystrokes("end enter");
+    cx.run_until_parked();
+    draw(cx);
+    cx.update(|window, _| {
+        let grid = test_support::find(window, &[], &"recording-range-calendar".into()).unwrap();
+        assert_eq!(
+            grid.label(),
+            Some("recording-range-calendar, December 2027")
+        );
+        let picker = test_support::find(window, &[], &"recording-date-range".into()).unwrap();
+        assert_eq!(picker.expanded(), Some(true));
+        assert_eq!(
+            picker.label(),
+            Some("Recording date range: Nov 11 – Nov 13, 2026")
+        );
+    });
+    cx.simulate_keystrokes("escape");
+    draw(cx);
+
     // Previous month is disabled at the availability calendar's lower bound.
     cx.simulate_keystrokes("tab tab tab tab");
     draw(cx);

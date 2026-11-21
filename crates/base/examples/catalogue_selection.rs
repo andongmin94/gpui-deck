@@ -9,11 +9,13 @@ use gpui::{
 use gpui_design::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Combobox, ComboboxGroup,
     ComboboxList, ComboboxOption, ComboboxState, Date, DatePicker, DatePickerState, Direction,
-    DirectionProvider, InputEditorStyle, SearchItem, TestSupportExt as _, Weekday,
+    DirectionProvider, InputEditorStyle, SearchItem, Select, SelectEvent, SelectItem, SelectOption,
+    SelectState, TestSupportExt as _, Weekday,
 };
 
 pub(crate) struct SelectionCatalogue {
     range: Entity<CalendarState>,
+    range_month: Entity<SelectState>,
     picker: Entity<DatePickerState>,
     availability: Entity<CalendarState>,
     targets: Entity<ComboboxState>,
@@ -54,6 +56,22 @@ impl SelectionCatalogue {
                 })
         });
         let picker = cx.new(|cx| DatePickerState::new(&range, window, cx));
+        let (first, last, initial) = {
+            let calendar = range.read(cx);
+            (
+                calendar.minimum().first_of_month(),
+                calendar.maximum(),
+                calendar.month(),
+            )
+        };
+        let months =
+            std::iter::successors(Some(first), |month| month.last_of_month().tomorrow().ok())
+                .take_while(|month| *month <= last)
+                .map(|month| {
+                    SelectItem::new(month.to_string(), month.strftime("%B %Y").to_string())
+                });
+        let range_month =
+            cx.new(|cx| SelectState::new(months, cx).default_value(initial.to_string()));
         let availability = cx.new(|cx| {
             CalendarState::new(date(11), cx)
                 .bounds(date(1), Date::new(2027, 12, 31).unwrap())
@@ -79,13 +97,38 @@ impl SelectionCatalogue {
             });
         });
         let subscriptions = vec![
-            cx.observe(&range, |_, _, cx| cx.notify()),
+            cx.observe_in(&range, window, |this: &mut Self, calendar, window, cx| {
+                let month = calendar.read(cx).month().to_string();
+                if this
+                    .range_month
+                    .read(cx)
+                    .selected_item()
+                    .is_none_or(|item| item.value().as_ref() != month)
+                {
+                    this.range_month.update(cx, |state, cx| {
+                        state.set_selected_value(Some(&month), window, cx)
+                    });
+                }
+                cx.notify();
+            }),
+            cx.observe(&range_month, |_, _, cx| cx.notify()),
+            cx.subscribe_in(
+                &range_month,
+                window,
+                |this: &mut Self, _, event, window, cx| {
+                    let SelectEvent::Change(value) = event;
+                    let month = value.parse().expect("month options contain civil dates");
+                    this.range
+                        .update(cx, |calendar, cx| calendar.display_month(month, window, cx));
+                },
+            ),
             cx.observe(&picker, |_, _, cx| cx.notify()),
             cx.observe(&availability, |_, _, cx| cx.notify()),
             cx.observe(&targets, |_, _, cx| cx.notify()),
         ];
         Self {
             range,
+            range_month,
             picker,
             availability,
             targets,
@@ -124,6 +167,7 @@ impl SelectionCatalogue {
     fn calendar_panel(
         id: &'static str,
         state: &Entity<CalendarState>,
+        month_select: Option<&Entity<SelectState>>,
         direction: Direction,
         cx: &App,
     ) -> AnyElement {
@@ -145,11 +189,40 @@ impl SelectionCatalogue {
                         previous.update(cx, |state, cx| state.previous_month(window, cx));
                     }),
             )
-            .child(
-                div()
+            .child(match month_select {
+                Some(select) => {
+                    let picker = select.read(cx);
+                    Select::new("range-month", select)
+                        .accessibility_label("Choose month and year")
+                        .list_max_height(px(180.))
+                        .border_1()
+                        .border_color(rgb(0x475569))
+                        .rounded_md()
+                        .focus_visible(|style| style.border_color(rgb(0x93c5fd)))
+                        .trigger(
+                            div()
+                                .px_2()
+                                .py_1()
+                                .child(format!("{} ⌄", month.strftime("%B %Y"))),
+                        )
+                        .content(div().w(px(162.)).p_1().bg(rgb(0x1e293b)).children(
+                            picker.items().iter().enumerate().map(|(index, item)| {
+                                SelectOption::new(select, index)
+                                    .px_2()
+                                    .py_1()
+                                    .when(picker.highlighted_index() == Some(index), |this| {
+                                        this.bg(rgb(0x334155))
+                                    })
+                                    .child(item.label().clone())
+                            }),
+                        ))
+                        .into_any_element()
+                }
+                None => div()
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child(month.strftime("%B %Y").to_string()),
-            )
+                    .child(month.strftime("%B %Y").to_string())
+                    .into_any_element(),
+            })
             .child(
                 Self::button(Button::new((ElementId::from(id), "next")))
                     .accessibility_label("Next month")
@@ -376,14 +449,14 @@ impl Render for SelectionCatalogue {
                 .trigger(|button| Self::button(button).accessibility_label(format!("Recording date range: {range}")).child(range))
                 .content(div().w(px(328.)).max_w((window.viewport_size().width - px(16.)).max(px(0.)))
                     .p_3().rounded_md().border_1().border_color(rgb(0x475569)).bg(rgb(0x0f172a)).text_color(rgb(0xf1f5f9))
-                    .child(Self::calendar_panel("recording-range-calendar", &self.range, self.direction, cx))))
+                    .child(Self::calendar_panel("recording-range-calendar", &self.range, Some(&self.range_month), self.direction, cx))))
             .child(Self::button(Button::new("recording-week-preset")).accessibility_label("Use Nov 11–13").child("Use Nov 11–13")
                 .on_click(cx.listener(|this, _, window, cx| {
                     this.picker.update(cx, |state, cx| { state.set_selection(CalendarSelection::Range { start: Some(date(11)), end: Some(date(13)) }, window, cx); });
                 })))
             .child(div().id("availability-title").role(Role::Heading).aria_level(3)
                 .aria_label("Available recording days").font_weight(FontWeight::SEMIBOLD).child("Available recording days"))
-            .child(div().max_w(px(360.)).w_full().child(Self::calendar_panel("availability-calendar", &self.availability, self.direction, cx)))
+            .child(div().max_w(px(360.)).w_full().child(Self::calendar_panel("availability-calendar", &self.availability, None, self.direction, cx)))
             .child(if selected_days.is_empty() { "No available dates selected".to_string() } else { format!("Available: {selected_days}") })
             .child(self.render_targets(cx))
             .child(Self::button(Button::new("calendar-reading-direction"))

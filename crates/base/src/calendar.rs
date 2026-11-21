@@ -88,7 +88,7 @@ pub(crate) struct CalendarActivation {
 /// Keyboard navigation changes the visible month as necessary, without selecting
 /// a date. Pointer/native focus preserves the current grid until activation.
 /// Enter, Space, and pointer activation commit selection. Date arithmetic uses
-/// Chrono's date-only type, with no clock or timezone dependency.
+/// jiff's civil date, with no clock or timezone dependency.
 ///
 /// One state belongs to one mounted calendar in one window. Render all dates
 /// returned by [`Self::days`] once, in order. The supported date range is years
@@ -287,7 +287,7 @@ impl CalendarState {
 
     /// All six weeks in chronological order, starting on [`Self::first_weekday`].
     /// Adjacent dates outside configured bounds
-    /// remain visible and disabled, including year 0/10000 at the outer edges.
+    /// remain visible and disabled, including years 0 and 9999 at the outer edges.
     pub fn days(&self) -> [Date; DAY_COUNT] {
         let first = self.grid_start();
         std::array::from_fn(|index| first + (index as i64).days())
@@ -321,6 +321,22 @@ impl CalendarState {
         if self.can_next_month() {
             self.display_month(self.month + 1.month(), window, cx);
         }
+    }
+
+    /// Displays the year and month of `month`, preserving the selection and
+    /// cursor's day of month when possible. The cursor is clamped to the new
+    /// month's length and the calendar bounds. An external month selector keeps
+    /// focus; a focused day follows the new cursor. Disabled calendars stay put.
+    pub fn display_month(&mut self, month: Date, window: &mut Window, cx: &mut Context<Self>) {
+        if self.disabled {
+            return;
+        }
+        let date = month
+            .with()
+            .day(self.cursor.day().min(month.days_in_month()))
+            .build()
+            .expect("the day is clamped to the month's length");
+        self.set_cursor(date, self.focused_index(window).is_some(), window, cx);
     }
 
     /// Replaces the selection mode and value without emitting an event. The first
@@ -516,15 +532,6 @@ impl CalendarState {
     fn move_months(&mut self, months: i32, window: &mut Window, cx: &mut Context<Self>) {
         // A month step clamps the day to the target month's length.
         let date = self.cursor + months.months();
-        self.set_cursor(date, self.focused_index(window).is_some(), window, cx);
-    }
-
-    fn display_month(&mut self, month: Date, window: &mut Window, cx: &mut Context<Self>) {
-        let date = month
-            .with()
-            .day(self.cursor.day().min(month.days_in_month()))
-            .build()
-            .expect("the day is clamped to the month's length");
         self.set_cursor(date, self.focused_index(window).is_some(), window, cx);
     }
 
@@ -1107,6 +1114,28 @@ mod tests {
             assert!(before.is_focused(window));
             assert_eq!(state.read(cx).month(), date(2025, 3, 1));
         });
+    }
+
+    #[gpui::test]
+    fn jumping_to_a_month_clamps_the_cursor_and_preserves_selection(cx: &mut TestAppContext) {
+        let initial = date(2023, 12, 31);
+        let minimum = date(2023, 10, 20);
+        let maximum = date(2030, 4, 9);
+        let (cx, view, changes) = harness(cx, initial, Some((minimum, maximum)));
+        cx.simulate_keystrokes("tab");
+        let state = view.read_with(cx, |view, _| view.state.clone());
+        for (month, expected) in [
+            (date(2028, 2, 1), date(2028, 2, 29)),
+            (date(2100, 12, 31), maximum),
+            (date(2000, 1, 1), minimum),
+        ] {
+            cx.update(|window, cx| {
+                state.update(cx, |state, cx| state.display_month(month, window, cx))
+            });
+            draw(cx);
+            assert_cursor(cx, &view, expected, Some(initial));
+        }
+        assert!(changes.borrow().is_empty());
     }
 
     #[gpui::test]

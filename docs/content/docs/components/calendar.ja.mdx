@@ -5,6 +5,11 @@ description: "単一/複数/範囲の日付選択、独立したフォーカス�
 
 <ComponentPreview name="calendar" height={360} />
 
+カタログの録画期間のカレンダーには年月セレクターがあります。
+`display_month(date, window, cx)` で月を直接表示できます。選択を保持したまま、
+移動先の月の日数と指定範囲に合わせてカーソルの日付を調整します。日付にフォーカスがあれば
+カーソルに従って移動し、外部の年月セレクターにあればそこに留まります。
+
 `CalendarState` は `CalendarSelection`、フォーカス中の日付、表示中の月を
 保持します。`Date` は jiff の暦日付（`jiff::civil::Date`）を再エクスポートしたもので、2 つ目の日付モデルやタイムゾーン変換は導入されません。State は一度だけ作成します。
 
@@ -25,7 +30,7 @@ let calendar = cx.new(|cx| {
 グリッドは `days()` を通じて 6 週間分を完全な形で公開し、デフォルトでは月曜始まりです。隣接する月の
 日付も表示されたままで、設定された範囲外の日付は無効になります。
 
-マウント前に `.week_starts_on(Weekday::Sun)` を指定すると、グリッドと Home/End の
+マウント前に `.week_starts_on(Weekday::Sunday)` を指定すると、グリッドと Home/End の
 境界が変わります。ヘッダーの順序を合わせるには `weekdays()` を使用します。`Weekday` は
 `Date` とともに再エクスポートされています。`.disabled_dates(|date| ...)` は週末や予約済みの日付などの
 アプリケーションのルールを与えます。既存の単一/複数の値を絞り込み、
