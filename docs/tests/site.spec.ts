@@ -8,11 +8,17 @@ test("the root opens the English home page", async ({ page }) => {
   );
 });
 
-test("the Korean home page links into the Korean docs", async ({ page }) => {
+test("the Korean home page and catalogue cards lead to the Korean component", async ({ page }) => {
   await page.goto("/ko");
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");
   await page.getByRole("link", { name: "시작하기" }).click();
   await expect(page).toHaveURL(/\/ko\/docs\/?$/);
+  const article = page.getByRole("article");
+  await article.getByRole("link", { name: /^컴포넌트/ }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("전체 컴포넌트");
+  await article.getByRole("link", { name: /^Chart/ }).click();
+  await expect(page).toHaveURL(/\/ko\/docs\/components\/chart\/?$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Chart");
 });
 
 test("a component page embeds its live preview", async ({ page }) => {
