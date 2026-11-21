@@ -41,6 +41,11 @@ pub struct Popup {
 }
 
 impl Popup {
+    pub(crate) fn available_height(window: &Window) -> Pixels {
+        let margin = crate::positioner::window_margins(window, WINDOW_MARGIN);
+        (window.viewport_size().height - margin.top - margin.bottom).max(px(0.))
+    }
+
     pub fn new(id: impl Into<ElementId>, trigger: impl IntoElement) -> Self {
         let id = id.into();
         Self {

@@ -5,6 +5,11 @@ description: "Fixed single selection, buffered typeahead, Home/End and arrow nav
 
 <ComponentPreview name="select" height={360} />
 
+Open the time-zone list and press Home, End, an arrow key or the first letters of
+a city. The list scrolls the highlighted option into view. Enter commits it.
+Wheel scrolling lets you inspect other options. Short lists use their natural
+height; `Select::list_max_height(px(144.))` sets a smaller limit within the window.
+
 `SelectState::new(items, cx)` owns a fixed ordered set of unique values, one
 committed value and a separate open-popup cursor. Disabled options are skipped.
 Observe the state for presentation and subscribe to `SelectEvent::Change` for

@@ -6,16 +6,18 @@ use std::time::Duration;
 use gpui::{
     AccessibleAction, AnyElement, App, ClickEvent, Context, ElementId, Entity, EventEmitter,
     FocusHandle, InteractiveElement, Interactivity, IntoElement, KeyBinding, KeyDownEvent,
-    MouseButton, ParentElement, RenderOnce, Role, SharedString, StatefulInteractiveElement,
-    StyleRefinement, Styled, Subscription, Window, div, prelude::FluentBuilder as _,
+    MouseButton, ParentElement, Pixels, RenderOnce, Role, ScrollHandle, SharedString,
+    StatefulInteractiveElement, StyleRefinement, Styled, Subscription, Window, div,
+    prelude::FluentBuilder as _, px,
 };
 use web_time::Instant;
 
 use crate::{
-    Popup, StyledExt as _, TestSupportExt as _,
+    ElementExt as _, Popup, ScrollbarAxis, StyledExt as _, TestSupportExt as _,
     a11y_disabled::A11yDisabledExt as _,
     actions::{Cancel, Confirm, SelectDown, SelectFirst, SelectLast, SelectUp},
     global_state::{DeferredPopover, GlobalState},
+    scroll_area::RevealViewport,
 };
 
 const CONTEXT: &str = "Select";
@@ -91,6 +93,8 @@ pub struct SelectState {
     open_on_pointer_down: bool,
     focus: FocusHandle,
     content_focus: FocusHandle,
+    scroll: ScrollHandle,
+    reveal_highlight: bool,
     deferred_context: Option<DeferredPopover>,
     dismiss_subscription: Option<Subscription>,
     search: String,
@@ -115,6 +119,8 @@ impl SelectState {
             open_on_pointer_down: false,
             focus: cx.focus_handle().tab_stop(true),
             content_focus: cx.focus_handle(),
+            scroll: ScrollHandle::new(),
+            reveal_highlight: false,
             deferred_context: None,
             dismiss_subscription: None,
             search: String::new(),
@@ -220,6 +226,7 @@ impl SelectState {
             return;
         }
         self.open = true;
+        self.reveal_highlight = true;
         self.search.clear();
         self.searched_at = None;
         self.deferred_context = Some(GlobalState::register_deferred_popover(cx));
@@ -267,6 +274,7 @@ impl SelectState {
         }
         self.open = false;
         self.highlighted = None;
+        self.reveal_highlight = false;
         self.deferred_context = None;
         self.dismiss_subscription = None;
         self.search.clear();
@@ -287,7 +295,7 @@ impl SelectState {
             return;
         };
         let len = self.items.len();
-        self.highlighted = (1..=len)
+        let next = (1..=len)
             .map(|step| {
                 if forward {
                     (current + step) % len
@@ -296,15 +304,20 @@ impl SelectState {
                 }
             })
             .find(|&ix| !self.items[ix].disabled);
-        cx.notify();
-        window.refresh();
+        if let Some(index) = next {
+            self.highlight(index, true, window, cx);
+        }
     }
 
-    fn highlight(&mut self, ix: usize, window: &mut Window, cx: &mut Context<Self>) {
-        if !self.open || self.disabled || self.items[ix].disabled || self.highlighted == Some(ix) {
+    fn highlight(&mut self, ix: usize, reveal: bool, window: &mut Window, cx: &mut Context<Self>) {
+        if !self.open || self.disabled || self.items[ix].disabled {
+            return;
+        }
+        if self.highlighted == Some(ix) && !reveal {
             return;
         }
         self.highlighted = Some(ix);
+        self.reveal_highlight = reveal;
         cx.notify();
         window.refresh();
     }
@@ -320,7 +333,7 @@ impl SelectState {
             self.items.iter().position(|item| !item.disabled)
         };
         if let Some(index) = index {
-            self.highlight(index, window, cx);
+            self.highlight(index, true, window, cx);
         }
     }
 
@@ -379,7 +392,7 @@ impl SelectState {
             });
         if let Some(index) = index {
             if self.open {
-                self.highlight(index, window, cx);
+                self.highlight(index, true, window, cx);
             } else if self.selected != Some(index) {
                 self.selected = Some(index);
                 cx.emit(SelectEvent::Change(self.items[index].value.clone()));
@@ -429,6 +442,7 @@ pub struct Select {
     field: crate::FieldMetadata,
     trigger: Option<AnyElement>,
     content: Option<AnyElement>,
+    list_max_height: Option<Pixels>,
     style: StyleRefinement,
 }
 
@@ -441,6 +455,7 @@ impl Select {
             field: crate::FieldMetadata::default(),
             trigger: None,
             content: None,
+            list_max_height: None,
             style: StyleRefinement::default(),
         }
     }
@@ -467,6 +482,13 @@ impl Select {
         self.content = Some(content.into_any_element());
         self
     }
+
+    /// Limits the height of the scrollable listbox. By default it can grow to
+    /// the usable window height. Short lists keep their natural height.
+    pub fn list_max_height(mut self, height: Pixels) -> Self {
+        self.list_max_height = Some(height.max(px(0.)));
+        self
+    }
 }
 
 impl Styled for Select {
@@ -490,6 +512,7 @@ impl RenderOnce for Select {
         let disabled = model.disabled;
         let focus = model.focus.clone();
         let content_focus = model.content_focus.clone();
+        let scroll = model.scroll.clone();
         let value = model.selected_item().map(|item| item.label.clone());
         let trigger_state = self.state.clone();
         let press_state = self.state.clone();
@@ -531,6 +554,8 @@ impl RenderOnce for Select {
             .children(self.trigger);
         let popup =
             Popup::new(("select-popup", self.state.entity_id()), trigger).when(open, |this| {
+                let available = Popup::available_height(window);
+                let height = self.list_max_height.unwrap_or(available).min(available);
                 this.content(
                     div()
                         .id("select-listbox")
@@ -540,7 +565,16 @@ impl RenderOnce for Select {
                         .on_mouse_down_out(move |_, window, cx| {
                             outside_state.update(cx, |state, cx| state.close(window, cx));
                         })
-                        .children(self.content),
+                        .child(RevealViewport::new(
+                            div()
+                                .id("select-viewport")
+                                .max_h(height)
+                                .overflow_y_scroll()
+                                .track_scroll(&scroll)
+                                .children(self.content),
+                            scroll,
+                            ScrollbarAxis::Vertical,
+                        )),
                 )
             });
 
@@ -652,9 +686,11 @@ impl RenderOnce for SelectOption {
         let disabled = model.disabled || item.disabled;
         let selected = model.selected == Some(self.index);
         let highlighted = model.highlighted == Some(self.index);
+        let reveal = highlighted && model.reveal_highlight;
         let label = item.label.clone();
         let index = self.index;
         let hover_state = self.state.clone();
+        let reveal_state = self.state.clone();
         let click_state = self.state;
 
         div()
@@ -667,7 +703,8 @@ impl RenderOnce for SelectOption {
             .when(!disabled, |this| {
                 this.on_hover(move |hovered, window, cx| {
                     if *hovered {
-                        hover_state.update(cx, |state, cx| state.highlight(index, window, cx));
+                        hover_state
+                            .update(cx, |state, cx| state.highlight(index, false, window, cx));
                     }
                 })
                 .on_click(move |_, window, cx| {
@@ -676,6 +713,14 @@ impl RenderOnce for SelectOption {
             })
             .children(self.children)
             .refine_style(&self.style)
+            .when(reveal, |this| {
+                this.on_prepaint(move |bounds, window, cx| {
+                    // Reveal only on open or keyboard navigation. A wheel
+                    // gesture can then scroll away without being pulled back.
+                    reveal_state.update(cx, |state, _| state.reveal_highlight = false);
+                    window.request_autoscroll(bounds);
+                })
+            })
             .a11y_disabled(disabled)
     }
 }
@@ -687,7 +732,8 @@ mod tests {
     use super::*;
     use crate::Root;
     use gpui::{
-        AppContext as _, KeyUpEvent, Keystroke, Modifiers, MouseButton, Render, TestAppContext, px,
+        AppContext as _, KeyUpEvent, Keystroke, Modifiers, MouseButton, Render, ScrollDelta,
+        ScrollEvent, TestAppContext, point, size,
     };
 
     struct Harness {
@@ -712,9 +758,12 @@ mod tests {
                             div().w(px(180.)).children(
                                 self.select.read(cx).items().iter().enumerate().map(
                                     |(index, item)| {
-                                        SelectOption::new(&self.select, index)
-                                            .h(px(32.))
-                                            .child(item.label().clone())
+                                        SelectOption::new(&self.select, index).h(px(32.)).child(
+                                            div()
+                                                .debug_selector(move || format!("option-{index}"))
+                                                .size_full()
+                                                .child(item.label().clone()),
+                                        )
                                     },
                                 ),
                             ),
@@ -722,6 +771,86 @@ mod tests {
                 )
             })
         }
+    }
+
+    #[gpui::test]
+    fn long_list_reveals_pending_keyboard_choices_and_allows_manual_scrolling(
+        cx: &mut TestAppContext,
+    ) {
+        cx.update(crate::init);
+        let (root, cx) = cx.add_window_view(|window, cx| {
+            let view = cx.new(|cx| {
+                let select = cx.new(|cx| {
+                    let items = ('A'..='Z').map(|c| SelectItem::new(c.to_string(), c.to_string()));
+                    SelectState::new(items, cx).default_value("U")
+                });
+                let observation = cx.observe(&select, |_, _, cx| cx.notify());
+                Harness {
+                    select,
+                    shown: true,
+                    _observation: observation,
+                }
+            });
+            Root::new(view, window, cx)
+        });
+        let view = root
+            .read_with(cx, |root, _| root.view().clone())
+            .downcast::<Harness>()
+            .unwrap();
+        let select = view.read_with(cx, |view, _| view.select.clone());
+        cx.simulate_resize(size(px(260.), px(132.)));
+        cx.update(|window, cx| {
+            window.activate_window();
+            select.read(cx).focus_handle().clone().focus(window, cx);
+            window.draw(cx).clear(cx);
+        });
+
+        let scroll = select.read_with(cx, |state, _| state.scroll.clone());
+        for (key, index, selector) in [
+            ("enter", 20, "option-20"),
+            ("end", 25, "option-25"),
+            ("down", 0, "option-0"),
+            ("p", 15, "option-15"),
+            ("home", 0, "option-0"),
+        ] {
+            cx.simulate_keystrokes(key);
+            cx.update(|window, cx| {
+                window.draw(cx).clear(cx);
+                window.simulate_next_frame(cx);
+                window.draw(cx).clear(cx);
+                let state = select.read(cx);
+                assert_eq!(state.highlighted_index(), Some(index));
+                assert_eq!(state.selected_index(), Some(20));
+                assert!(state.content_focus_handle().is_focused(window));
+                assert!(scroll.max_offset().y > px(0.));
+                assert!(scroll.bounds().top() >= px(0.));
+                assert!(scroll.bounds().bottom() <= window.viewport_size().height);
+            });
+            let bounds = cx.debug_bounds(selector).unwrap();
+            assert!(bounds.top() >= scroll.bounds().top(), "{key}: {bounds:?}");
+            assert!(
+                bounds.bottom() <= scroll.bounds().bottom(),
+                "{key}: {bounds:?}"
+            );
+        }
+
+        cx.simulate_event(ScrollEvent {
+            position: scroll.bounds().center(),
+            delta: ScrollDelta::Pixels(point(px(0.), px(-120.))),
+            ..Default::default()
+        });
+        cx.update(|window, cx| {
+            window.draw(cx).clear(cx);
+            window.simulate_next_frame(cx);
+            window.draw(cx).clear(cx);
+        });
+        assert!(cx.debug_bounds("option-0").unwrap().bottom() <= scroll.bounds().top());
+
+        cx.simulate_keystrokes("end enter");
+        cx.update(|window, cx| {
+            assert_eq!(select.read(cx).selected_index(), Some(25));
+            assert!(select.read(cx).focus_handle().is_focused(window));
+        });
     }
 
     #[gpui::test]

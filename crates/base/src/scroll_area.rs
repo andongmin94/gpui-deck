@@ -124,11 +124,7 @@ impl RenderOnce for ScrollArea {
             ScrollbarAxis::Both => viewport.overflow_scroll(),
         };
         self.base
-            .child(RevealViewport {
-                viewport,
-                handle: self.handle,
-                axis: self.axis,
-            })
+            .child(RevealViewport::new(viewport, self.handle, self.axis))
             .child(self.scrollbar)
     }
 }
@@ -136,13 +132,25 @@ impl RenderOnce for ScrollArea {
 // A transparent prepaint scope keeps reveal requests attached to the viewport
 // whose children produced them. Layout, clipping, drawing, and pointer scrolling
 // remain owned by the ordinary GPUI div.
-struct RevealViewport {
+pub(crate) struct RevealViewport {
     viewport: gpui::Stateful<Div>,
     handle: ScrollHandle,
     axis: ScrollbarAxis,
 }
 
 impl RevealViewport {
+    pub(crate) fn new(
+        viewport: gpui::Stateful<Div>,
+        handle: ScrollHandle,
+        axis: ScrollbarAxis,
+    ) -> Self {
+        Self {
+            viewport,
+            handle,
+            axis,
+        }
+    }
+
     fn reveal(&self, mut request: Bounds<Pixels>, window: &mut Window) {
         let viewport = self.handle.bounds();
         let old_offset = self.handle.offset();

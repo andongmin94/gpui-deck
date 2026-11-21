@@ -212,6 +212,14 @@ fn frame_insets(decorations: Decorations, client_inset: Pixels) -> Edges<Pixels>
     }
 }
 
+pub(crate) fn window_margins(window: &Window, margin: Pixels) -> Edges<Pixels> {
+    frame_insets(
+        window.window_decorations(),
+        window.client_inset().unwrap_or(px(0.)),
+    )
+    .map(|inset| *inset + margin)
+}
+
 /// Resolves the bounds of a popup of `popup_size`.
 ///
 /// Side placement picks the preferred side when the popup fits, otherwise the
@@ -405,10 +413,6 @@ impl Element for Positioner {
         }
 
         let popup_size = (child_max - child_min).into();
-        let frame = frame_insets(
-            window.window_decorations(),
-            window.client_inset().unwrap_or(px(0.)),
-        );
         let mut strategy = self.strategy;
         if let (Strategy::Corner { position, .. }, Some(tracked)) =
             (&mut strategy, &self.corner_position)
@@ -424,7 +428,7 @@ impl Element for Positioner {
             strategy,
             popup_size,
             window.viewport_size(),
-            frame.map(|inset| *inset + self.margin),
+            window_margins(window, self.margin),
         );
         let offset = position.bounds.origin - child_min;
         let current_offset = window.element_offset();

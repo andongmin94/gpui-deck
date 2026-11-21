@@ -5,6 +5,11 @@ description: "固定的单选、带缓冲的输入定位、Home/End 与方向键
 
 <ComponentPreview name="select" height={360} />
 
+打开展示时区的列表，按 Home、End、方向键或输入城市名的前几个字母，
+列表会滚动到高亮选项。按 Enter 确认选择，也可以用滚轮浏览其他选项。
+较短的列表按内容确定高度；使用 `Select::list_max_height(px(144.))`
+可以在窗口允许的范围内设置一个更小的高度上限。
+
 `SelectState::new(items, cx)` 持有一组固定有序的唯一值、一个
 已提交的值以及一个独立的弹出层打开状态光标。已禁用的选项会被跳过。
 观察该状态以进行呈现，并订阅 `SelectEvent::Change` 以获知

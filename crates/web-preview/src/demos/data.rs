@@ -414,7 +414,7 @@ impl Render for SelectDemo {
         let current = state
             .selected_item()
             .map(|item| item.label().clone())
-            .unwrap_or_else(|| "Select a fruit".into());
+            .unwrap_or_else(|| "Select a time zone".into());
         let has_value = selected.is_some();
         let options = state.items().iter().enumerate().map(|(index, item)| {
             SelectOption::new(&self.state, index)
@@ -430,8 +430,9 @@ impl Render for SelectDemo {
                 .when(selected == Some(index), |option| option.child("✓"))
         });
         frame(theme).items_start().pt(px(48.)).child(
-            Select::new("fruit", &self.state)
-                .accessibility_label("Fruit")
+            Select::new("time-zone", &self.state)
+                .accessibility_label("Time zone")
+                .list_max_height(px(144.))
                 .w(px(200.))
                 .rounded(px(6.))
                 .border_1()
@@ -461,14 +462,20 @@ fn select(theme: Theme, cx: &mut App) -> AnyView {
     let state = cx.new(|cx| {
         SelectState::new(
             [
-                SelectItem::new("apple", "Apple"),
-                SelectItem::new("banana", "Banana"),
-                SelectItem::new("blueberry", "Blueberry"),
-                SelectItem::new("grapes", "Grapes").disabled(true),
-                SelectItem::new("pineapple", "Pineapple"),
+                SelectItem::new("America/Los_Angeles", "Los Angeles"),
+                SelectItem::new("America/Denver", "Denver"),
+                SelectItem::new("America/Chicago", "Chicago"),
+                SelectItem::new("America/New_York", "New York"),
+                SelectItem::new("Europe/London", "London"),
+                SelectItem::new("Europe/Paris", "Paris").disabled(true),
+                SelectItem::new("Asia/Kolkata", "Kolkata"),
+                SelectItem::new("Asia/Seoul", "Seoul"),
+                SelectItem::new("Asia/Tokyo", "Tokyo"),
+                SelectItem::new("Australia/Sydney", "Sydney"),
             ],
             cx,
         )
+        .default_value("Asia/Seoul")
     });
     cx.new(|cx| {
         let observe = cx.observe(&state, |_, _, cx| cx.notify());
