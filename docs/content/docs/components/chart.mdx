@@ -3,7 +3,7 @@ title: Chart
 description: "Categorical series, grouped/stacked/pie/radar layouts, visible-series domain, linear or angular point inspection and exact native values."
 ---
 
-<ComponentPreview name="chart" height={360} />
+<ComponentPreview name="chart" height={640} />
 
 `ChartState` accepts category labels and `ChartSeries` values. Each series has one
 finite value per category. The retained state supplies visible series, inspected
@@ -48,7 +48,16 @@ fractional values. Use `format_value` to apply your units to the ticks, visible
 readout, native plot value and table cells:
 
 ```rust
+let state = cx.new(|cx| ChartState::new(
+    ["Search", "Cart", "Pay"],
+    [
+        ChartSeries::new("Median", [0.12, 0.08, 0.18]),
+        ChartSeries::new("P95", [0.32, 0.2, 0.4]),
+    ],
+    cx,
+));
+
 ChartRecipe::new("latency", &state, ChartKind::Line, Direction::Ltr,
     "Request latency", "All latency measurements", "Route")
-    .format_value(|value| format!("{value} ms"))
+    .format_value(|value| format!("{value} s"))
 ```

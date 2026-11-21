@@ -14,6 +14,9 @@ use crate::theme::Theme;
 mod controls;
 mod data;
 mod overlays;
+mod recipe_controls;
+mod recipe_display;
+mod recipe_views;
 
 /// Demo names defined in this module; the other modules list their own.
 const CONTROL_NAMES: &[&str] = &[
@@ -33,6 +36,9 @@ pub fn names() -> impl Iterator<Item = &'static str> {
         .iter()
         .chain(overlays::NAMES)
         .chain(data::NAMES)
+        .chain(["card", "data-table"].iter())
+        .chain(recipe_controls::NAMES)
+        .chain(recipe_display::NAMES)
         .copied()
 }
 
@@ -46,11 +52,15 @@ pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyV
         "slider" => Some(controls::slider(theme, cx)),
         "progress" => Some(controls::progress(theme, cx)),
         "separator" => Some(controls::separator(theme, cx)),
+        "card" => Some(recipe_views::card(theme, cx)),
+        "data-table" => Some(recipe_views::data_table(theme, window, cx)),
         _ => None,
     };
     if let Some(view) = control
         .or_else(|| overlays::open(name, theme, window, cx))
         .or_else(|| data::open(name, theme, window, cx))
+        .or_else(|| recipe_controls::open(name, theme, window, cx))
+        .or_else(|| recipe_display::open(name, theme, window, cx))
     {
         return view;
     }

@@ -3,10 +3,12 @@ title: Data Table
 description: "Text filtering/sorting, pagination, page/row checkbox selection, column visibility, and stable-ID row actions."
 ---
 
+<ComponentPreview name="data-table" height={640} />
+
 [`data_table.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/data_table.rs) provides a working
 client-side table composition. It uses the existing native Input/Field,
 Table, ScrollArea, Checkbox, DropdownMenu, and Button, plus the InputGroup, EmptyState, and Pagination
-recipes. Columns and immutable rows belong to the consuming application.
+recipes. The application supplies the columns and rows.
 
 ```rust
 let state = cx.new(|cx| {
@@ -47,7 +49,7 @@ between ascending and descending order; equal keys retain their original order.
 
 The native input owns the query. Every whitespace-separated term must appear in
 the combined cell text, ignoring case. Matching/sorted indices are derived when
-the query or sort changes. Both changes return to the first page; moving focus
+the query, sort or rows change. Changing the query or sort returns to the first page; moving focus
 does not reset it. `visible_rows()`, `filtered_count()`, `page_index()`, and
 `page_count()` expose the current view. `set_page` clamps to the available range,
 and page/filter/sort changes return the row viewport to its vertical start.
@@ -82,8 +84,18 @@ the view while its state entity is retained.
 Native Table indices describe the displayed page. `TableRow::selected` exposes
 the checkbox selection. `TableCell::sort_direction` exposes the active native
 column-header direction; body/footer cells ignore it. Header Button names also
-announce the sorting description and next action. The columns are fixed-width text,
-with selection and application action columns. Numeric/date ordering, custom cell renderers,
-multi-column sorting, column reordering, mutable
-row sources, remote data, and virtualization are outside the current scope.
-Adapt the copied source when an application needs different data operations.
+announce the sorting description and next action.
+
+Use `DataTableColumn::render_cell(|row, text| ...)` to supply a GPUI element.
+The preset table renders the numeric bitrate as a Badge. The cell's text still supplies
+its accessible name and filter terms, and its typed key still determines sort order.
+Interactive children own their actions and can read `row.is_disabled()`.
+
+Call `set_rows(new_rows, cx)` to replace the data in the same state. The table reapplies
+the current query and sort, preserves column visibility and keeps selections whose
+IDs remain enabled. The page stays within the new bounds. `set_page_size(size, cx)`
+accepts a positive size and keeps the former page's first row on the new page.
+`page_size()` returns the current size.
+
+Columns have fixed widths. Applications own remote data loading. Multi-column sorting,
+column reordering and virtualization remain outside this recipe.

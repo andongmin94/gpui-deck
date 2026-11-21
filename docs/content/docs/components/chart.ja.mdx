@@ -3,7 +3,7 @@ title: Chart
 description: "カテゴリ系列、グループ/積み上げ/円/レーダーのレイアウト、表示中の系列の値域、直線的または角度によるポイントの確認、ネイティブでの正確な値の公開に対応します。"
 ---
 
-<ComponentPreview name="chart" height={360} />
+<ComponentPreview name="chart" height={640} />
 
 `ChartState` はカテゴリのラベルと `ChartSeries` の値を受け取ります。各系列はカテゴリごとに
 有限の値を 1 つ持ちます。保持された State は、表示中の系列、確認中の
@@ -44,7 +44,16 @@ description: "カテゴリ系列、グループ/積み上げ/円/レーダーの
 目盛り、現在値の表示、ネイティブのアクセシビリティの値、表のセルに反映されます。
 
 ```rust
+let state = cx.new(|cx| ChartState::new(
+    ["Search", "Cart", "Pay"],
+    [
+        ChartSeries::new("Median", [0.12, 0.08, 0.18]),
+        ChartSeries::new("P95", [0.32, 0.2, 0.4]),
+    ],
+    cx,
+));
+
 ChartRecipe::new("latency", &state, ChartKind::Line, Direction::Ltr,
     "リクエストの応答時間", "すべての応答時間の測定値", "ルート")
-    .format_value(|value| format!("{value} ms"))
+    .format_value(|value| format!("{value} s"))
 ```

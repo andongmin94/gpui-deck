@@ -3,10 +3,12 @@ title: Data Table
 description: "文本过滤/排序、分页、页/行复选框选择、列可见性，以及基于稳定 ID 的行动作。"
 ---
 
+<ComponentPreview name="data-table" height={640} />
+
 [`data_table.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/data_table.rs) 提供了一个可运行的
 客户端表格组合。它使用现有的原生 Input/Field、
 Table、ScrollArea、Checkbox、DropdownMenu 和 Button，以及 InputGroup、EmptyState 和 Pagination
-配方。列和不可变的行归使用该配方的应用所有。
+配方。列和行由应用提供。
 
 ```rust
 let state = cx.new(|cx| {
@@ -47,7 +49,7 @@ DataTable::new("preset-catalogue", &state, palette)
 
 原生输入负责查询。每个以空白分隔的词都必须出现在
 合并后的单元格文本中，忽略大小写。匹配/排序后的索引在
-查询或排序变化时派生。两种变化都会回到第一页；移动焦点
+查询、排序或行数据变化时重新计算。更改查询或排序会回到第一页；移动焦点
 不会重置它。`visible_rows()`、`filtered_count()`、`page_index()` 和
 `page_count()` 暴露当前视图。`set_page` 会限制在可用范围内，
 页码/过滤/排序的变化会让行视口回到垂直起点。
@@ -82,8 +84,14 @@ Columns 会打开一个原生的带勾选菜单。可切换任何数据列，包
 原生 Table 的索引描述所显示的页。`TableRow::selected` 暴露
 复选框的选择。`TableCell::sort_direction` 暴露当前生效的原生
 列标题方向；主体/页脚单元格会忽略它。表头 Button 的名称还会
-播报排序描述和下一步动作。列是固定宽度的文本，
-另有选择列和应用动作列。数值/日期排序、自定义单元格渲染器、
-多列排序、列重排、可变的
-行来源、远程数据和虚拟化都不在当前范围之内。
-当应用需要不同的数据操作时，请修改复制的源码。
+播报排序描述和下一步动作。
+
+通过 `DataTableColumn::render_cell(|row, text| ...)` 返回 GPUI 元素，即可自定义单元格内容。
+预设表用 Badge 显示码率。单元格原有的文本继续用于无障碍名称和搜索，带类型的键则用于排序。
+单元格中的交互控件管理自己的操作，可以通过 `row.is_disabled()` 读取行的禁用状态。
+
+`set_rows(new_rows, cx)` 在同一状态中替换数据。表格重新应用当前搜索和排序，保留列的显示设置，
+并保留新数据中仍可选的行 ID。页码会调整到新的有效范围。
+`set_page_size(size, cx)` 接受正数，并转到包含原页面首行的新页面。`page_size()` 返回当前分页大小。
+
+各列使用固定宽度，远程数据由应用加载。多列排序、列重排和虚拟化不在此配方的范围内。

@@ -129,8 +129,13 @@ fn axis_ticks((min, max): (f64, f64)) -> impl Iterator<Item = f64> {
     .flatten()
 }
 
-fn color(index: usize) -> Hsla {
-    rgb([0x38bdf8, 0xfb923c, 0x4ade80, 0xc084fc, 0xf472b6, 0xfacc15][index % 6]).into()
+fn series_color(index: usize, foreground: Hsla) -> Hsla {
+    let colors = if foreground.l > 0.5 {
+        [0x38bdf8, 0xfb923c, 0x4ade80, 0xc084fc, 0xf472b6, 0xfacc15]
+    } else {
+        [0x0369a1, 0x9a3412, 0x166534, 0x7e22ce, 0xbe185d, 0x854d0e]
+    };
+    rgb(colors[index % colors.len()]).into()
 }
 
 const RADIAL_WIDTH: f32 = 240.;
@@ -155,6 +160,7 @@ struct Plot {
     inspected: Option<usize>,
     kind: ChartKind,
     direction: Direction,
+    foreground: Hsla,
 }
 
 fn stroke(points: &[Point<Pixels>], closed: bool, color: Hsla, window: &mut Window) {
@@ -248,7 +254,7 @@ impl Plot {
                     point(bounds.left(), y(tick as f32 / 4.)),
                     size(bounds.size.width, px(1.)),
                 ),
-                rgb(0x334155),
+                self.foreground.opacity(0.2),
             ));
         }
         window.paint_quad(fill(
@@ -256,7 +262,7 @@ impl Plot {
                 point(bounds.left(), y(self.baseline)),
                 size(bounds.size.width, px(1.)),
             ),
-            rgb(0x94a3b8),
+            self.foreground.opacity(0.55),
         ));
         if let Some(index) = self.inspected {
             window.paint_quad(fill(
@@ -264,7 +270,7 @@ impl Plot {
                     point(x(index), bounds.top()),
                     size(px(1.), bounds.size.height),
                 ),
-                rgb(0x64748b),
+                self.foreground.opacity(0.65),
             ));
         }
         let band = bounds.size.width / categories as f32 * 0.7;
@@ -375,21 +381,31 @@ impl Plot {
                     .collect()
             };
             for level in 1..=4 {
-                stroke(&ring(level as f32 / 4.), true, rgb(0x334155).into(), window);
+                stroke(
+                    &ring(level as f32 / 4.),
+                    true,
+                    self.foreground.opacity(0.2),
+                    window,
+                );
             }
             if self.baseline > 0. {
-                stroke(&ring(self.baseline), true, rgb(0x94a3b8).into(), window);
+                stroke(
+                    &ring(self.baseline),
+                    true,
+                    self.foreground.opacity(0.55),
+                    window,
+                );
             }
             for index in 0..self.categories {
-                let spoke = rgb(if self.inspected == Some(index) {
-                    0x94a3b8
+                let spoke = self.foreground.opacity(if self.inspected == Some(index) {
+                    0.65
                 } else {
-                    0x334155
+                    0.2
                 });
                 stroke(
                     &[center, radial_point(center, radius, turn(index), direction)],
                     false,
-                    spoke.into(),
+                    spoke,
                     window,
                 );
             }
@@ -428,13 +444,16 @@ impl Plot {
             } else {
                 points.push(center);
             }
-            polygon(&points, color(index), window);
+            polygon(&points, series_color(index, self.foreground), window);
         }
     }
 }
 
 impl RenderOnce for ChartRecipe {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let foreground = window.text_style().color;
+        let muted = foreground.opacity(0.75);
+        let border = foreground.opacity(0.25);
         let model = self.state.read(cx);
         let categories = model.categories();
         let data = model.series();
@@ -467,7 +486,7 @@ impl RenderOnce for ChartRecipe {
                 } else {
                     Vec::new()
                 },
-                color: color(index),
+                color: series_color(index, foreground),
             })
             .collect();
         let direction = self.direction;
@@ -479,6 +498,7 @@ impl RenderOnce for ChartRecipe {
             inspected,
             kind,
             direction,
+            foreground,
         };
         let mut plot = Chart::new((self.id.clone(), "plot"), &self.state, self.plot_label)
             .value_description(description.clone())
@@ -487,9 +507,9 @@ impl RenderOnce for ChartRecipe {
             .flex_shrink_0()
             .border_1()
             .border_color(if model.focus_handle().is_focused(window) {
-                rgb(0x93c5fd)
+                foreground
             } else {
-                rgb(0x334155)
+                border
             })
             .child(
                 canvas(
@@ -516,7 +536,7 @@ impl RenderOnce for ChartRecipe {
                     .w(px(44.))
                     .text_center()
                     .text_size(px(11.))
-                    .text_color(rgb(0x94a3b8))
+                    .text_color(muted)
                     .child(category.clone())
             }));
         }
@@ -531,11 +551,14 @@ impl RenderOnce for ChartRecipe {
                     .py_1()
                     .rounded(px(4.))
                     .border_1()
-                    .border_color(color(index))
+                    .border_color(series_color(index, foreground))
                     .text_color(if visible[index] {
-                        color(index)
+                        series_color(index, foreground)
                     } else {
-                        rgb(0x94a3b8).into()
+                        muted
+                    })
+                    .focus_visible(|style| {
+                        style.bg(foreground.opacity(0.15)).border_color(foreground)
                     })
                     .child(format!(
                         "{} {}",
@@ -556,7 +579,7 @@ impl RenderOnce for ChartRecipe {
         .accessibility_label(self.table_label)
         .w_full()
         .border_1()
-        .border_color(rgb(0x334155));
+        .border_color(border);
         let mut header = TableRow::new((self.id.clone(), "header")).cell(
             TableCell::new((self.id.clone(), "category-header"))
                 .accessibility_label(self.category_header.clone())
@@ -604,7 +627,7 @@ impl RenderOnce for ChartRecipe {
                 figure = figure.child(div().flex().flex_col().gap_1().text_size(px(12.)).children(
                     categories.iter().enumerate().map(|(index, category)| {
                         div()
-                            .text_color(color(index))
+                            .text_color(series_color(index, foreground))
                             .child(format!("● {category}"))
                     }),
                 ));
@@ -618,7 +641,7 @@ impl RenderOnce for ChartRecipe {
                 .flex()
                 .flex_col()
                 .justify_between()
-                .text_color(rgb(0x94a3b8))
+                .text_color(muted)
                 .text_size(px(12.))
                 .children(axis_ticks(range).map(&self.format_value));
             let labels = direction
@@ -673,7 +696,6 @@ impl RenderOnce for ChartRecipe {
                     .id((self.id, "readout"))
                     .role(Role::Status)
                     .aria_label(description.clone())
-                    .text_color(rgb(0xe2e8f0))
                     .child(description),
             )
             .child(format!(

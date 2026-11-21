@@ -3,7 +3,7 @@ title: Chart
 description: "범주형 시리즈, 그룹/누적/파이/레이더 레이아웃, 보이는 시리즈 기준 도메인, 선형 또는 각도 기반 포인트 검사, 정확한 네이티브 값."
 ---
 
-<ComponentPreview name="chart" height={360} />
+<ComponentPreview name="chart" height={640} />
 
 `ChartState`는 범주 레이블과 `ChartSeries` 값을 받습니다. 각 시리즈는 범주마다
 유한한 값 하나를 가집니다. 유지되는 상태는 보이는 시리즈, 검사 중인 범주, 정확한 값
@@ -43,7 +43,16 @@ Table을 더합니다. `ChartKind::layout`은 각 종류가 그리는 상태 레
 단위를 지정하면 눈금, 현재 값 표시, 네이티브 접근성 값, 표의 셀에 함께 적용됩니다.
 
 ```rust
+let state = cx.new(|cx| ChartState::new(
+    ["Search", "Cart", "Pay"],
+    [
+        ChartSeries::new("Median", [0.12, 0.08, 0.18]),
+        ChartSeries::new("P95", [0.32, 0.2, 0.4]),
+    ],
+    cx,
+));
+
 ChartRecipe::new("latency", &state, ChartKind::Line, Direction::Ltr,
     "요청 지연 시간", "전체 지연 시간 측정값", "경로")
-    .format_value(|value| format!("{value} ms"))
+    .format_value(|value| format!("{value} s"))
 ```

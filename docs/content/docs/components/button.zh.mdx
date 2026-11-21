@@ -10,20 +10,22 @@ description: "指针与键盘激活、禁用状态、焦点、无障碍名称与
 Button 角色；其内容、间距、形状和状态样式由
 应用负责。
 
+将预览使用的浅色和深色按钮样式复制到应用中。
+
+```sh
+cargo run -p gpui-design-cli --locked -- add button --to ../my-app/src/ui
+```
+
 ```rust
-Button::new("save")
-    .accessibility_label("Save session")
-    .px_3()
-    .py_2()
-    .rounded(px(6.))
-    .bg(palette.accent)
-    .text_color(palette.accent_foreground)
-    .focus_visible(|style| style.border_color(palette.ring))
-    .styles(|styles| styles.disabled(|style| style.opacity(0.5)))
+use ui::{Appearance, recipes::ButtonVariant};
+
+let palette = Appearance::Settings.palette();
+ButtonVariant::Primary
+    .apply(Button::new("save").accessibility_label("保存会话"), palette)
     .on_click(|_, window, cx| {
         // The application decides what activation does.
     })
-    .child("Save")
+    .child("保存")
 ```
 
 ## 激活与焦点

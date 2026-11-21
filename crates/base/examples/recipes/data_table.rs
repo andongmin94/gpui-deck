@@ -1,12 +1,12 @@
-//! Application-owned text-table operations over shared native controls.
+//! Application-owned data-table operations over shared native controls.
 
 use std::{cmp::Ordering, collections::HashSet, rc::Rc};
 
 use gpui::{
-    App, AppContext as _, Context, Div, ElementId, Entity, Focusable as _, InteractiveElement as _,
-    IntoElement, ParentElement as _, Pixels, RenderOnce, Role, ScrollHandle, SharedString,
-    Stateful, StyleRefinement, Styled, Subscription, Window, accesskit::SortDirection, div, point,
-    prelude::FluentBuilder as _, px,
+    AnyElement, App, AppContext as _, Context, Div, ElementId, Entity, Focusable as _,
+    InteractiveElement as _, IntoElement, ParentElement as _, Pixels, RenderOnce, Role,
+    ScrollHandle, SharedString, Stateful, StyleRefinement, Styled, Subscription, Window,
+    accesskit::SortDirection, div, point, prelude::FluentBuilder as _, px,
 };
 use gpui_design::{
     Button, Checkbox, CheckboxState, Date, DropdownMenu, Field, Input, InputBase, InputState,
@@ -22,6 +22,7 @@ pub(crate) struct DataTableColumn {
     label: SharedString,
     width: Pixels,
     align_end: bool,
+    renderer: Option<Box<dyn Fn(&DataTableRow, &SharedString) -> AnyElement>>,
 }
 
 impl DataTableColumn {
@@ -31,12 +32,24 @@ impl DataTableColumn {
             label: label.into(),
             width,
             align_end: false,
+            renderer: None,
         }
     }
 
     /// Aligns heading and values to the end edge, as for numeric amounts.
     pub(crate) fn align_end(mut self) -> Self {
         self.align_end = true;
+        self
+    }
+
+    /// Supply cell content while keeping the row's search text, native cell name and sort key.
+    pub(crate) fn render_cell<E: IntoElement>(
+        mut self,
+        render: impl Fn(&DataTableRow, &SharedString) -> E + 'static,
+    ) -> Self {
+        self.renderer = Some(Box::new(move |row, text| {
+            render(row, text).into_any_element()
+        }));
         self
     }
 }
@@ -164,15 +177,19 @@ impl DataTableRow {
     pub(crate) fn cells(&self) -> &[SharedString] {
         &self.cells
     }
+
+    pub(crate) fn is_disabled(&self) -> bool {
+        self.disabled
+    }
 }
 
 /// Retained client-side filtering, one-column sorting, and pagination.
 ///
 /// The native InputState is the query's source of truth. Matching indices are
-/// derived only when query text or sort order changes. Each whitespace-separated
+/// derived when rows, query text or sort order change. Each whitespace-separated
 /// query term must occur somewhere in the row, ignoring case. Sorting preserves
-/// source order for equal keys. Rows stay immutable and selection belongs to the
-/// consuming application. Checkbox selection is independent of the current row
+/// source order for equal keys. The application supplies the rows and current
+/// choice. Checkbox selection is independent of the current row
 /// action and survives filtering, sorting, and paging by stable row ID. The
 /// header checkbox changes only enabled rows on the displayed page. Observe
 /// this entity when rendering it from a parent.
@@ -207,17 +224,7 @@ impl DataTableState {
         let rows: Vec<_> = rows.into_iter().collect();
         assert!(!columns.is_empty(), "a data table needs text columns");
         assert!(page_size > 0, "page size must be positive");
-        for (index, row) in rows.iter().enumerate() {
-            assert_eq!(
-                row.cells.len(),
-                columns.len(),
-                "each row needs one value per column"
-            );
-            assert!(
-                rows[..index].iter().all(|other| other.id != row.id),
-                "row IDs must be unique"
-            );
-        }
+        Self::validate_rows(&rows, columns.len());
         let input = cx.new(|cx| InputState::new(window, cx).placeholder("Search all columns"));
         let input_observation = cx.observe(&input, |state, _, cx| {
             state.sync_query(cx);
@@ -268,8 +275,55 @@ impl DataTableState {
         self.page
     }
 
+    pub(crate) fn page_size(&self) -> usize {
+        self.page_size
+    }
+
+    /// Keep the former page's first row on screen after changing the positive page size.
+    #[allow(dead_code)] // Optional for consumers with a fixed page size.
+    pub(crate) fn set_page_size(&mut self, page_size: usize, cx: &mut Context<Self>) {
+        assert!(page_size > 0, "page size must be positive");
+        if self.page_size != page_size {
+            self.page = self.page * self.page_size / page_size;
+            self.page_size = page_size;
+            self.reset_vertical_scroll();
+            cx.notify();
+        }
+    }
+
+    fn validate_rows(rows: &[DataTableRow], column_count: usize) {
+        let mut ids = HashSet::with_capacity(rows.len());
+        for row in rows {
+            assert_eq!(
+                row.cells.len(),
+                column_count,
+                "each row needs one value per column"
+            );
+            assert!(ids.insert(row.id()), "row IDs must be unique");
+        }
+    }
+
+    /// Reapply the current filter and sort, retaining selected IDs that are still selectable.
+    #[allow(dead_code)] // Optional for consumers with static rows.
+    pub(crate) fn set_rows(
+        &mut self,
+        rows: impl IntoIterator<Item = DataTableRow>,
+        cx: &mut Context<Self>,
+    ) {
+        let rows: Vec<_> = rows.into_iter().collect();
+        Self::validate_rows(&rows, self.columns.len());
+        self.selected = rows
+            .iter()
+            .filter(|row| !row.is_disabled() && self.selected.contains(row.id()))
+            .map(|row| row.id().clone())
+            .collect();
+        self.rows = rows;
+        self.rebuild(self.page, cx);
+        cx.notify();
+    }
+
     pub(crate) fn page_count(&self) -> usize {
-        self.filtered.len().div_ceil(self.page_size)
+        self.filtered.len().div_ceil(self.page_size())
     }
 
     pub(crate) fn filtered_count(&self) -> usize {
@@ -355,14 +409,19 @@ impl DataTableState {
     }
 
     fn sync_query(&mut self, cx: &Context<Self>) {
-        let query = self.input.read(cx).value();
-        if query != self.filtered_query {
-            self.filtered_query = query;
-            self.rebuild();
+        if self.input.read(cx).value() != self.filtered_query {
+            self.rebuild(0, cx);
         }
     }
 
-    fn rebuild(&mut self) {
+    fn rebuild(&mut self, requested_page: usize, cx: &Context<Self>) {
+        let query = self.input.read(cx).value();
+        let page = if query == self.filtered_query {
+            requested_page
+        } else {
+            0
+        };
+        self.filtered_query = query;
         let terms: Vec<_> = self
             .filtered_query
             .split_whitespace()
@@ -395,7 +454,7 @@ impl DataTableState {
                 if descending { order.reverse() } else { order }
             });
         }
-        self.page = 0;
+        self.page = page.min(self.page_count().saturating_sub(1));
         self.reset_vertical_scroll();
     }
 
@@ -407,7 +466,7 @@ impl DataTableState {
     fn sort_by_column(&mut self, column: usize, cx: &mut Context<Self>) {
         self.descending = self.sort_column == Some(column) && !self.descending;
         self.sort_column = Some(column);
-        self.rebuild();
+        self.rebuild(0, cx);
         cx.notify();
     }
 
@@ -423,7 +482,7 @@ impl DataTableState {
 
 type RowAction = Rc<dyn Fn(SharedString, &mut Window, &mut App)>;
 
-/// A copyable text table with an application-controlled current row and action.
+/// A copyable table with an application-controlled current row and action.
 ///
 /// This composes Field/Input, Table, ScrollArea, EmptyState, and Pagination.
 /// Header and row buttons keep ordinary Tab order; there is no grid focus or
@@ -718,6 +777,10 @@ impl RenderOnce for DataTable {
             }
             for (visible_index, &(index, column)) in visible_columns.iter().enumerate() {
                 let cell = &row.cells()[index];
+                let content = match &column.renderer {
+                    Some(render) => render(row, cell),
+                    None => cell.clone().into_any_element(),
+                };
                 rendered = rendered.cell(
                     align(
                         TableCell::new((row_id.clone(), format!("column-{index}")))
@@ -726,7 +789,7 @@ impl RenderOnce for DataTable {
                             .p_2(),
                         column.align_end,
                     )
-                    .child(cell.clone()),
+                    .child(content),
                 );
             }
             let value = row.id().clone();
@@ -755,12 +818,15 @@ impl RenderOnce for DataTable {
             table = table
                 .row(rendered.cell(TableCell::new((row_id, "action-cell")).p_1().child(button)));
         }
+        let count = state.filtered_count();
+        let noun = if count == 1 { "row" } else { "rows" };
+        let matching_rows = format!("{count} matching {noun}");
         table = table.caption(
             TableCaption::new((self.id.clone(), "caption"))
                 .py_2()
                 .text_sm()
                 .text_color(palette.muted)
-                .child(format!("{} matching rows", state.filtered_count())),
+                .child(matching_rows.clone()),
         );
 
         let empty = state.filtered_count() == 0;
@@ -800,9 +866,8 @@ impl RenderOnce for DataTable {
                 )
             })
             .child(div().text_sm().text_color(palette.muted).child(format!(
-                "{} of {} matching rows selected",
+                "{} of {matching_rows} selected",
                 state.filtered_selected_count(),
-                state.filtered_count(),
             )))
             .child(
                 Pagination::new(
@@ -981,6 +1046,56 @@ mod tests {
                     .update(cx, |input, cx| input.set_value("1,250", window, cx));
                 table.sync_query(cx);
                 assert_eq!(order(table), ["b"]);
+            });
+        });
+    }
+
+    #[gpui::test]
+    fn refreshed_rows_and_new_page_sizes_preserve_the_current_view(cx: &mut TestAppContext) {
+        let window = cx.add_empty_window();
+        window.update(|window, cx| {
+            let table = sample(window, cx);
+            table.update(cx, |table, cx| {
+                for id in ["a", "c", "d"] {
+                    table.set_row_selected(id.into(), true, cx);
+                }
+                table
+                    .input
+                    .update(cx, |input, cx| input.set_value("Ready", window, cx));
+                table.sync_query(cx);
+                table.set_column_visible(1, false, cx);
+                table.sort_by_column(0, cx);
+                table.sort_by_column(0, cx);
+                table.set_page_size(1, cx);
+                table.set_page(2, cx);
+
+                table.set_rows(
+                    [
+                        DataTableRow::new("b", ["Beta", "Ready"]),
+                        DataTableRow::new("c", ["Charlie", "Ready"]).disabled(true),
+                        DataTableRow::new("e", ["Echo", "Paused"]),
+                        DataTableRow::new("d", ["Delta updated", "Ready"]),
+                    ],
+                    cx,
+                );
+                assert_eq!(table.page_index(), 2);
+                assert_eq!(table.filtered_count(), 3);
+                assert_eq!(table.visible_rows().next().unwrap().id().as_ref(), "b");
+                assert!(!table.is_column_visible(1));
+                assert_eq!(table.filtered_selected_count(), 1);
+                assert!(table.is_row_selected(&"d".into()));
+                assert!(!table.is_row_selected(&"a".into()));
+                assert!(!table.is_row_selected(&"c".into()));
+
+                table.set_page_size(2, cx);
+                assert_eq!((table.page_index(), table.page_size()), (1, 2));
+                assert_eq!(table.visible_rows().next().unwrap().id().as_ref(), "b");
+                table.set_rows([DataTableRow::new("d", ["Delta", "Ready"])], cx);
+                assert_eq!(table.page_index(), 0);
+                assert_eq!(table.filtered_selected_count(), 1);
+                table.set_rows([], cx);
+                assert_eq!((table.page_index(), table.page_count()), (0, 0));
+                assert!(!table.is_row_selected(&"d".into()));
             });
         });
     }

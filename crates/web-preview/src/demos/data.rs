@@ -1,22 +1,21 @@
 //! Form, selection, date and data-display demos.
 
 use gpui::{
-    AnyView, App, AppContext as _, Axis, Bounds, Context, Div, ElementId, Entity, FocusHandle,
-    Focusable as _, FontWeight, Hsla, InteractiveElement as _, IntoElement, ParentElement as _,
-    Render, Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _,
-    Subscription, Window, accesskit::SortDirection, canvas, div, fill, hsla, point,
-    prelude::FluentBuilder as _, px, size,
+    AnyView, App, AppContext as _, Axis, Context, Div, ElementId, Entity, FocusHandle,
+    Focusable as _, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _, Render,
+    Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription,
+    Window, accesskit::SortDirection, div, hsla, prelude::FluentBuilder as _, px,
 };
 use gpui_design::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Carousel, CarouselControl,
-    CarouselSlide, CarouselState, Chart, ChartSeries, ChartState, Combobox, ComboboxList,
-    ComboboxOption, ComboboxState, Date, DatePicker, DatePickerState, Direction, DirectionProvider,
-    Field, Input, InputAccessibility, InputBase, InputEditorStyle, InputOtp, InputOtpEvent,
-    InputOtpState, InputState, Label, MessageScroller, MessageScrollerState, Questionnaire,
-    QuestionnaireStage, QuestionnaireState, Resizable, ResizablePanel, ResizableState, ScrollArea,
-    ScrollbarMode, SearchItem, Select, SelectItem, SelectOption, SelectState, Table, TableCaption,
-    TableCell, TableColumn, TableRow, Textarea, TextareaState, Toggle, ToggleGroup,
-    ToggleGroupState, ToggleItem, ToggleOption, input::InputEvent,
+    CarouselSlide, CarouselState, ChartSeries, ChartState, Combobox, ComboboxList, ComboboxOption,
+    ComboboxState, Date, DatePicker, DatePickerState, Direction, DirectionProvider, Field, Input,
+    InputAccessibility, InputBase, InputEditorStyle, InputOtp, InputOtpEvent, InputOtpState,
+    InputState, Label, MessageScroller, MessageScrollerState, Questionnaire, QuestionnaireStage,
+    QuestionnaireState, Resizable, ResizablePanel, ResizableState, ScrollArea, ScrollbarMode,
+    SearchItem, Select, SelectItem, SelectOption, SelectState, Table, TableCaption, TableCell,
+    TableColumn, TableRow, Textarea, TextareaState, ToggleGroup, ToggleGroupState, ToggleItem,
+    ToggleOption, input::InputEvent,
 };
 
 use super::{frame, outline, primary};
@@ -81,7 +80,7 @@ fn editor_style(theme: Theme) -> InputEditorStyle {
     }
 }
 
-fn text_input(
+pub(super) fn text_input(
     theme: Theme,
     label: &str,
     placeholder: &str,
@@ -451,7 +450,12 @@ impl Render for SelectDemo {
                                 .when(!has_value, |text| text.text_color(theme.muted_foreground))
                                 .child(current),
                         )
-                        .child(div().text_color(theme.muted_foreground).child("⌄")),
+                        .child(
+                            div()
+                                .text_size(px(10.))
+                                .text_color(theme.muted_foreground)
+                                .child("▼"),
+                        ),
                 )
                 .content(popup(theme).w(px(200.)).children(options)),
         )
@@ -1253,135 +1257,40 @@ fn carousel(theme: Theme, cx: &mut App) -> AnyView {
 
 // Chart
 
+#[path = "../../../base/examples/recipes/chart.rs"]
+#[allow(dead_code)] // This preview shows one of the eight chart kinds available to consumers.
+mod chart_recipe;
+use chart_recipe::{ChartKind, ChartRecipe};
+
 struct ChartDemo {
     theme: Theme,
     state: Entity<ChartState>,
     _observe: Subscription,
 }
 
-impl ChartDemo {
-    fn colors(theme: Theme) -> [Hsla; 2] {
-        if theme.background.l > 0.5 {
-            [gpui::rgb(0x2563eb).into(), gpui::rgb(0x60a5fa).into()]
-        } else {
-            [gpui::rgb(0x3b82f6).into(), gpui::rgb(0x93c5fd).into()]
-        }
-    }
-}
-
 impl Render for ChartDemo {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
-        let colors = Self::colors(theme);
-        let model = self.state.read(cx);
-        let categories = model.categories().to_vec();
-        let inspected = model.inspected_index();
-        let visible: Vec<usize> = (0..model.series().len())
-            .filter(|&series| model.is_visible(series))
-            .collect();
-        // Normalized bar heights per category, in visible series order.
-        let bars: Vec<Vec<(f32, Hsla)>> = (0..categories.len())
-            .map(|category| {
-                visible
-                    .iter()
-                    .map(|&series| {
-                        let value = model.series()[series].values()[category];
-                        (model.normalized_value(value), colors[series])
-                    })
-                    .collect()
-            })
-            .collect();
-        let description = model.inspected_description();
-        let accent = theme.accent;
-        let plot = canvas(
-            |_, _, _| (),
-            move |bounds: Bounds<gpui::Pixels>, _, window, _| {
-                let band = bounds.size.width / bars.len().max(1) as f32;
-                for (category, group) in bars.iter().enumerate() {
-                    let left = bounds.left() + band * category as f32;
-                    if inspected == Some(category) {
-                        window.paint_quad(
-                            fill(
-                                Bounds::new(
-                                    point(left, bounds.top()),
-                                    size(band, bounds.size.height),
-                                ),
-                                accent,
-                            )
-                            .corner_radii(px(4.)),
-                        );
-                    }
-                    let inner = band * 0.7;
-                    let gap = px(4.);
-                    let width =
-                        (inner - gap * (group.len().max(1) - 1) as f32) / group.len().max(1) as f32;
-                    for (slot, (height, color)) in group.iter().enumerate() {
-                        let height = (bounds.size.height - px(8.)) * *height;
-                        let x = left + (band - inner) / 2. + (width + gap) * slot as f32;
-                        window.paint_quad(
-                            fill(
-                                Bounds::new(
-                                    point(x, bounds.bottom() - height),
-                                    size(width, height),
-                                ),
-                                *color,
-                            )
-                            .corner_radii(px(3.)),
-                        );
-                    }
-                }
-            },
-        )
-        .size_full();
-        let legend = model.series().iter().enumerate().map(|(index, series)| {
-            let pressed = model.is_visible(index);
-            let state = self.state.clone();
-            Toggle::new(("legend", index))
-                .accessibility_label(format!("Show {}", series.label()))
-                .pressed(pressed)
-                .h(px(28.))
-                .px(px(8.))
-                .flex()
-                .items_center()
-                .gap(px(6.))
-                .rounded(px(6.))
-                .hover(|style| style.bg(theme.accent))
-                .focus_visible(|style| style.bg(theme.accent))
-                .when(!pressed, |toggle| toggle.opacity(0.5))
-                .child(div().size(px(10.)).rounded(px(2.)).bg(colors[index]))
-                .child(series.label().clone())
-                .on_change(move |pressed, _, window, cx| {
-                    state.update(cx, |state, cx| {
-                        state.set_visible(index, pressed, window, cx);
-                    });
-                })
-        });
-        frame(theme).flex_col().gap(px(8.)).child(
+    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        frame(self.theme).p(px(16.)).child(
             div()
-                .w(px(380.))
+                .w_full()
+                .max_w(px(540.))
+                .min_w_0()
                 .flex()
                 .flex_col()
-                .gap(px(6.))
+                .gap(px(8.))
+                .child(heading("Request latency"))
                 .child(
-                    Chart::new("visitors", &self.state, "Visitors by month")
-                        .w_full()
-                        .h(px(170.))
-                        .child(plot),
-                )
-                .child(
-                    div()
-                        .flex()
-                        .children(categories.into_iter().map(|category| {
-                            div()
-                                .flex_1()
-                                .text_center()
-                                .text_size(px(12.))
-                                .text_color(theme.muted_foreground)
-                                .child(category)
-                        })),
-                )
-                .child(div().flex().justify_center().gap(px(8.)).children(legend))
-                .child(muted(theme, description).text_size(px(13.)).text_center()),
+                    ChartRecipe::new(
+                        "latency",
+                        &self.state,
+                        ChartKind::Line,
+                        Direction::Ltr,
+                        "Request latency",
+                        "All latency measurements",
+                        "Route",
+                    )
+                    .format_value(|value| format!("{value} s")),
+                ),
         )
     }
 }
@@ -1389,10 +1298,10 @@ impl Render for ChartDemo {
 fn chart(theme: Theme, cx: &mut App) -> AnyView {
     let state = cx.new(|cx| {
         ChartState::new(
-            ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+            ["Search", "Cart", "Pay"],
             [
-                ChartSeries::new("Desktop", [186., 305., 237., 73., 209., 214.]),
-                ChartSeries::new("Mobile", [80., 200., 120., 190., 130., 140.]),
+                ChartSeries::new("Median", [0.12, 0.08, 0.18]),
+                ChartSeries::new("P95", [0.32, 0.2, 0.4]),
             ],
             cx,
         )

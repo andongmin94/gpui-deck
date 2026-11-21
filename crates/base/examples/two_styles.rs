@@ -31,10 +31,10 @@ use gpui_design::{
 #[path = "recipes/mod.rs"]
 mod recipes;
 use recipes::{
-    Alert, AspectRatio, Attachment, Avatar, AvatarGroup, Badge, ButtonGroup, Card, CodeBlock,
-    DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState, EmptyState, Heading,
-    InlineCode, InputGroup, Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet, SheetSide,
-    Sidebar, Skeleton, Spinner, Trace,
+    Alert, AspectRatio, Attachment, Avatar, AvatarGroup, Badge, ButtonGroup, ButtonVariant, Card,
+    CodeBlock, DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState, EmptyState,
+    Heading, InlineCode, InputGroup, Item, Kbd, KbdGroup, Marker, Message, Paragraph, Sheet,
+    SheetSide, Sidebar, Skeleton, Spinner, Trace,
 };
 
 #[path = "presentation.rs"]
@@ -167,7 +167,11 @@ impl Demo {
                 [
                     DataTableColumn::new("Preset", px(180.)),
                     DataTableColumn::new("Description", px(280.)),
-                    DataTableColumn::new("Bitrate", px(110.)).align_end(),
+                    DataTableColumn::new("Bitrate", px(110.))
+                        .align_end()
+                        .render_cell(move |row, text| {
+                            Badge::new(format!("bitrate-{}", row.id()), text.clone(), palette)
+                        }),
                     DataTableColumn::new("Updated", px(130.)),
                 ],
                 preset_rows,
@@ -476,16 +480,7 @@ impl Demo {
     }
 
     fn button(palette: Palette, button: Button) -> Button {
-        button
-            .h(palette.control_height)
-            .px_3()
-            .rounded(palette.radius)
-            .border_1()
-            .border_color(palette.accent)
-            .bg(palette.accent)
-            .text_color(palette.accent_foreground)
-            .hover(|style| style.opacity(0.85))
-            .focus_visible(|style| style.border_color(palette.foreground))
+        ButtonVariant::Primary.apply(button, palette)
     }
 
     fn menu_content(

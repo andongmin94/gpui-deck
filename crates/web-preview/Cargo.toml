@@ -10,6 +10,9 @@ publish = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[features]
+test-support = ["gpui-design/test-support"]
+
 [dependencies]
 gpui.workspace = true
 gpui-design = { path = "../base" }

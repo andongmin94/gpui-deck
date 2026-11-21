@@ -3,7 +3,7 @@ title: Chart
 description: "分类数据系列、分组/堆叠/饼图/雷达图布局、可见系列的值域、线性或角度式数据点检查，以及精确的原生数值。"
 ---
 
-<ComponentPreview name="chart" height={360} />
+<ComponentPreview name="chart" height={640} />
 
 `ChartState` 接受类别标签和 `ChartSeries` 的值。每个系列在每个类别上都有一个
 有限的值。保留的状态提供可见系列、被检查的
@@ -46,7 +46,16 @@ Pie/Radar 则按最大的居中圆内的角度检查；
 默认刻度会保留小数。使用 `format_value` 指定单位后，坐标轴刻度、当前读数、原生无障碍读数和表格单元格都会采用相同的格式。
 
 ```rust
+let state = cx.new(|cx| ChartState::new(
+    ["Search", "Cart", "Pay"],
+    [
+        ChartSeries::new("Median", [0.12, 0.08, 0.18]),
+        ChartSeries::new("P95", [0.32, 0.2, 0.4]),
+    ],
+    cx,
+));
+
 ChartRecipe::new("latency", &state, ChartKind::Line, Direction::Ltr,
     "请求延迟", "全部延迟测量值", "路径")
-    .format_value(|value| format!("{value} ms"))
+    .format_value(|value| format!("{value} s"))
 ```

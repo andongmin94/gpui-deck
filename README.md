@@ -24,7 +24,7 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 
 | Control | Behavior supplied by the library | Application-owned presentation |
 | --- | --- | --- |
-| **Button** | Pointer and keyboard activation, disabled state, focus, accessible name and role, and optional current-page metadata | Content, spacing, shape, and state styling |
+| **Button** | Pointer and keyboard activation, disabled state, focus, accessible name and role, and optional current-page metadata | Content and styling, including a copyable six-variant Button recipe |
 | **Toggle** | Controlled pressed state over Button's activation, focus, and disabled behavior | Content and pressed-state styling |
 | **ToggleGroup** | Multiple or optional single pressed value, programmatic replacement, one Tab stop, orientation-aware navigation, and disabled items | Group layout and Toggle option styling |
 | **Checkbox** | Controlled unchecked/checked/mixed state, activation, disabled state, and focus | Indicator, label, layout, and state styling |
@@ -34,9 +34,9 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Textarea** | Multiline editing over the same engine, retained text, wrapping, and normal form Tab traversal | Field container, dimensions, text style, and surrounding content |
 | **Field** | Label focus, help/error descriptions, and required/invalid metadata for Input/Textarea-based controls, plus ControlField for Checkbox, Switch, RadioGroup and Select | Layout, label/help/error styles, control rendering, and validation rules |
 | **Label** | Named native text label that focuses an existing control when clicked, with an explicit disabled flag and no extra Tab stop | Text, layout, styling, target accessible name, and matching disabled state |
-| **Select** | Fixed single selection, buffered typeahead, Home/End and arrow navigation, disabled options, commit, and focus | Trigger, popup content, and option rendering |
+| **Select** | Single selection, buffered typeahead, Home/End and arrow navigation, disabled options, and automatic scrolling to the active option | Trigger, popup height limit, content and option rendering |
 | **Combobox** | Editable single/multiple selection, grouped search results, replaceable options, keyboard/pointer commit, and draft cancellation | Query frame, suggestion surface, result rows, selected chips, and empty state |
-| **Calendar** | Single/multiple/range date selection, separate focus, date-disabled rules, configurable week start, bounded navigation and RTL | Month controls, weekday/date labels, grid layout, and day styling |
+| **Calendar** | Single/multiple/range date selection, separate focus, disabled dates, configurable week start, direct month/year navigation, bounds and RTL | Month controls, weekday/date labels, grid layout, and day styling |
 | **DatePicker** | Calendar selection inside Popover, selected-date or retained-cursor initial focus, single/complete-range closing, dismissal, disabled state, and typed ISO/relative date parsing | Formatted trigger, calendar/month controls, presets, and popup surface |
 | **Slider** | One or more ordered numeric values, bounded steps, per-thumb focus and accessibility, keyboard/pointer adjustment, disabled state, vertical and RTL geometry | Track, fill, thumbs, sizing, and state styling |
 | **Progress** | Controlled percentage or indeterminate progress, accessible name and numeric range | Track, fill, label, and any animation |
@@ -61,9 +61,9 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 | **Menubar** | One top-level focus entry, menu switching, opening and shared command trees | Menu labels, surfaces, commands and styling |
 | **NavigationMenu** | Coordinated disclosures, roving focus and destination Link activation | Destination callbacks, panel content and layout |
 | **Toast** | Retained lifetime, hover/focus/window pause, safe dismissal, and a stacking Toaster with a visible limit | Message, action controls, placement and appearance |
-| **Drawer** | Dialog lifecycle plus bottom drag-to-dismiss through a dedicated handle | Backdrop, grip, surface, scrolling body and confirmation |
+| **Drawer** | Dialog lifecycle, outward drag-to-dismiss from four edges, and optional snap heights for vertical drawers | Backdrop, grip, surface, scrolling body and confirmation |
 | **Carousel** | Leading slide with one or more slides per view, opt-in pausing autoplay, bounded/looping navigation, discrete swipe, RTL and focus restoration | Slide content and widths, viewport size, controls and indicators |
-| **Chart** | Categorical series, grouped/stacked/pie/radar layouts, visible-series domain, linear or angular point inspection and exact native values | Copyable native line/bar/area, stacked, pie/donut and radar plots, axes, legend, readout and Table |
+| **Chart** | Categorical series, grouped/stacked/pie/radar layouts, visible-series domain and keyboard/pointer inspection | Copyable plots, names, category heading and unit formatting shared by ticks, readout and data table |
 | **MessageScroller** | Bottom following, keyed history anchoring, unread count and jump-to-latest | Stable message identities, content, dimensions and jump control |
 | **Questionnaire** | Linear question/review/complete flow, validated answers and Back | Editors, prompts, validation, focus and submission |
 
@@ -99,7 +99,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Item** | Named content row with a title, description, optional media, header, footer, and trailing action | Current recording preset with a record dot, scope header, date footer and its existing preview/edit control |
 | **Alert** | Inline title and description, with separate destructive styling and explicit urgency | Informational schedule notice and a missing-name warning after closing invalid settings |
 | **Pagination** | Controlled previous/next buttons, current-page text, and empty/first/last-page boundaries | Moving through the preset catalogue |
-| **DataTable** | Text filtering/sorting, pagination, page/row checkbox selection, column visibility, and stable-ID row actions | Browsing recording presets, selecting rows independently, and applying a preset |
+| **DataTable** | Replaceable stable-ID rows, custom cell content, text filtering, typed sorting, adjustable page size, selection, column visibility and row actions | Browsing recording presets, selecting rows independently, and applying a preset |
 | **Spinner** | Named indeterminate Progress with a rotating arc that respects GPUI's reduced-motion setting | The unknown-progress preview |
 | **Skeleton** | Static decorative placeholder with application-controlled size and shape | The preview's unavailable percentage display |
 | **Avatar** | Named circular image with explicit fallback text, using GPUI's image loader and cache, plus an overlapping AvatarGroup with a named "+N" overflow | Preset artwork or initials and a people group in the existing HoverCard preview |

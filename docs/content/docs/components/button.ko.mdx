@@ -9,20 +9,22 @@ description: "포인터와 키보드 활성화, 비활성화 상태, 포커스, 
 Enter/Space 활성화, 포커스, 비활성화 상태, 네이티브 Button 역할을 소유합니다.
 내용, 간격, 모양, 상태별 스타일은 애플리케이션이 맡습니다.
 
+미리보기에 쓰인 라이트·다크 버튼 스타일을 앱에 복사합니다.
+
+```sh
+cargo run -p gpui-design-cli --locked -- add button --to ../my-app/src/ui
+```
+
 ```rust
-Button::new("save")
-    .accessibility_label("Save session")
-    .px_3()
-    .py_2()
-    .rounded(px(6.))
-    .bg(palette.accent)
-    .text_color(palette.accent_foreground)
-    .focus_visible(|style| style.border_color(palette.ring))
-    .styles(|styles| styles.disabled(|style| style.opacity(0.5)))
+use ui::{Appearance, recipes::ButtonVariant};
+
+let palette = Appearance::Settings.palette();
+ButtonVariant::Primary
+    .apply(Button::new("save").accessibility_label("세션 저장"), palette)
     .on_click(|_, window, cx| {
         // The application decides what activation does.
     })
-    .child("Save")
+    .child("저장")
 ```
 
 ## 활성화와 포커스

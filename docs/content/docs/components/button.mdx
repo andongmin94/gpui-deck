@@ -10,16 +10,18 @@ pointer and Enter/Space activation, focus, the disabled state and the native
 Button role; its content, spacing, shape and state styling belong to the
 application.
 
+Copy the same light and dark button variants used in the preview into your application.
+
+```sh
+cargo run -p gpui-design-cli --locked -- add button --to ../my-app/src/ui
+```
+
 ```rust
-Button::new("save")
-    .accessibility_label("Save session")
-    .px_3()
-    .py_2()
-    .rounded(px(6.))
-    .bg(palette.accent)
-    .text_color(palette.accent_foreground)
-    .focus_visible(|style| style.border_color(palette.ring))
-    .styles(|styles| styles.disabled(|style| style.opacity(0.5)))
+use ui::{Appearance, recipes::ButtonVariant};
+
+let palette = Appearance::Settings.palette();
+ButtonVariant::Primary
+    .apply(Button::new("save").accessibility_label("Save session"), palette)
     .on_click(|_, window, cx| {
         // The application decides what activation does.
     })

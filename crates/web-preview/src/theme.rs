@@ -1,10 +1,12 @@
 //! The neutral palette of the documentation site, in light and dark.
 
+use crate::{Appearance, Palette};
 use gpui::{Hsla, rgb};
 
 /// Colors matching the site's neutral theme so previews sit naturally in it.
 #[derive(Clone, Copy, Debug)]
 pub struct Theme {
+    appearance: Appearance,
     pub background: Hsla,
     pub foreground: Hsla,
     pub muted: Hsla,
@@ -20,6 +22,7 @@ pub struct Theme {
 impl Theme {
     pub fn light() -> Self {
         Self {
+            appearance: Appearance::Settings,
             background: rgb(0xffffff).into(),
             foreground: rgb(0x0a0a0a).into(),
             muted: rgb(0xf5f5f5).into(),
@@ -35,6 +38,7 @@ impl Theme {
 
     pub fn dark() -> Self {
         Self {
+            appearance: Appearance::Compact,
             background: rgb(0x0a0a0a).into(),
             foreground: rgb(0xfafafa).into(),
             muted: rgb(0x262626).into(),
@@ -46,5 +50,9 @@ impl Theme {
             ring: rgb(0x737373).into(),
             destructive: rgb(0xf87171).into(),
         }
+    }
+
+    pub(crate) fn recipe_palette(self) -> Palette {
+        self.appearance.palette()
     }
 }

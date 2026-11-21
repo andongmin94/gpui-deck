@@ -7,6 +7,14 @@
 pub mod demos;
 pub mod theme;
 
+// Compile the sources installed by the CLI so preview and consumer use the same recipes.
+#[path = "../../base/examples/presentation.rs"]
+mod presentation;
+use presentation::{Appearance, Palette};
+#[path = "../../base/examples/recipes/mod.rs"]
+#[allow(dead_code, unused_imports)] // Each preview uses a subset of the recipe's optional slots.
+mod recipes;
+
 #[cfg(target_family = "wasm")]
 mod web {
     use gpui::{App, AppContext as _, WindowOptions};

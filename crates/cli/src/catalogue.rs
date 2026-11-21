@@ -38,6 +38,7 @@ pub(crate) const RECIPES: &[Recipe] = &[
     ),
     recipe!("badge", badge, [Badge], []),
     recipe!("bubble", bubble, [Bubble, BubbleSide], []),
+    recipe!("button", button, [ButtonVariant], []),
     recipe!("button-group", button_group, [ButtonGroup], []),
     recipe!("card", card, [Card], []),
     recipe!("chart", chart, [ChartKind, ChartRecipe], []),

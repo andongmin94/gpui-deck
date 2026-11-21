@@ -11,55 +11,70 @@ use gpui_design::{
     ToggleItem, ToggleOption,
 };
 
-use super::{frame, outline, primary};
+use super::{frame, outline};
+use crate::recipes::ButtonVariant;
 use crate::theme::Theme;
 
 // Button
 
 struct ButtonDemo {
     theme: Theme,
-    clicks: usize,
+    last_pressed: Option<&'static str>,
 }
 
 impl Render for ButtonDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = self.theme;
-        frame(theme)
+        let palette = theme.recipe_palette();
+        let variants = [
+            ("Primary", ButtonVariant::Primary),
+            ("Secondary", ButtonVariant::Secondary),
+            ("Outline", ButtonVariant::Outline),
+            ("Ghost", ButtonVariant::Ghost),
+            ("Destructive", ButtonVariant::Destructive),
+            ("Link", ButtonVariant::Link),
+        ];
+        let buttons = div()
+            .flex()
             .flex_wrap()
-            .child(
-                primary(theme, Button::new("default"))
-                    .child(if self.clicks == 0 {
-                        "Button".to_string()
-                    } else {
-                        format!("Clicked {}×", self.clicks)
-                    })
-                    .on_click(cx.listener(|this, _, _, cx| {
-                        this.clicks += 1;
+            .gap_2()
+            .justify_center()
+            .children(variants.into_iter().map(|(label, variant)| {
+                variant
+                    .apply(Button::new(label).accessibility_label(label), palette)
+                    .child(label)
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.last_pressed = Some(label);
                         cx.notify();
-                    })),
-            )
+                    }))
+            }))
             .child(
-                outline(theme, Button::new("secondary"))
-                    .bg(theme.muted)
-                    .border_color(theme.muted)
-                    .child("Secondary"),
-            )
-            .child(outline(theme, Button::new("outline")).child("Outline"))
-            .child(
-                outline(theme, Button::new("ghost"))
-                    .border_color(gpui::transparent_black())
-                    .child("Ghost"),
-            )
-            .child(
-                primary(theme, Button::new("disabled"))
-                    .disabled(true)
+                ButtonVariant::Primary
+                    .apply(
+                        Button::new("disabled")
+                            .accessibility_label("Disabled")
+                            .disabled(true),
+                        palette,
+                    )
                     .child("Disabled"),
-            )
+            );
+        frame(theme)
+            .bg(palette.canvas)
+            .text_color(palette.foreground)
+            .flex_col()
+            .child(buttons)
+            .when_some(self.last_pressed, |view, label| {
+                view.child(format!("{label} pressed"))
+            })
     }
 }
 
 pub fn button(theme: Theme, cx: &mut App) -> AnyView {
-    cx.new(|_| ButtonDemo { theme, clicks: 0 }).into()
+    cx.new(|_| ButtonDemo {
+        theme,
+        last_pressed: None,
+    })
+    .into()
 }
 
 // Toggle and ToggleGroup
