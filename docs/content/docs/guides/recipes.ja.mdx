@@ -14,7 +14,7 @@ description: "23 のカタログレシピは、再利用可能なアプリケー
 アプリのルートで CLI を実行すると、レシピと必要な依存関係、トークン、モジュール宣言、ライセンス、アセットをまとめてコピーできます。
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.1 --locked
+cargo install gpui-deck-cli --version 0.0.2 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```
@@ -23,7 +23,7 @@ gpui-deck add data-table avatar --to src/ui
 `ui::Appearance::Settings.palette()` または `ui::Appearance::Compact.palette()` を使用してください。
 [インストールガイド](/ja/docs/installation/)に記載されている Cargo の依存関係を使用します。CLI は
 コンシューマーのマニフェストを変更しません。ビルド時にリポジトリの現在のレシピソースを埋め込みます。
-リモートレジストリや更新サービスはありません。
+チームのパレットとコンポーネントは GitHub からも導入できます。 [ブロックの導入と共有](/ja/docs/guides/blocks/)
 
 アプリケーションのマニフェストに次の feature 宣言を残してください。
 

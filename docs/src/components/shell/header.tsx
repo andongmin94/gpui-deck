@@ -47,14 +47,18 @@ export function SiteHeader({
     { href: `/${lang}/docs`, label: t.docs, exact: true },
     { href: `/${lang}/docs/components`, label: t.components },
     { href: `/${lang}/docs/recipes`, label: t.recipes },
+    { href: `/${lang}/docs/guides/blocks`, label: t.blocks, exact: true },
     { href: `/${lang}/docs/guides/forms`, label: t.guides, prefix: `/${lang}/docs/guides` },
   ];
+  const activeLink =
+    links.find((link) => current === link.href) ??
+    links.find((link) => !link.exact && current.startsWith(link.prefix ?? link.href));
   const pathIn = (code: string) =>
     current.replace(new RegExp(`^/${lang}(?=/|$)`), `/${code}`) || `/${code}`;
 
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-4 md:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-4 md:px-6">
         {onToggleMenu ? (
           <button
             type="button"
@@ -77,6 +81,7 @@ export function SiteHeader({
                     <DropdownMenu.LinkItem
                       key={link.href}
                       render={<Link href={link.href} />}
+                      aria-current={link === activeLink ? "page" : undefined}
                       closeOnClick
                       className={`${menuItem} h-11`}
                     >
@@ -90,23 +95,21 @@ export function SiteHeader({
         )}
         <Link
           href={`/${lang}`}
-          className="flex shrink-0 items-center gap-2 text-sm font-semibold sm:mr-4 sm:text-base"
+          className="flex shrink-0 items-center gap-1.5 text-sm font-semibold tracking-tight lg:mr-3 sm:text-base"
         >
-          <span className="hidden size-5 rounded-[5px] bg-fd-foreground sm:block" aria-hidden />
+          <img src="/deck.svg" alt="" width="23" height="23" className="hidden sm:block" />
           {SITE_NAME}
         </Link>
         <nav className="hidden items-center gap-1 text-sm md:flex">
           {links.map((link) => {
-            const active = link.exact
-              ? current === link.href
-              : current.startsWith(link.prefix ?? link.href);
+            const active = link === activeLink;
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={`rounded-md px-2.5 py-1.5 font-medium transition-colors hover:text-fd-foreground ${
-                  active ? "text-fd-primary" : "text-fd-muted-foreground"
+                  active ? "bg-fd-secondary text-fd-primary" : "text-fd-foreground/85"
                 }`}
               >
                 {link.label}
@@ -118,7 +121,7 @@ export function SiteHeader({
           <button
             type="button"
             onClick={() => setOpenSearch(true)}
-            className="hidden h-8 w-56 items-center gap-2 rounded-md bg-fd-secondary px-3 text-sm text-fd-muted-foreground transition-colors hover:bg-fd-accent sm:flex lg:w-64"
+            className="hidden h-8 w-48 items-center gap-2 rounded-full bg-fd-secondary px-3 text-sm text-fd-muted-foreground transition-colors hover:bg-fd-accent lg:flex xl:w-64"
           >
             <span className="flex-1 text-left">{t.search}</span>
             <kbd className="rounded border bg-fd-background px-1.5 font-mono text-[10px] font-medium">
@@ -129,7 +132,7 @@ export function SiteHeader({
             type="button"
             aria-label={t.search}
             onClick={() => setOpenSearch(true)}
-            className={`${iconButton} sm:hidden`}
+            className={`${iconButton} lg:hidden`}
           >
             <Search className="size-4" />
           </button>

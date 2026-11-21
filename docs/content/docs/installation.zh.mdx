@@ -40,10 +40,12 @@ GPUI 快照系列固定为 **`=0.3.12`**。更改渲染依赖时，请同时更�
 在应用根目录下从 crates.io 安装 CLI，然后将配方复制到 `src/ui`。
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.1 --locked
+cargo install gpui-deck-cli --version 0.0.2 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```
+
+[安装与分享区块](/zh/docs/guides/blocks/)
 
 在使用方中声明 `mod ui;`。该工具会保留你对先前安装的配方和调色板文件所做的修改；如果生成的模块声明被修改过，或存在新文件冲突，则会在写入前停止。Cargo 依赖由使用方自行处理。
 参见[源码复制指南](/zh/docs/guides/recipes/)。

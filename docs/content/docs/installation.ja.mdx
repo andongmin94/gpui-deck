@@ -39,10 +39,12 @@ GPUI スナップショットファミリーは **`=0.3.12`** に固定されて
 アプリのルートで crates.io から CLI をインストールし、レシピを `src/ui` にコピーします。
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.1 --locked
+cargo install gpui-deck-cli --version 0.0.2 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```
+
+[ブロックの導入と共有](/ja/docs/guides/blocks/)
 
 コンシューマーで `mod ui;` を宣言してください。このツールは、以前にインストールしたレシピとパレットのファイルへの編集を保持します。生成されたモジュール宣言が変更されている場合や、新しいファイルが衝突する場合は、書き込む前に停止します。Cargo の依存関係はコンシューマーに任せます。
 詳しくは[ソースコピーガイド](/ja/docs/guides/recipes/)をご覧ください。

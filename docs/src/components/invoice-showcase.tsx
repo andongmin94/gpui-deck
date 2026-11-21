@@ -33,46 +33,46 @@ export function InvoiceShowcase({ labels, children }: { labels: Labels; children
   return (
     <section
       aria-labelledby="invoice-title"
-      className="mx-auto w-full max-w-[1248px] px-4 pb-12 sm:px-8 sm:pb-16"
+      className="min-w-0 overflow-hidden rounded-2xl border bg-fd-background shadow-xs sm:rounded-3xl lg:col-start-2 lg:row-start-1"
     >
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-        <div>
-          <h2 id="invoice-title" className="text-xl font-semibold tracking-tight">
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b px-5 py-4 sm:px-6">
+        <div className="min-w-0 flex-[1_1_18rem]">
+          <h2 id="invoice-title" className="text-lg leading-6 font-semibold tracking-tight">
             {labels.title}
           </h2>
           <p className="mt-1 text-sm leading-relaxed text-fd-muted-foreground [html:lang(ko)_&]:break-keep">
             {labels.description}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           <button
             type="button"
             aria-controls="invoice-preview"
             onClick={toggleDemo}
-            className="inline-flex h-10 items-center gap-2 rounded-lg bg-fd-primary px-3.5 text-sm font-medium text-fd-primary-foreground hover:opacity-90"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-fd-primary px-3 text-sm font-medium text-fd-primary-foreground hover:opacity-85"
           >
             {live ? (
-              <RotateCcw className="size-4" aria-hidden />
+              <RotateCcw className="size-3.5" aria-hidden />
             ) : (
-              <Play className="size-4" aria-hidden />
+              <Play className="size-3.5" aria-hidden />
             )}
             {live ? labels.stop : labels.run}
           </button>
           <a
             href={sourceUrl}
-            className="inline-flex h-10 items-center gap-2 rounded-lg border px-3.5 text-sm font-medium hover:bg-fd-accent"
+            className="inline-flex min-h-8 items-center gap-1.5 rounded-full bg-fd-secondary px-3 text-sm font-medium hover:bg-fd-accent"
           >
-            <Code2 className="size-4" aria-hidden />
+            <Code2 className="size-3.5" aria-hidden />
             {labels.source}
           </a>
         </div>
       </div>
       {mode === "unavailable" && (
-        <output className="mb-3 block text-sm text-fd-muted-foreground">
+        <output className="block border-b px-5 py-3 text-sm text-fd-muted-foreground">
           {labels.unavailable}
         </output>
       )}
-      <div id="invoice-preview" className="overflow-hidden rounded-xl border bg-fd-card shadow-sm">
+      <div id="invoice-preview">
         {live ? (
           <iframe
             title={labels.title}

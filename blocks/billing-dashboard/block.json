@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "billing-dashboard",
+  "recipes": ["chart", "data-table"],
+  "files": [
+    { "source": "dashboard.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "components/panel.rs", "target": "components/panel.rs" }
+  ]
+}

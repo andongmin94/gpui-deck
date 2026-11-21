@@ -26,12 +26,22 @@ From your Rust application, add the library and install the recipe CLI from crat
 
 ```sh
 cargo add gpui-deck@0.0.1
-cargo install gpui-deck-cli --version 0.0.1 --locked
+cargo install gpui-deck-cli --version 0.0.2 --locked
 gpui-deck add button --to src/ui
 ```
 
 Declare `mod ui;` in your app, and use the matching `gpui-pre` and
 `gpui-pre-platform` dependencies in the [installation guide](https://gpui-deck.andongmin.com/en/docs/installation/).
+
+Install a team's billing dashboard from its public GitHub manifest:
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json
+```
+
+The command copies the team’s palette, dashboard source, chart and table recipes into
+`src/ui`. [Install and share blocks](https://gpui-deck.andongmin.com/en/docs/guides/blocks/)
+includes a runnable app and the manifest for publishing your own block.
 
 ## Current scope
 

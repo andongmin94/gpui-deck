@@ -43,10 +43,12 @@ The GPUI snapshot family is pinned to **`=0.3.12`**. Update those pins and
 From your application root, install the CLI from crates.io and copy the recipes into `src/ui`.
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.1 --locked
+cargo install gpui-deck-cli --version 0.0.2 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```
+
+[Install and share blocks](/en/docs/guides/blocks/)
 
 Declare `mod ui;` in the consumer. The tool preserves edits to previously installed
 recipe and palette files; modified generated module declarations or new-file

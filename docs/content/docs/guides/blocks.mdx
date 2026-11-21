@@ -1,0 +1,61 @@
+---
+title: Install and share blocks
+description: "Install a team's billing dashboard from GitHub, then publish a block with your own palette and components."
+---
+
+## Install the billing dashboard
+
+Start with a Rust application and the Cargo dependencies in the [installation guide](/en/docs/installation/). Run these commands at the application root with `curl` on your PATH.
+
+```sh
+cargo install gpui-deck-cli --version 0.0.2 --locked
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json
+```
+
+The default destination is `src/ui`. The block’s Rust module and team palette land in `src/ui/billing_dashboard/`. Its chart and data table share that palette. The CLI also installs the table’s input group, pagination and empty state. Use `--to` to choose a different UI module.
+
+Put this in `src/main.rs`, then run `cargo build` or `cargo run`.
+
+```rust
+mod ui;
+
+use gpui::AppContext as _;
+use ui::billing_dashboard::BillingDashboard;
+
+fn main() {
+    gpui_platform::application().run(|cx| {
+        gpui_deck::init(cx);
+        cx.open_window(Default::default(), |window, cx| {
+            let dashboard = cx.new(|cx| BillingDashboard::new(window, cx));
+            cx.new(|cx| gpui_deck::Root::new(dashboard, window, cx))
+        })
+        .expect("open billing dashboard");
+        cx.activate(true);
+    });
+}
+```
+
+## Publish your team's block
+
+Commit a `block.json` file and the source files it lists to a public GitHub repository. The [billing dashboard source](https://github.com/andongmin94/gpui-deck/tree/main/blocks/billing-dashboard) is a complete example.
+
+```json
+{
+  "version": 1,
+  "name": "billing-dashboard",
+  "recipes": ["chart", "data-table"],
+  "files": [
+    { "source": "dashboard.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "components/panel.rs", "target": "components/panel.rs" }
+  ]
+}
+```
+
+`name` determines the Rust module directory (`billing-dashboard` becomes `billing_dashboard`). `recipes` lists the bundled recipes the block imports. Under `files`, each `source` is relative to the manifest and each `target` is relative to the installed block module. Include a `mod.rs` target for the entry point. Add your team's own palette, components and assets to this list.
+
+Use a lowercase, hyphen-separated name. Keep relative file paths portable with letters, numbers, underscores, hyphens and dots. For example, a `brand/button.rs` source can be installed as `components/button.rs`.
+
+Share the GitHub file URL for the manifest, or its `raw.githubusercontent.com` URL. Link to a commit to share an exact revision. Users can edit the installed Rust files in their app. Repeating the same URL keeps their edits. Review the author's source before building.
+
+`gpui-deck diff --to src/ui` compares the bundled recipes and their generated scaffolding. Use your project's Git diff for the team's block files.

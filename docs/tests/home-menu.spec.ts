@@ -12,7 +12,13 @@ test("the mobile home menu supports keyboard navigation to localized docs", asyn
     await trigger.press("ArrowDown");
     await expect(menu).toBeVisible({ timeout: 1000 });
   }).toPass();
-  await expect(menu.getByRole("menuitem")).toHaveText(["문서", "컴포넌트", "레시피", "가이드"]);
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "문서",
+    "컴포넌트",
+    "레시피",
+    "블록",
+    "가이드",
+  ]);
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
   await expect(trigger).toBeFocused();

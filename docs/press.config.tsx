@@ -35,6 +35,10 @@ export default app.config({
     hreflang: { zh: "zh-Hans" },
   },
   head({ page }): HeadTag[] {
+    const icon: HeadTag = {
+      tag: "link",
+      attrs: { rel: "icon", href: "/deck.svg", type: "image/svg+xml" },
+    };
     // Restore the accent before the browser chooses the first invoice preview image.
     const restoreAccent: HeadTag = {
       tag: "script",
@@ -42,6 +46,7 @@ export default app.config({
     };
     if (!page) {
       return [
+        icon,
         restoreAccent,
         { tag: "meta", attrs: { property: "og:site_name", content: SITE_NAME } },
       ];
@@ -49,6 +54,7 @@ export default app.config({
     const title = page.slugs.length === 0 ? SITE_NAME : `${page.data.title} – ${SITE_NAME}`;
     const description = page.data.description ?? SITE_DESCRIPTION;
     return [
+      icon,
       restoreAccent,
       { tag: "title", children: title },
       { tag: "meta", attrs: { name: "description", content: description } },

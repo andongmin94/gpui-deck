@@ -1,0 +1,61 @@
+---
+title: 安装与分享区块
+description: "从 GitHub 安装团队的账单仪表盘，并发布包含自定义配色与组件的区块。"
+---
+
+## 安装账单仪表盘
+
+按[安装指南](/zh/docs/installation/)为 Rust 应用添加 Cargo 依赖。确保 `curl` 在 PATH 中可用，然后在应用根目录执行以下命令。
+
+```sh
+cargo install gpui-deck-cli --version 0.0.2 --locked
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json
+```
+
+默认安装目录是 `src/ui`。仪表盘模块和团队配色位于 `src/ui/billing_dashboard/`。图表和账单表格使用同一套配色。CLI 还会安装表格依赖的输入组、分页和空状态配方。可通过 `--to` 指定其他 UI 模块目录。
+
+将以下代码放入 `src/main.rs`，然后运行 `cargo build` 编译，或运行 `cargo run` 打开窗口。
+
+```rust
+mod ui;
+
+use gpui::AppContext as _;
+use ui::billing_dashboard::BillingDashboard;
+
+fn main() {
+    gpui_platform::application().run(|cx| {
+        gpui_deck::init(cx);
+        cx.open_window(Default::default(), |window, cx| {
+            let dashboard = cx.new(|cx| BillingDashboard::new(window, cx));
+            cx.new(|cx| gpui_deck::Root::new(dashboard, window, cx))
+        })
+        .expect("open billing dashboard");
+        cx.activate(true);
+    });
+}
+```
+
+## 发布团队区块
+
+将 `block.json` 及其中列出的源文件提交到公开的 GitHub 仓库。[账单仪表盘源码](https://github.com/andongmin94/gpui-deck/tree/main/blocks/billing-dashboard)提供了完整示例。
+
+```json
+{
+  "version": 1,
+  "name": "billing-dashboard",
+  "recipes": ["chart", "data-table"],
+  "files": [
+    { "source": "dashboard.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "components/panel.rs", "target": "components/panel.rs" }
+  ]
+}
+```
+
+`name` 决定 Rust 模块的目录名，例如 `billing-dashboard` 对应 `billing_dashboard`。在 `recipes` 中列出区块引用的内置配方。`files` 中的 `source` 相对于清单文件，`target` 相对于安装后的区块目录。入口文件的 `target` 为 `mod.rs`。将团队自己的配色、组件和资源也添加到此列表。
+
+区块名称以小写英文字母开头，各单词用连字符分隔。相对路径可使用英文字母、数字、下划线、连字符与点。例如，可以将 `brand/button.rs` 安装为 `components/button.rs`。
+
+分享清单文件的 GitHub 网页 URL 或 `raw.githubusercontent.com` URL。要固定版本，请分享指向特定提交的链接。使用者可以直接编辑安装好的 Rust 源码，再次添加同一个 URL 会保留这些修改。构建前请检查作者的源码。
+
+`gpui-deck diff --to src/ui` 可比较内置配方和生成的模块声明。团队区块源文件的修改可以用应用仓库的 Git diff 查看。

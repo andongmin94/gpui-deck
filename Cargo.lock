@@ -2103,10 +2103,13 @@ dependencies = [
 
 [[package]]
 name = "gpui-deck-cli"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "anyhow",
  "gpui-deck",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]

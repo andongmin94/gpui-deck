@@ -8,19 +8,26 @@ use std::{
 };
 
 use anyhow::{Context as _, Result, bail};
+use block::{Block, BlockIndex, InstalledBlock};
 use gpui_deck::recipe_sources::{LICENSE, PRESENTATION, RECIPES, Recipe};
+
+mod block;
+mod changes;
 
 const USAGE: &str = "GPUI Deck source recipes
 
 Usage:
   gpui-deck list
   gpui-deck add <recipe>... --to <module-directory>
+  gpui-deck add <github-manifest-url> [--to <module-directory>]
   gpui-deck diff --to <module-directory>
 
 Example:
   gpui-deck add data-table avatar --to src/ui
 
 Adds recipe dependencies, presentation tokens, module declarations and license.
+GitHub block URLs also install the author's files. The default block destination
+is src/ui. URL installs require curl on PATH.
 Existing installed recipe and token edits are kept. Modified generated module
 declarations or conflicting new files stop the command before any files change.
 The consumer supplies its gpui and gpui-deck Cargo dependencies.
@@ -41,6 +48,7 @@ enum Command {
     Help,
     List,
     Add { names: Vec<String>, to: PathBuf },
+    AddBlock { url: String, to: PathBuf },
     Diff { to: PathBuf },
 }
 
@@ -88,6 +96,15 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
             if names.is_empty() {
                 bail!("add needs at least one recipe; use list to see available names");
             }
+            if names.iter().any(|name| name.contains("://")) {
+                if names.len() != 1 {
+                    bail!("add one block URL at a time");
+                }
+                return Ok(Command::AddBlock {
+                    url: names.pop().unwrap(),
+                    to: to.unwrap_or_else(|| "src/ui".into()),
+                });
+            }
             Ok(Command::Add {
                 names,
                 to: to.context("add requires --to <module-directory>")?,
@@ -132,7 +149,17 @@ fn module_source(names: &BTreeSet<String>) -> Result<String> {
         } else {
             format!("{{{}}}", recipe.exports.join(", "))
         };
-        source.push_str(&format!("pub(crate) use {}::{exports};\n", recipe.module));
+        let declaration = format!("pub(crate) use {}::{exports};", recipe.module);
+        if declaration.len() > 100 && recipe.exports.len() > 1 {
+            source.push_str(&format!(
+                "pub(crate) use {}::{{\n    {},\n}};\n",
+                recipe.module,
+                recipe.exports.join(", ")
+            ));
+        } else {
+            source.push_str(&declaration);
+            source.push('\n');
+        }
     }
     Ok(source)
 }
@@ -157,6 +184,15 @@ fn matches_text(contents: &[u8], expected: &str) -> bool {
             .is_ok_and(|text| text.replace("\r\n", "\n") == expected.replace("\r\n", "\n"))
 }
 
+fn matches_generated(path: &Path, contents: &[u8], expected: &str) -> bool {
+    matches_text(contents, expected)
+        || (path == Path::new("recipes/mod.rs")
+            && matches_text(
+                contents,
+                &expected.replace("::{\n    ", "::{").replace(",\n};", "};"),
+            ))
+}
+
 fn installed_recipes(to: &Path) -> Result<Option<BTreeSet<String>>> {
     let path = to.join(MANIFEST);
     let Some(contents) = read(&path)? else {
@@ -176,13 +212,36 @@ fn installed_recipes(to: &Path) -> Result<Option<BTreeSet<String>>> {
     Ok(Some(names))
 }
 
-fn generated_files(names: &BTreeSet<String>) -> Result<BTreeMap<PathBuf, String>> {
-    Ok(BTreeMap::from([
-        ("mod.rs".into(), ROOT_MODULE.to_owned()),
+fn installed_blocks(to: &Path) -> Result<BlockIndex> {
+    let Some(contents) = read(&to.join(block::INDEX))? else {
+        return Ok(BlockIndex::new());
+    };
+    serde_json::from_slice(&contents)
+        .with_context(|| format!("read {}", to.join(block::INDEX).display()))
+}
+
+fn generated_files(
+    names: &BTreeSet<String>,
+    blocks: &BlockIndex,
+) -> Result<BTreeMap<PathBuf, String>> {
+    let mut root = ROOT_MODULE.to_owned();
+    for module in blocks.keys() {
+        block::check_module(module)?;
+        root.push_str(&format!("pub(crate) mod {module};\n"));
+    }
+    let mut files = BTreeMap::from([
+        ("mod.rs".into(), root),
         ("recipes/mod.rs".into(), module_source(names)?),
         (MANIFEST.into(), manifest_source(names)),
         ("LICENSE-APACHE".into(), LICENSE.to_owned()),
-    ]))
+    ]);
+    if !blocks.is_empty() {
+        files.insert(
+            block::INDEX.into(),
+            serde_json::to_string_pretty(blocks)? + "\n",
+        );
+    }
+    Ok(files)
 }
 
 fn source_files(names: &BTreeSet<String>) -> Result<BTreeMap<PathBuf, &'static str>> {
@@ -207,61 +266,132 @@ struct Installed {
 }
 
 fn add(names: Vec<String>, to: &Path) -> Result<Installed> {
+    install(names, None, to)
+}
+
+fn check_destination(to: &Path, relative: &Path) -> Result<()> {
+    let mut path = to.to_owned();
+    let mut components = relative.components().peekable();
+    while let Some(component) = components.next() {
+        path.push(component);
+        match fs::symlink_metadata(&path) {
+            Ok(metadata) => {
+                #[cfg(windows)]
+                let link =
+                    std::os::windows::fs::MetadataExt::file_attributes(&metadata) & 0x400 != 0;
+                #[cfg(not(windows))]
+                let link = metadata.is_symlink();
+                let valid_kind = if components.peek().is_some() {
+                    metadata.is_dir()
+                } else {
+                    metadata.is_file()
+                };
+                if link || !valid_kind {
+                    bail!(
+                        "expected an ordinary installation path at {}",
+                        path.display()
+                    );
+                }
+            }
+            Err(error) if error.kind() == ErrorKind::NotFound => break,
+            Err(error) => return Err(error).with_context(|| format!("inspect {}", path.display())),
+        }
+    }
+    Ok(())
+}
+
+fn install(mut names: Vec<String>, block: Option<Block>, to: &Path) -> Result<Installed> {
     // Resolve and preflight the complete addition before writing any source.
+    let _lock = changes::lock(to)?;
+    check_destination(to, Path::new(MANIFEST))?;
+    check_destination(to, Path::new(block::INDEX))?;
     let installed = installed_recipes(to)?;
     let has_manifest = installed.is_some();
     let previous = installed.unwrap_or_default();
+    let mut blocks = installed_blocks(to)?;
+    let old = generated_files(&previous, &blocks)?;
+    let mut sources = BTreeMap::new();
+    if let Some(block) = block {
+        let module = block.module;
+        let alternate = to.join(format!("{module}.rs"));
+        if alternate.try_exists()? {
+            bail!("{} already declares this block module", alternate.display());
+        }
+        let entry = blocks
+            .entry(module.clone())
+            .or_insert_with(|| InstalledBlock {
+                url: block.url.clone(),
+                files: BTreeSet::new(),
+            });
+        if entry.url != block.url {
+            bail!("block {module} is already installed from another URL");
+        }
+        names.extend(block.recipes);
+        for (file, bytes) in block.files {
+            let path = Path::new(&module).join(&file);
+            let previously_installed = !entry.files.insert(file);
+            sources.insert(path, (bytes, previously_installed));
+        }
+    }
     let selected = resolve(previous.iter().cloned().chain(names))?;
     let previous_files = source_files(&previous)?;
+    for (path, source) in source_files(&selected)? {
+        let previously_installed = has_manifest && previous_files.contains_key(&path);
+        sources.insert(path, (source.as_bytes().to_vec(), previously_installed));
+    }
     let mut pending = BTreeMap::new();
     let mut result = Installed::default();
-    for (path, source) in source_files(&selected)? {
+    for (path, (bytes, previously_installed)) in sources {
+        check_destination(to, &path)?;
         match read(&to.join(&path))? {
-            Some(_) if has_manifest && previous_files.contains_key(&path) => {
+            Some(contents)
+                if previously_installed
+                    || contents == bytes
+                    || std::str::from_utf8(&bytes)
+                        .is_ok_and(|text| matches_text(&contents, text)) =>
+            {
                 result.kept.push(path);
             }
-            Some(contents) if matches_text(&contents, source) => result.kept.push(path),
             Some(_) => bail!(
                 "{} already exists with different contents; choose a dedicated module directory",
                 to.join(&path).display()
             ),
             None => {
-                pending.insert(path, source.to_owned());
+                pending.insert(path, bytes);
             }
         }
     }
-    let old = generated_files(&previous)?;
-    for (path, new) in generated_files(&selected)? {
+    for (path, new) in generated_files(&selected, &blocks)? {
+        check_destination(to, &path)?;
         match read(&to.join(&path))? {
-            Some(contents) if matches_text(&contents, &new) => result.kept.push(path),
-            Some(contents) if matches_text(&contents, &old[&path]) => {
-                pending.insert(path, new);
+            Some(contents) if matches_generated(&path, &contents, &new) => result.kept.push(path),
+            Some(contents)
+                if old
+                    .get(&path)
+                    .is_some_and(|text| matches_generated(&path, &contents, text)) =>
+            {
+                pending.insert(path, new.into_bytes());
             }
             Some(_) => bail!(
                 "{} was modified; preserve your changes and add the module declarations manually or choose another --to directory",
                 to.join(&path).display()
             ),
             None => {
-                pending.insert(path, new);
+                pending.insert(path, new.into_bytes());
             }
         }
     }
-    for (path, source) in pending {
-        let destination = to.join(&path);
-        fs::create_dir_all(destination.parent().unwrap())
-            .with_context(|| format!("create directory for {}", destination.display()))?;
-        fs::write(&destination, source)
-            .with_context(|| format!("write {}", destination.display()))?;
-        result.written.push(path);
-    }
+    result.written = changes::write(to, pending)?;
     Ok(result)
 }
 
 fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
+    let _lock = changes::lock(to)?;
     let installed = installed_recipes(to)?
         .with_context(|| format!("no installed recipe manifest in {}", to.display()))?;
     let selected = resolve(installed)?;
-    let mut files = generated_files(&selected)?;
+    let blocks = installed_blocks(to)?;
+    let mut files = generated_files(&selected, &blocks)?;
     files.extend(
         source_files(&selected)?
             .into_iter()
@@ -272,7 +402,7 @@ fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
         let local = read(&to.join(&path))?;
         if local
             .as_deref()
-            .is_some_and(|contents| matches_text(contents, &bundled))
+            .is_some_and(|contents| matches_generated(&path, contents, &bundled))
         {
             continue;
         }
@@ -322,7 +452,23 @@ fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
     if !different {
         writeln!(writer, "Installed files match the bundled sources.")?;
     }
+    if !blocks.is_empty() {
+        writeln!(
+            writer,
+            "GitHub block files are application-owned and were not compared."
+        )?;
+    }
     Ok(())
+}
+
+fn report(to: &Path, result: Installed) {
+    for path in result.written {
+        println!("added {}", to.join(path).display());
+    }
+    for path in result.kept {
+        println!("kept {}", to.join(path).display());
+    }
+    println!("Declare this directory as a module in its parent (for example, mod ui;).");
 }
 
 fn run() -> Result<()> {
@@ -343,17 +489,15 @@ fn run() -> Result<()> {
         }
         Command::Diff { to } => diff(&to, io::stdout().lock())?,
         Command::Add { names, to } => {
-            let result = add(names, &to)?;
-            for path in result.written {
-                println!("added {}", to.join(path).display());
-            }
-            for path in result.kept {
-                println!("kept {}", to.join(path).display());
-            }
-            println!("Declare this directory as a module in its parent (for example, mod ui;).");
+            report(&to, add(names, &to)?);
             println!(
                 "Import its recipes and Appearance::Settings.palette() or Appearance::Compact.palette()."
             );
+        }
+        Command::AddBlock { url, to } => {
+            let block = block::load(&url, block::download)?;
+            println!("Installing block module {}", block.module);
+            report(&to, install(Vec::new(), Some(block), &to)?);
         }
     }
     Ok(())
@@ -399,6 +543,20 @@ mod tests {
         let arguments = |items: &[&str]| items.iter().map(OsString::from).collect::<Vec<_>>();
         assert_eq!(parse(arguments(&["list"])).unwrap(), Command::List);
         assert_eq!(
+            parse(arguments(&["add", EXAMPLE_URL])).unwrap(),
+            Command::AddBlock {
+                url: EXAMPLE_URL.into(),
+                to: "src/ui".into()
+            }
+        );
+        assert_eq!(
+            parse(arguments(&["add", EXAMPLE_URL, "--to", "app/widgets"])).unwrap(),
+            Command::AddBlock {
+                url: EXAMPLE_URL.into(),
+                to: "app/widgets".into()
+            }
+        );
+        assert_eq!(
             parse(arguments(&["diff", "--to", "src/ui"])).unwrap(),
             Command::Diff {
                 to: "src/ui".into()
@@ -417,6 +575,7 @@ mod tests {
             vec!["add", "--to", "src/ui"],
             vec!["add", "card", "--to"],
             vec!["add", "card", "--to", "a", "--to", "b"],
+            vec!["add", EXAMPLE_URL, "card"],
             vec!["diff"],
             vec!["diff", "--to"],
             vec!["diff", "card", "--to", "src/ui"],
@@ -424,6 +583,158 @@ mod tests {
         ] {
             assert!(parse(arguments(&invalid)).is_err());
         }
+    }
+
+    const EXAMPLE_URL: &str = "https://github.com/acme/ui/blob/main/billing/block.json";
+    const RAW_URL: &str = "https://raw.githubusercontent.com/acme/ui/main/billing/block.json";
+    const EXAMPLE: &str = r#"{
+        "version": 1, "name": "billing-dashboard", "recipes": ["chart", "data-table"],
+        "files": [{"source":"screen.rs","target":"mod.rs"},{"source":"brand.rs","target":"palette.rs"},
+                  {"source":"logo.png","target":"assets/logo.png"}]
+    }"#;
+
+    fn sample(url: &str, manifest: &str) -> Result<Block> {
+        block::load(url, |url| match url.rsplit('/').next().unwrap() {
+            "block.json" => Ok(manifest.as_bytes().to_vec()),
+            "screen.rs" => Ok(b"mod palette;".to_vec()),
+            "brand.rs" => Ok(b"// team palette".to_vec()),
+            "logo.png" => Ok(vec![0, 255, 10]),
+            other => bail!("fixture not found: {other}"),
+        })
+    }
+
+    #[test]
+    fn github_block_and_bundled_recipes_share_an_editable_installation() {
+        let directory = Directory::new();
+        let to = &directory.0;
+        let block = sample(EXAMPLE_URL, EXAMPLE).unwrap();
+        assert_eq!(block.url, RAW_URL);
+        assert_eq!(
+            sample(&RAW_URL.replace("/main/", "/refs/heads/main/"), EXAMPLE)
+                .unwrap()
+                .url,
+            RAW_URL
+        );
+        install(Vec::new(), Some(block), to).unwrap();
+        let palette = to.join("billing_dashboard/palette.rs");
+        assert_eq!(fs::read_to_string(&palette).unwrap(), "// team palette");
+        assert_eq!(
+            fs::read(to.join("billing_dashboard/assets/logo.png")).unwrap(),
+            [0, 255, 10]
+        );
+        assert_eq!(
+            fs::read_to_string(to.join(MANIFEST)).unwrap(),
+            "chart\ndata-table\nempty\ninput-group\npagination\n"
+        );
+        assert!(
+            fs::read_to_string(to.join("mod.rs"))
+                .unwrap()
+                .contains("pub(crate) mod billing_dashboard;")
+        );
+        fs::write(&palette, "// app palette").unwrap();
+        add(vec!["card".into()], to).unwrap();
+        let same = install(Vec::new(), Some(sample(RAW_URL, EXAMPLE).unwrap()), to).unwrap();
+        assert!(same.written.is_empty());
+        assert_eq!(fs::read_to_string(&palette).unwrap(), "// app palette");
+        let mut output = Vec::new();
+        diff(to, &mut output).unwrap();
+        assert!(
+            String::from_utf8(output)
+                .unwrap()
+                .contains("GitHub block files")
+        );
+        let other = sample(&EXAMPLE_URL.replace("/acme/", "/other/"), EXAMPLE).unwrap();
+        assert!(install(Vec::new(), Some(other), to).is_err());
+    }
+
+    #[test]
+    fn block_and_recipe_conflicts_abort_the_entire_install() {
+        for conflict in [
+            "billing_dashboard/palette.rs",
+            "recipes/chart.rs",
+            "billing_dashboard.rs",
+        ] {
+            let directory = Directory::new();
+            let destination = directory.0.join(conflict);
+            fs::create_dir_all(destination.parent().unwrap()).unwrap();
+            fs::write(&destination, "// existing app source").unwrap();
+            assert!(
+                install(
+                    Vec::new(),
+                    Some(sample(EXAMPLE_URL, EXAMPLE).unwrap()),
+                    &directory.0
+                )
+                .is_err()
+            );
+            assert_eq!(
+                fs::read_to_string(destination).unwrap(),
+                "// existing app source"
+            );
+            assert!(!directory.0.join("mod.rs").exists());
+            assert!(!directory.0.join("billing_dashboard/mod.rs").exists());
+            assert!(!directory.0.join(MANIFEST).exists());
+        }
+    }
+
+    #[test]
+    fn malformed_blocks_and_unavailable_sources_fail_before_install() {
+        for invalid in [
+            EXAMPLE.replace("\"version\": 1", "\"version\": 2"),
+            EXAMPLE.replace("billing-dashboard", "presentation"),
+            EXAMPLE.replace("billing-dashboard", "mod"),
+            EXAMPLE.replace("screen.rs", "../screen.rs"),
+            EXAMPLE.replace("palette.rs", "MOD.RS"),
+            EXAMPLE.replace("palette.rs", "/palette.rs"),
+            EXAMPLE.replace("palette.rs", "mod.rs/child"),
+            EXAMPLE.replace("brand.rs", "missing.rs"),
+            EXAMPLE.replace("logo.png", ".git/config"),
+        ] {
+            assert!(sample(EXAMPLE_URL, &invalid).is_err());
+        }
+        assert!(sample("https://example.com/blocks/billing.json", EXAMPLE).is_err());
+    }
+
+    #[test]
+    fn read_only_declarations_preserve_the_existing_installation_for_retry() {
+        let directory = Directory::new();
+        let to = &directory.0;
+        add(vec!["card".into()], to).unwrap();
+        let modules = to.join("recipes/mod.rs");
+        let original = modules.metadata().unwrap().permissions();
+        let mut read_only = original.clone();
+        read_only.set_readonly(true);
+        fs::set_permissions(&modules, read_only).unwrap();
+        let result = install(Vec::new(), Some(sample(EXAMPLE_URL, EXAMPLE).unwrap()), to);
+        fs::set_permissions(&modules, original).unwrap();
+        assert!(result.is_err());
+        assert_eq!(fs::read_to_string(to.join(MANIFEST)).unwrap(), "card\n");
+        assert!(!to.join(block::INDEX).exists());
+        assert!(!to.join("billing_dashboard/mod.rs").exists());
+        install(Vec::new(), Some(sample(EXAMPLE_URL, EXAMPLE).unwrap()), to).unwrap();
+    }
+
+    #[test]
+    fn simultaneous_additions_preserve_both_manifests_and_legacy_export_format() {
+        let directory = Directory::new();
+        let to = directory.0.join("ui");
+        std::thread::scope(|scope| {
+            scope.spawn(|| add(vec!["button".into()], &to).unwrap());
+            scope.spawn(|| {
+                install(Vec::new(), Some(sample(EXAMPLE_URL, EXAMPLE).unwrap()), &to).unwrap()
+            });
+        });
+        let exported = fs::read_to_string(to.join("recipes/mod.rs")).unwrap();
+        assert!(exported.contains("pub(crate) use button::"));
+        assert!(exported.contains("pub(crate) use data_table::{\n"));
+        let legacy = exported.replace("::{\n    ", "::{").replace(",\n};", "};");
+        fs::write(to.join("recipes/mod.rs"), legacy).unwrap();
+        add(vec!["badge".into()], &to).unwrap();
+        assert!(to.join("billing_dashboard/mod.rs").exists());
+        assert!(
+            fs::read_to_string(to.join("recipes/mod.rs"))
+                .unwrap()
+                .contains("pub(crate) use data_table::{\n")
+        );
     }
 
     #[test]

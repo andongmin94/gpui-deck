@@ -14,7 +14,7 @@ consumer's `Palette` or application-supplied `Styled` values.
 From your application root, use the CLI to copy each recipe with its dependencies, tokens, module declarations, license and assets.
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.1 --locked
+cargo install gpui-deck-cli --version 0.0.2 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```
@@ -22,8 +22,7 @@ gpui-deck add data-table avatar --to src/ui
 Declare `mod ui;` in the consumer and use `ui::recipes::{DataTable, Avatar}` and
 `ui::Appearance::Settings.palette()` or `ui::Appearance::Compact.palette()`.
 Use the matching Cargo dependencies in the [installation guide](/en/docs/installation/). The CLI does not change the
-consumer's manifest. It embeds the repository's current recipe source when built;
-there is no remote registry or update service.
+consumer's manifest. Named recipes are bundled with the CLI. [Install and share blocks](/en/docs/guides/blocks/)
 
 Keep this feature declaration in the consumer manifest:
 

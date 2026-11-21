@@ -1,0 +1,61 @@
+---
+title: ブロックの導入と共有
+description: "GitHub からチームの請求ダッシュボードを導入し、独自のパレットとコンポーネントを含むブロックを共有します。"
+---
+
+## 請求ダッシュボードを導入する
+
+Rust アプリに[インストールガイド](/ja/docs/installation/)の Cargo 依存関係を追加します。`curl` が使える環境で、アプリのルートから実行してください。
+
+```sh
+cargo install gpui-deck-cli --version 0.0.2 --locked
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json
+```
+
+既定のインストール先は `src/ui` です。ダッシュボードとチームのパレットは `src/ui/billing_dashboard/` に入ります。チャートと請求書テーブルは同じパレットを使い、テーブルが必要とする入力グループ、ページ送り、空状態のレシピも一緒に入ります。別の UI モジュールを選ぶには `--to` を指定します。
+
+次のコードを `src/main.rs` に置き、`cargo build` でビルドするか、`cargo run` でウィンドウを開きます。
+
+```rust
+mod ui;
+
+use gpui::AppContext as _;
+use ui::billing_dashboard::BillingDashboard;
+
+fn main() {
+    gpui_platform::application().run(|cx| {
+        gpui_deck::init(cx);
+        cx.open_window(Default::default(), |window, cx| {
+            let dashboard = cx.new(|cx| BillingDashboard::new(window, cx));
+            cx.new(|cx| gpui_deck::Root::new(dashboard, window, cx))
+        })
+        .expect("open billing dashboard");
+        cx.activate(true);
+    });
+}
+```
+
+## チームのブロックを公開する
+
+公開 GitHub リポジトリに `block.json` とそこに記載したソースファイルをコミットします。[請求ダッシュボードのソース](https://github.com/andongmin94/gpui-deck/tree/main/blocks/billing-dashboard)に一式があります。
+
+```json
+{
+  "version": 1,
+  "name": "billing-dashboard",
+  "recipes": ["chart", "data-table"],
+  "files": [
+    { "source": "dashboard.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "components/panel.rs", "target": "components/panel.rs" }
+  ]
+}
+```
+
+`name` が Rust モジュールのディレクトリ名になります。例えば `billing-dashboard` は `billing_dashboard` になります。`recipes` にはブロックが使う標準レシピを指定します。`files` の `source` はマニフェストからの相対パス、`target` はインストール先のブロック内の相対パスです。エントリーポイントの `target` は `mod.rs` にし、独自のパレット、コンポーネント、アセットも追加してください。
+
+ブロック名は小文字で始め、単語をハイフンで区切ります。相対パスには英数字、アンダースコア、ハイフン、ピリオドを使用します。例えば `brand/button.rs` を `components/button.rs` に配置できます。
+
+マニフェストの GitHub ファイル URL または `raw.githubusercontent.com` の URL を共有します。バージョンを固定するにはコミットを指すリンクを使います。利用者は Rust ソースを直接編集できます。同じ URL を再度指定しても編集は保持されます。ビルド前に作者のソースを確認してください。
+
+`gpui-deck diff --to src/ui` は同梱レシピと生成されたモジュール宣言を比較します。チームのブロックファイルの変更はアプリ側の Git diff で確認します。

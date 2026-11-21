@@ -4,7 +4,15 @@ test("the root opens the English home page", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/en\/?$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Build desktop apps with Rust and GPUI.",
+    "Build your design system with GPUI.",
+  );
+  await expect(page.getByRole("link", { name: "Install this block" })).toHaveAttribute(
+    "href",
+    "/en/docs/guides/blocks",
+  );
+  await expect(page.getByRole("link", { name: "block.json" })).toHaveAttribute(
+    "href",
+    "https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json",
   );
 });
 
@@ -69,6 +77,7 @@ test("the invoice accent follows the picker and survives a reload before the dem
   await page.getByRole("menuitemradio", { name: "바이올렛" }).click();
   const poster = page.getByRole("img", { name: /청구 현황/ });
   await expect(poster).toHaveCSS("background-image", /\/violet\/mobile-light\.webp/);
+  await expect(page.getByRole("radio", { name: "바이올렛" })).toBeChecked();
 
   const resources: string[] = [];
   page.on("request", (request) => resources.push(new URL(request.url()).pathname));
@@ -79,6 +88,10 @@ test("the invoice accent follows the picker and survives a reload before the dem
     "/images/invoices/violet/mobile-light.webp",
   ]);
   expect(resources.some((path) => path.startsWith("/preview"))).toBe(false);
+  await page.getByRole("radio", { name: "바이올렛" }).press("ArrowRight");
+  await expect(page.getByRole("radio", { name: "로즈" })).toBeChecked();
+  await expect(picker).toHaveAccessibleName("강조색 · 로즈");
+  await expect(poster).toHaveCSS("background-image", /\/rose\/mobile-light\.webp/);
 });
 
 test("the Korean home page and catalogue cards lead to the Korean component", async ({ page }) => {
