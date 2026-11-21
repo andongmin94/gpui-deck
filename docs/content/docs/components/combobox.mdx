@@ -5,6 +5,8 @@ description: "Editable single/multiple selection, grouped search results, replac
 
 <ComponentPreview name="combobox" height={360} />
 
+In the preview, type `s` and press Enter to choose SvelteKit. The arrow keys follow the displayed search ranking and skip disabled matches.
+
 Construct `ComboboxState::new(items, window, cx)` with ordered, unique
 `SearchItem::new(value, label)` entries. `.keywords(...)` adds aliases,
 `.disabled(true)` marks an unavailable choice, and `.group(label)` assigns a

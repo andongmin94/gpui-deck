@@ -5,6 +5,8 @@ description: "편집 가능한 단일/다중 선택, 그룹으로 묶인 검색 
 
 <ComponentPreview name="combobox" height={360} />
 
+미리보기에서 `s`를 입력하고 Enter를 누르면 SvelteKit이 선택됩니다. 방향키는 화면에 표시된 검색 순위대로 이동하며 비활성 항목을 건너뜁니다.
+
 순서가 있고 고유한 `SearchItem::new(value, label)` 항목으로
 `ComboboxState::new(items, window, cx)`를 생성합니다. `.keywords(...)`는 별칭을 추가하고,
 `.disabled(true)`는 사용할 수 없는 선택지를 표시하며, `.group(label)`은 이름 있는 결과

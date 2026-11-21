@@ -5,6 +5,8 @@ description: "可编辑的单选/多选、分组的搜索结果、可替换的�
 
 <ComponentPreview name="combobox" height={360} />
 
+在预览中输入 `s` 并按 Enter 即可选中 SvelteKit。方向键按界面上的搜索结果顺序移动，并跳过禁用项。
+
 使用有序且唯一的 `SearchItem::new(value, label)` 条目构造
 `ComboboxState::new(items, window, cx)`。`.keywords(...)` 添加别名，
 `.disabled(true)` 标记不可用的选项，`.group(label)` 指定一个

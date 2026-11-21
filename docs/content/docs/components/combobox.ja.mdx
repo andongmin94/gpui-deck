@@ -5,6 +5,8 @@ description: "編集可能な単一/複数選択、グループ化された検�
 
 <ComponentPreview name="combobox" height={360} />
 
+プレビューで `s` を入力して Enter を押すと SvelteKit が選択されます。矢印キーは表示された検索順位に沿って移動し、無効な項目を飛ばします。
+
 順序付きで一意な `SearchItem::new(value, label)` エントリから
 `ComboboxState::new(items, window, cx)` を構築します。`.keywords(...)` はエイリアスを追加し、
 `.disabled(true)` は利用できない選択肢を示し、`.group(label)` は名前付きの

@@ -170,6 +170,8 @@ pub struct CommandState {
     // Only the last text processed by the derived filter, never a second value.
     filtered_query: SharedString,
     visible: Vec<usize>,
+    // Inverse of the ranked result order, indexed by the source item.
+    visible_positions: Vec<Option<usize>>,
     highlighted: Option<usize>,
     scroll: ScrollHandle,
     option_bounds: Vec<Option<Bounds<Pixels>>>,
@@ -206,6 +208,7 @@ impl CommandState {
         Self {
             option_bounds: vec![None; items.len()],
             visible: (0..items.len()).collect(),
+            visible_positions: (0..items.len()).map(Some).collect(),
             highlighted: items.iter().position(|item| !item.disabled),
             items,
             input,
@@ -364,6 +367,11 @@ impl CommandState {
                 .then(a.3.cmp(&b.3))
         });
         self.visible = ranked.into_iter().map(|(_, _, _, index)| index).collect();
+        self.visible_positions.clear();
+        self.visible_positions.resize(self.items.len(), None);
+        for (position, &index) in self.visible.iter().enumerate() {
+            self.visible_positions[index] = Some(position);
+        }
         self.highlighted = self
             .visible
             .iter()
@@ -379,6 +387,10 @@ impl CommandState {
         self.input.update(cx, |input, cx| {
             input.marked_text_range(window, cx).is_some()
         })
+    }
+
+    fn visible_position(&self, index: usize) -> Option<usize> {
+        self.visible_positions.get(index).copied().flatten()
     }
 
     fn scroll_to_highlight(&self) {
@@ -420,7 +432,7 @@ impl CommandState {
         }
         let start = self
             .highlighted
-            .and_then(|index| self.visible.binary_search(&index).ok())
+            .and_then(|index| self.visible_position(index))
             .unwrap_or(if forward { count - 1 } else { 0 });
         for distance in 1..=count {
             let position = if forward {
@@ -438,7 +450,7 @@ impl CommandState {
 
     pub(crate) fn highlight(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
         if self.highlighted == Some(index)
-            || self.visible.binary_search(&index).is_err()
+            || self.visible_position(index).is_none()
             || self.items[index].disabled
             || self.input.read(cx).presentation().is_disabled()
             || self.is_composing(window, cx)
@@ -452,7 +464,7 @@ impl CommandState {
     }
 
     fn activate(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
-        if self.visible.binary_search(&index).is_err()
+        if self.visible_position(index).is_none()
             || self.items[index].disabled
             || self.input.read(cx).presentation().is_disabled()
             || self.is_composing(window, cx)
@@ -852,7 +864,7 @@ impl RenderOnce for CommandOption {
             .items
             .get(self.index)
             .expect("CommandOption index must identify an item");
-        if state.visible.binary_search(&self.index).is_err() {
+        if state.visible_position(self.index).is_none() {
             return gpui::Empty.into_any_element();
         }
         let disabled = item.disabled || state.input.read(cx).presentation().is_disabled();
@@ -1206,7 +1218,7 @@ mod tests {
 
     #[gpui::test]
     fn fuzzy_terms_rank_word_starts_and_keep_groups_contiguous(cx: &mut TestAppContext) {
-        let (cx, view, _) = harness(
+        let (cx, view, actions) = harness(
             cx,
             vec![
                 SearchItem::new("export", "Export recording").group("File"),
@@ -1245,6 +1257,18 @@ mod tests {
             assert_eq!(groups, ["View", "File"]);
             assert_eq!(view.read(cx).command.read(cx).highlighted_index(), Some(3));
         });
+        draw(cx);
+        press(cx, "enter");
+        assert_eq!(*actions.borrow(), ["pointer"].map(SharedString::from));
+        press(cx, "down");
+        press(cx, "enter");
+        let first = cx.debug_bounds("option-3").unwrap().center();
+        cx.simulate_click(first, Modifiers::default());
+        draw(cx);
+        assert_eq!(
+            *actions.borrow(),
+            ["pointer", "export", "pointer"].map(SharedString::from)
+        );
         assert_eq!(visible("re sl", cx), [2], "every term must match");
         assert!(visible("xyz", cx).is_empty());
     }
