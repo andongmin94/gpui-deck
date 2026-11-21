@@ -1,0 +1,6 @@
+# The documentation formatter requires LF on every platform.
+*.css text eol=lf
+*.json text eol=lf
+*.mjs text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
