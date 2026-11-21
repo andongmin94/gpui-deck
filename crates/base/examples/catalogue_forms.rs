@@ -2,8 +2,7 @@
 
 #[path = "recipes/sheet.rs"]
 mod sheet;
-use sheet::Sheet;
-pub(crate) use sheet::SheetSide;
+pub(crate) use sheet::{Sheet, SheetSide};
 
 use gpui::{
     AppContext as _, Context, Entity, FocusHandle, InteractiveElement as _, IntoElement,

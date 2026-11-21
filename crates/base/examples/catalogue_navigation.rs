@@ -2,6 +2,7 @@
 
 #[path = "recipes/sidebar.rs"]
 mod sidebar;
+use super::catalogue_forms::{Sheet, SheetSide};
 use sidebar::Sidebar;
 
 use gpui::{
@@ -549,11 +550,11 @@ impl Render for NavigationCatalogue {
         let project_sidebar = div().w_full().min_w_0().flex().gap_4()
             .when(window.viewport_size().width < px(640.), |layout| layout.flex_col())
             .child(Sidebar::new("project-sidebar", &self.sections, "Project sections", super::Appearance::Compact.palette())
+                .sheet_below(px(640.))
                 .collapsible(&self.sidebar)
                 .group("Project", ["overview", "activity"])
                 .collapsible_group("Project tools", ["members", "exports"], &self.tools)
-                .flex_shrink_0()
-                .when(window.viewport_size().width < px(640.), |sidebar| sidebar.w_full()))
+                .flex_shrink_0())
             .child(div().id("project-section").test_support().role(Role::Region)
                 .aria_label(section_label.clone()).flex_1().min_w_0().p_4()
                 .rounded_md().bg(rgb(0x172033))

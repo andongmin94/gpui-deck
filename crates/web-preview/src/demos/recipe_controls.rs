@@ -164,6 +164,7 @@ impl Render for SidebarDemo {
                     self.theme.recipe_palette(),
                 )
                 .group("Workspace", ["overview", "members", "projects"])
+                .sheet_below(px(640.))
                 .rail(&self.rail),
             )
             .child(

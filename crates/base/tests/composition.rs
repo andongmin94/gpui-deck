@@ -4439,26 +4439,72 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
         );
     });
 
-    for width in [320., 980.] {
-        cx.simulate_resize(gpui::size(px(width), px(840.)));
-        draw(cx);
-        draw(cx);
-        cx.update(|window, _| {
-            let navigation = test_support::find(window, &[], &"project-sidebar".into())
+    // The narrow window gives space back to the current page. Its one trigger
+    // opens modal navigation and gets focus back on dismissal or selection.
+    let nav_id = gpui::ElementId::from("project-sidebar");
+    let trigger = (nav_id.clone(), "sheet-trigger").into();
+    cx.simulate_resize(gpui::size(px(320.), px(840.)));
+    draw(cx);
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(test_support::find(window, &[], &nav_id).is_none());
+        let open = test_support::find(window, &[], &trigger).unwrap();
+        assert_eq!(open.focused(), Some(true));
+        assert_eq!(open.expanded(), Some(false));
+        let page = test_support::find(window, &[], &"project-section".into()).unwrap();
+        assert_eq!(page.label(), Some("Members"));
+        assert!(page.bounds().right() <= px(320.));
+    });
+    activate_key(cx, "enter");
+    cx.update(|window, _| {
+        assert!(
+            test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::Dialog)
+                    && node.label() == Some("Project sections"))
+        );
+        assert_eq!(
+            test_support::find(window, &[], &trigger)
                 .unwrap()
-                .bounds();
-            let content = test_support::find(window, &[], &"project-section".into())
-                .unwrap()
-                .bounds();
-            assert!(navigation.left() >= px(0.) && navigation.right() <= px(width));
-            assert!(content.left() >= px(0.) && content.right() <= px(width));
-            if width < 640. {
-                assert!(navigation.bottom() <= content.top());
-            } else {
-                assert!(navigation.right() <= content.left());
-            }
-        });
-    }
+                .expanded(),
+            Some(true)
+        );
+    });
+    cx.simulate_keystrokes("escape");
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(test_support::find(window, &[], &nav_id).is_none());
+        assert_eq!(
+            test_support::find(window, &[], &trigger).unwrap().focused(),
+            Some(true)
+        );
+    });
+    activate_key(cx, "enter");
+    cx.simulate_keystrokes("tab");
+    activate_key(cx, "enter");
+    cx.update(|window, cx| {
+        assert_eq!(project.read(cx).selected_index(), Some(0));
+        assert_eq!(
+            test_support::find(window, &[], &trigger).unwrap().focused(),
+            Some(true)
+        );
+        assert!(test_support::find(window, &[], &nav_id).is_none());
+    });
+    activate_key(cx, "enter");
+    cx.simulate_resize(gpui::size(px(980.), px(840.)));
+    draw(cx);
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(
+            !test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::Dialog))
+        );
+        let navigation = test_support::find(window, &[], &nav_id).unwrap();
+        let content = test_support::find(window, &[], &"project-section".into()).unwrap();
+        assert!(navigation.bounds().right() <= content.bounds().left());
+        assert!(test_support::find(window, &[], &trigger).is_none());
+    });
 
     let section = |cx: &mut VisualTestContext, index: usize| {
         cx.update(|window, cx| {

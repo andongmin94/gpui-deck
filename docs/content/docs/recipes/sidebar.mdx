@@ -66,7 +66,9 @@ The existing Collapsible owns expanded/disabled metadata, keyboard activation,
 active-only content and focus restoration when closure removes a focused entry.
 The disclosure trigger stays mounted. Closing navigation preserves the selected
 page; the application continues to own its separate Region. The catalogue's
-Project sidebar demonstrates whole and group closure, including narrow layout.
+Project sidebar demonstrates both disclosures in its wide layout.
+
+Add `.sheet_below(px(640.))` to show a single navigation button on narrow windows. It opens the destinations in a left-edge Sheet with a scrollable body. Choose a page to close it, or dismiss with Escape, Close, or a backdrop press. Focus returns to the button. Widening the window restores the inline navigation and its previous rail or disclosure setting. The Project catalogue and this preview use this mode.
 
 `.rail(&rail_state)` instead collapses the Sidebar to an icon rail, like shadcn's
 `collapsible="icon"`. An open state shows labels; a closed state narrows the

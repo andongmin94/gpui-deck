@@ -1,19 +1,20 @@
 //! Application-owned navigation composed from TabsState, Button and Collapsible.
 
 use gpui::{
-    AnyElement, AnyView, App, AppContext as _, Context, Div, ElementId, Entity, FontWeight,
-    InteractiveElement as _, IntoElement, ParentElement as _, Render, RenderOnce, Role,
-    SharedString, Stateful, StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div,
-    prelude::FluentBuilder as _, rems,
+    AnyElement, AnyView, App, AppContext as _, Context, Div, ElementId, Entity, FocusHandle,
+    FontWeight, InteractiveElement as _, IntoElement, ParentElement as _, Pixels, Render,
+    RenderOnce, Role, ScrollHandle, SharedString, Stateful, StatefulInteractiveElement as _,
+    StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, rems,
 };
 use gpui_design::{
-    Button, Collapsible, CollapsibleContent, CollapsibleState, CollapsibleTrigger, ObservedElement,
-    TestSupportExt as _,
+    Button, Collapsible, CollapsibleContent, CollapsibleState, CollapsibleTrigger, DialogClose,
+    DialogState, ObservedElement, TestSupportExt as _,
 };
 
 use std::rc::Rc;
 
 use super::super::Palette;
+use super::{Sheet, SheetSide};
 
 /// A navigation sidebar whose selection is owned by an existing `TabsState`.
 ///
@@ -48,9 +49,18 @@ pub(crate) struct Sidebar {
     groups: Vec<SidebarGroup>,
     rail: Option<Entity<CollapsibleState>>,
     icons: Vec<(SharedString, SidebarIcon)>,
+    sheet_breakpoint: Option<Pixels>,
 }
 
 type SidebarIcon = Rc<dyn Fn() -> AnyElement>;
+
+#[derive(Clone)]
+struct SidebarSheet {
+    dialog: Entity<DialogState>,
+    scroll: ScrollHandle,
+    trigger: FocusHandle,
+    inline: FocusHandle,
+}
 
 struct SidebarGroup {
     label: SharedString,
@@ -86,7 +96,17 @@ impl Sidebar {
             groups: Vec::new(),
             rail: None,
             icons: Vec::new(),
+            sheet_breakpoint: None,
         }
+    }
+
+    /// Below this viewport width, show navigation in a left-edge Sheet opened by
+    /// a named Button. Selecting an entry closes the Sheet. The wide navigation
+    /// keeps its own rail/disclosure setting when the viewport grows again.
+    #[allow(dead_code)] // Optional when navigation is already inside a modal.
+    pub(crate) fn sheet_below(mut self, width: Pixels) -> Self {
+        self.sheet_breakpoint = Some(width);
+        self
     }
 
     /// Keeps a native disclosure trigger mounted when navigation is hidden.
@@ -155,7 +175,86 @@ impl Styled for Sidebar {
 }
 
 impl RenderOnce for Sidebar {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let Some(breakpoint) = self.sheet_breakpoint else {
+            return self.navigation(None, cx).into_any_element();
+        };
+        let sheet = window
+            .use_keyed_state((self.id.clone(), "responsive"), cx, |_, cx| SidebarSheet {
+                dialog: cx.new(DialogState::new),
+                scroll: ScrollHandle::new(),
+                trigger: cx.focus_handle(),
+                inline: cx.focus_handle(),
+            })
+            .read(cx)
+            .clone();
+        let open = sheet.dialog.read(cx).is_open();
+        if window.viewport_size().width >= breakpoint {
+            let move_focus = sheet.trigger.is_focused(window)
+                || sheet
+                    .dialog
+                    .read(cx)
+                    .focus_handle()
+                    .contains_focused(window, cx);
+            if open {
+                sheet.dialog.update(cx, |state, cx| state.close(window, cx));
+            }
+            if move_focus {
+                sheet.inline.focus(window, cx);
+            }
+            self.base = self.base.track_focus(&sheet.inline);
+            return self.navigation(None, cx).into_any_element();
+        }
+        if sheet.inline.contains_focused(window, cx) {
+            sheet.trigger.focus(window, cx);
+        }
+        let palette = self.palette;
+        let dialog = sheet.dialog.clone();
+        let trigger = Button::new((self.id.clone(), "sheet-trigger"))
+            .track_focus(&sheet.trigger)
+            .aria_expanded(open)
+            .accessibility_label(self.label.clone())
+            .border_1()
+            .border_color(palette.border)
+            .rounded(palette.radius)
+            .px_2()
+            .py_1()
+            .bg(palette.surface)
+            .text_color(palette.foreground)
+            .focus_visible(|style| style.border_color(palette.accent))
+            .child(self.label.clone())
+            .on_click(move |_, window, cx| dialog.update(cx, |state, cx| state.open(window, cx)));
+        let panel = Sheet::new(
+            (self.id.clone(), "sheet"),
+            &sheet.dialog,
+            &sheet.scroll,
+            self.label.clone(),
+            palette,
+        )
+        .side(SheetSide::Left)
+        .w(rems(18.))
+        .footer(DialogClose::new(&sheet.dialog).trigger(|button| {
+            button
+                .rounded(palette.radius)
+                .px_2()
+                .py_1()
+                .focus_visible(|style| style.border_1().border_color(palette.accent))
+                .child("Close")
+        }));
+        // Closed desktop disclosures and the icon rail must not hide mobile destinations.
+        self.collapse = None;
+        self.rail = None;
+        div()
+            .child(trigger)
+            .child(panel.when(open, |panel| {
+                panel.child(self.w_full().navigation(Some(sheet.dialog), cx))
+            }))
+            .into_any_element()
+    }
+}
+
+impl Sidebar {
+    fn navigation(self, dialog: Option<Entity<DialogState>>, cx: &App) -> impl IntoElement {
         assert!(
             self.rail.is_none() || self.collapse.is_none(),
             "Use either a Sidebar rail or a whole-sidebar disclosure"
@@ -206,6 +305,7 @@ impl RenderOnce for Sidebar {
             let disabled = item.is_disabled();
             let is_selected = selected == Some(index);
             let state = self.state.clone();
+            let dialog = dialog.clone();
 
             Button::new((self.id.clone(), index.to_string()))
                 .accessibility_label(label.clone())
@@ -241,6 +341,9 @@ impl RenderOnce for Sidebar {
                     state.update(cx, |state, cx| {
                         state.select_value(value.as_ref(), window, cx);
                     });
+                    if let Some(dialog) = &dialog {
+                        dialog.update(cx, |state, cx| state.close(window, cx));
+                    }
                 })
         };
 
