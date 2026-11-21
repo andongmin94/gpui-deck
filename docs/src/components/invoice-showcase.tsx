@@ -4,6 +4,7 @@ import { Code2, Play, RotateCcw } from "lucide-react";
 import { type ReactNode, useState } from "react";
 
 import { GIT } from "@/lib/site";
+import { useAccent } from "./use-accent";
 
 const sourceUrl = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/crates/web-preview/src/demos/invoice_workspace.rs`;
 
@@ -18,6 +19,7 @@ type Labels = {
 
 export function InvoiceShowcase({ labels, children }: { labels: Labels; children: ReactNode }) {
   const [mode, setMode] = useState<"preview" | "live" | "unavailable">("preview");
+  const accent = useAccent();
   const live = mode === "live";
 
   function toggleDemo() {
@@ -74,6 +76,7 @@ export function InvoiceShowcase({ labels, children }: { labels: Labels; children
         {live ? (
           <iframe
             title={labels.title}
+            data-accent={accent}
             src="/preview?c=invoice-workspace"
             className="block h-[min(78svh,700px)] min-h-96 w-full"
           />

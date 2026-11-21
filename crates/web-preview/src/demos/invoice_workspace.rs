@@ -77,9 +77,76 @@ fn chart_state(
 
 struct InvoiceWorkspace {
     theme: Theme,
+    accent: Hsla,
     invoices: Vec<Invoice>,
     chart: Entity<ChartState>,
     _observe: Subscription,
+}
+
+fn invoice_accent(name: Option<&str>, theme: Theme) -> Hsla {
+    let (light, dark) = match name {
+        Some("blue") => (0x1d4ed8, 0x93c5fd),
+        Some("green") => (0x15765d, 0x75d7b7),
+        Some("violet") => (0x6d28d9, 0xc4b5fd),
+        Some("rose") => (0xbe123c, 0xfda4af),
+        _ => (0x404040, 0xd4d4d4),
+    };
+    rgb(if theme.foreground.l > 0.5 {
+        dark
+    } else {
+        light
+    })
+    .into()
+}
+
+#[cfg(target_family = "wasm")]
+fn browser_accent(theme: Theme, cx: &Context<InvoiceWorkspace>) -> Hsla {
+    use wasm_bindgen::{JsCast as _, closure::Closure};
+    use web_sys::{MutationObserver, MutationObserverInit, UrlSearchParams};
+
+    let browser = web_sys::window().expect("browser preview window");
+    let query_accent = browser
+        .location()
+        .search()
+        .ok()
+        .and_then(|query| UrlSearchParams::new_with_str(&query).ok())
+        .and_then(|params| params.get("accent"));
+    let Some(frame) = browser.frame_element().ok().flatten() else {
+        return invoice_accent(query_accent.as_deref(), theme);
+    };
+
+    // The host owns the picker. Observing its iframe preserves the running app
+    // and also picks up choices made while WebAssembly was loading.
+    let target = frame.clone();
+    let read_accent = move || {
+        let selected = target.get_attribute("data-accent");
+        invoice_accent(selected.as_deref().or(query_accent.as_deref()), theme)
+    };
+    let initial = read_accent();
+    let entity = cx.weak_entity();
+    let mut app = cx.to_async();
+    let on_change = Closure::<dyn FnMut()>::new(move || {
+        let accent = read_accent();
+        let _ = entity.update(&mut app, |workspace, cx| {
+            if workspace.accent != accent {
+                workspace.accent = accent;
+                cx.notify();
+            }
+        });
+    });
+    let observer = MutationObserver::new(on_change.as_ref().unchecked_ref())
+        .expect("create invoice accent observer");
+    let options = MutationObserverInit::new();
+    options.set_attributes(true);
+    observer
+        .observe_with_options(&frame, &options)
+        .expect("observe invoice frame");
+    cx.on_release(move |_, _| {
+        observer.disconnect();
+        drop(on_change);
+    })
+    .detach();
+    initial
 }
 
 pub(super) fn open(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
@@ -87,8 +154,13 @@ pub(super) fn open(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
         let invoices = invoices();
         let chart = cx.new(|cx| chart_state(&invoices, MONTHS.len() - 1, window, cx));
         let observe = cx.observe(&chart, |_, _, cx| cx.notify());
+        #[cfg(target_family = "wasm")]
+        let accent = browser_accent(theme, cx);
+        #[cfg(not(target_family = "wasm"))]
+        let accent = invoice_accent(None, theme);
         InvoiceWorkspace {
             theme,
+            accent,
             invoices,
             chart,
             _observe: observe,
@@ -120,18 +192,10 @@ fn card(theme: Theme) -> Div {
 }
 
 impl InvoiceWorkspace {
-    fn accent(&self) -> Hsla {
-        if self.theme.foreground.l > 0.5 {
-            rgb(0x75d7b7).into()
-        } else {
-            rgb(0x15765d).into()
-        }
-    }
-
     fn totals(&self, compact: bool) -> Div {
         let invoiced = self.invoices.iter().map(|row| row.amount).sum::<u32>();
         let collected = collections(&self.invoices).iter().sum::<u32>();
-        let accent = self.accent();
+        let accent = self.accent;
         let theme = self.theme;
         let amounts = [
             ("Total invoiced", invoiced),
@@ -175,7 +239,8 @@ impl InvoiceWorkspace {
 
     fn chart_panel(&self, window: &Window, cx: &Context<Self>) -> Div {
         let theme = self.theme;
-        let accent = self.accent();
+        let accent = self.accent;
+        let secondary_bar = accent.opacity(if theme.foreground.l > 0.5 { 0.48 } else { 0.7 });
         let chart = self.chart.read(cx);
         let inspected = chart.inspected_index().unwrap_or(0);
         let values = chart.series()[0].values();
@@ -221,7 +286,7 @@ impl InvoiceWorkspace {
                             .bg(if index == inspected {
                                 accent
                             } else {
-                                accent.opacity(0.48)
+                                secondary_bar
                             }),
                     )
             }),
@@ -312,7 +377,7 @@ impl InvoiceWorkspace {
 
     fn invoice_panel(&self, compact: bool, cx: &mut Context<Self>) -> Div {
         let theme = self.theme;
-        let accent = self.accent();
+        let accent = self.accent;
         let selected = self
             .invoices
             .iter()

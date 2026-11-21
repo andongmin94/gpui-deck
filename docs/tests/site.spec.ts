@@ -53,6 +53,34 @@ test("the invoice preview and source stay available without WebGPU", async ({ pa
   await expect(workspace.locator("iframe")).toHaveCount(0);
 });
 
+test("the invoice accent follows the picker and survives a reload before the demo starts", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko");
+  const picker = page.getByRole("button", { name: /^강조색/ });
+  await expect(picker).toHaveAccessibleName("강조색 · 뉴트럴");
+  await expect(async () => {
+    await picker.press("ArrowDown");
+    await expect(page.getByRole("menuitemradio", { name: "뉴트럴" })).toBeChecked({
+      timeout: 1000,
+    });
+  }).toPass();
+  await page.getByRole("menuitemradio", { name: "바이올렛" }).click();
+  const poster = page.getByRole("img", { name: /청구 현황/ });
+  await expect(poster).toHaveCSS("background-image", /\/violet\/mobile-light\.webp/);
+
+  const resources: string[] = [];
+  page.on("request", (request) => resources.push(new URL(request.url()).pathname));
+  await page.reload();
+  await expect(picker).toHaveAccessibleName("강조색 · 바이올렛");
+  await expect(poster).toHaveCSS("background-image", /\/violet\/mobile-light\.webp/);
+  expect(resources.filter((path) => path.startsWith("/images/invoices/"))).toEqual([
+    "/images/invoices/violet/mobile-light.webp",
+  ]);
+  expect(resources.some((path) => path.startsWith("/preview"))).toBe(false);
+});
+
 test("the Korean home page and catalogue cards lead to the Korean component", async ({ page }) => {
   await page.goto("/ko");
   await expect(page.locator("html")).toHaveAttribute("lang", "ko");

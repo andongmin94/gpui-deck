@@ -1,20 +1,52 @@
 .invoice-poster {
+  --desktop-light: url("/images/invoices/neutral/desktop-light.webp");
+  --desktop-dark: url("/images/invoices/neutral/desktop-dark.webp");
+  --mobile-light: url("/images/invoices/neutral/mobile-light.webp");
+  --mobile-dark: url("/images/invoices/neutral/mobile-dark.webp");
   width: 100%;
   aspect-ratio: 1160 / 712;
-  background: center / contain no-repeat url("/images/invoice-workspace-desktop-light.webp");
+  background: center / contain no-repeat var(--desktop-light);
+}
+
+[data-accent="blue"] .invoice-poster {
+  --desktop-light: url("/images/invoices/blue/desktop-light.webp");
+  --desktop-dark: url("/images/invoices/blue/desktop-dark.webp");
+  --mobile-light: url("/images/invoices/blue/mobile-light.webp");
+  --mobile-dark: url("/images/invoices/blue/mobile-dark.webp");
+}
+
+[data-accent="green"] .invoice-poster {
+  --desktop-light: url("/images/invoices/green/desktop-light.webp");
+  --desktop-dark: url("/images/invoices/green/desktop-dark.webp");
+  --mobile-light: url("/images/invoices/green/mobile-light.webp");
+  --mobile-dark: url("/images/invoices/green/mobile-dark.webp");
+}
+
+[data-accent="violet"] .invoice-poster {
+  --desktop-light: url("/images/invoices/violet/desktop-light.webp");
+  --desktop-dark: url("/images/invoices/violet/desktop-dark.webp");
+  --mobile-light: url("/images/invoices/violet/mobile-light.webp");
+  --mobile-dark: url("/images/invoices/violet/mobile-dark.webp");
+}
+
+[data-accent="rose"] .invoice-poster {
+  --desktop-light: url("/images/invoices/rose/desktop-light.webp");
+  --desktop-dark: url("/images/invoices/rose/desktop-dark.webp");
+  --mobile-light: url("/images/invoices/rose/mobile-light.webp");
+  --mobile-dark: url("/images/invoices/rose/mobile-dark.webp");
 }
 
 .dark .invoice-poster {
-  background-image: url("/images/invoice-workspace-desktop-dark.webp");
+  background-image: var(--desktop-dark);
 }
 
 @media (width < 40rem) {
   .invoice-poster {
     aspect-ratio: 355 / 990;
-    background-image: url("/images/invoice-workspace-mobile-light.webp");
+    background-image: var(--mobile-light);
   }
 
   .dark .invoice-poster {
-    background-image: url("/images/invoice-workspace-mobile-dark.webp");
+    background-image: var(--mobile-dark);
   }
 }

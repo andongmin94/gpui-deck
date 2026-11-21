@@ -20,6 +20,8 @@ export const shellCopy = {
     menu: "Toggle navigation",
     theme: "Toggle theme",
     language: "Language",
+    accent: "Accent color",
+    colors: { neutral: "Neutral", blue: "Blue", green: "Green", violet: "Violet", rose: "Rose" },
     footer: "A headless UI foundation for Rust and GPUI. The source code is available on",
   },
   ko: {
@@ -34,6 +36,8 @@ export const shellCopy = {
     menu: "탐색 열기/닫기",
     theme: "테마 전환",
     language: "언어",
+    accent: "강조색",
+    colors: { neutral: "뉴트럴", blue: "블루", green: "그린", violet: "바이올렛", rose: "로즈" },
     footer: "Rust와 GPUI를 위한 헤드리스 UI 기반입니다. 소스 코드는 다음에서 볼 수 있습니다:",
   },
   ja: {
@@ -48,6 +52,14 @@ export const shellCopy = {
     menu: "ナビゲーションを開閉",
     theme: "テーマを切り替え",
     language: "言語",
+    accent: "アクセントカラー",
+    colors: {
+      neutral: "ニュートラル",
+      blue: "ブルー",
+      green: "グリーン",
+      violet: "バイオレット",
+      rose: "ローズ",
+    },
     footer: "Rust と GPUI のためのヘッドレス UI 基盤です。ソースコードはこちらで公開しています:",
   },
   zh: {
@@ -62,6 +74,8 @@ export const shellCopy = {
     menu: "切换导航",
     theme: "切换主题",
     language: "语言",
+    accent: "强调色",
+    colors: { neutral: "中性", blue: "蓝色", green: "绿色", violet: "紫色", rose: "玫瑰色" },
     footer: "面向 Rust 与 GPUI 的无头 UI 基础。源代码发布在",
   },
 } as const;

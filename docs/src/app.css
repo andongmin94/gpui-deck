@@ -18,6 +18,53 @@
   --color-fd-background: #0a0a0a;
 }
 
+[data-swatch="neutral"] {
+  --accent-light: #404040;
+  --accent-dark: #d4d4d4;
+}
+
+:root[data-accent="blue"],
+[data-swatch="blue"] {
+  --accent-light: #1d4ed8;
+  --accent-dark: #93c5fd;
+}
+
+:root[data-accent="green"],
+[data-swatch="green"] {
+  --accent-light: #15765d;
+  --accent-dark: #75d7b7;
+}
+
+:root[data-accent="violet"],
+[data-swatch="violet"] {
+  --accent-light: #6d28d9;
+  --accent-dark: #c4b5fd;
+}
+
+:root[data-accent="rose"],
+[data-swatch="rose"] {
+  --accent-light: #be123c;
+  --accent-dark: #fda4af;
+}
+
+:root[data-accent]:not([data-accent="neutral"]) {
+  --color-fd-primary: var(--accent-light);
+  --color-fd-ring: var(--accent-light);
+}
+
+:root.dark[data-accent]:not([data-accent="neutral"]) {
+  --color-fd-primary: var(--accent-dark);
+  --color-fd-ring: var(--accent-dark);
+}
+
+.accent-swatch {
+  background-color: var(--accent-light);
+}
+
+.dark .accent-swatch {
+  background-color: var(--accent-dark);
+}
+
 html {
   scrollbar-gutter: stable;
 }

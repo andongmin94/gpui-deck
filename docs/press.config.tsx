@@ -7,6 +7,7 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
+import { accents, accentStorageKey } from "@/lib/accent";
 import { i18n, translations } from "@/lib/i18n";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
@@ -34,12 +35,21 @@ export default app.config({
     hreflang: { zh: "zh-Hans" },
   },
   head({ page }): HeadTag[] {
+    // Restore the accent before the browser chooses the first invoice preview image.
+    const restoreAccent: HeadTag = {
+      tag: "script",
+      children: `try { const value = localStorage.getItem(${JSON.stringify(accentStorageKey)}); if (${JSON.stringify(accents)}.includes(value)) document.documentElement.dataset.accent = value; } catch {}`,
+    };
     if (!page) {
-      return [{ tag: "meta", attrs: { property: "og:site_name", content: SITE_NAME } }];
+      return [
+        restoreAccent,
+        { tag: "meta", attrs: { property: "og:site_name", content: SITE_NAME } },
+      ];
     }
     const title = page.slugs.length === 0 ? SITE_NAME : `${page.data.title} – ${SITE_NAME}`;
     const description = page.data.description ?? SITE_DESCRIPTION;
     return [
+      restoreAccent,
       { tag: "title", children: title },
       { tag: "meta", attrs: { name: "description", content: description } },
       { tag: "meta", attrs: { property: "og:title", content: title } },

@@ -3,10 +3,12 @@
 import { Menu as DropdownMenu } from "@base-ui/react/menu";
 import { Link, useRouter } from "fumapress/client";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
-import { Languages, Menu, Moon, Search, Sun, X } from "lucide-react";
+import { Check, Languages, Menu, Moon, Palette, Search, Sun, X } from "lucide-react";
 import { useTheme } from "next-themes";
 
+import { accents } from "@/lib/accent";
 import { GIT, SITE_NAME } from "@/lib/site";
+import { selectAccent, useAccent } from "../use-accent";
 import { copyFor, languages } from "./copy";
 
 function GitHubIcon() {
@@ -38,6 +40,8 @@ export function SiteHeader({
   const { path } = useRouter();
   const { setOpenSearch } = useSearchContext();
   const { resolvedTheme, setTheme } = useTheme();
+  const accent = useAccent();
+  const accentLabel = `${t.accent} · ${t.colors[accent]}`;
   const current = path.replace(/\/$/, "");
   const links = [
     { href: `/${lang}/docs`, label: t.docs, exact: true },
@@ -50,7 +54,7 @@ export function SiteHeader({
 
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-2 px-4 md:px-6">
+      <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-4 md:px-6">
         {onToggleMenu ? (
           <button
             type="button"
@@ -160,6 +164,42 @@ export function SiteHeader({
           >
             <GitHubIcon />
           </a>
+          <DropdownMenu.Root modal={false}>
+            <DropdownMenu.Trigger
+              aria-label={accentLabel}
+              title={accentLabel}
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-fd-primary hover:bg-fd-accent"
+            >
+              <Palette className="size-4" aria-hidden />
+              <span className="hidden text-xs font-medium lg:inline">{t.colors[accent]}</span>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Positioner sideOffset={6} align="end" className="z-50">
+                <DropdownMenu.Popup aria-label={t.accent} className={menuPopup}>
+                  <DropdownMenu.RadioGroup value={accent} onValueChange={selectAccent}>
+                    {accents.map((color) => (
+                      <DropdownMenu.RadioItem
+                        key={color}
+                        value={color}
+                        closeOnClick
+                        className={`${menuItem} h-9 gap-2`}
+                      >
+                        <span
+                          aria-hidden
+                          data-swatch={color}
+                          className="accent-swatch size-3 rounded-full"
+                        />
+                        {t.colors[color]}
+                        <DropdownMenu.RadioItemIndicator className="ml-auto">
+                          <Check aria-hidden className="size-3.5" />
+                        </DropdownMenu.RadioItemIndicator>
+                      </DropdownMenu.RadioItem>
+                    ))}
+                  </DropdownMenu.RadioGroup>
+                </DropdownMenu.Popup>
+              </DropdownMenu.Positioner>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
           <button
             type="button"
             aria-label={t.theme}
