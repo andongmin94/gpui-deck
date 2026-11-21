@@ -4093,6 +4093,12 @@ fn preset_table_filters_sorts_pages_and_applies_stable_rows(cx: &mut TestAppCont
             Some("presentation")
         );
     });
+    let table = demo.read_with(cx, |demo, _| demo.preset_table.clone());
+    table.update(cx, |table, cx| table.set_rows([], cx));
+    draw(cx);
+    cx.update(|window, _| {
+        assert!(test_support::find(window, &[], &(id, "clear-filter").into()).is_none());
+    });
 }
 
 #[gpui::test]

@@ -846,7 +846,15 @@ impl RenderOnce for DataTable {
             .child(filter)
             .child(columns_menu)
             .when(!empty, |base| base.child(viewport))
-            .when(empty, |base| {
+            .when(state.rows.is_empty(), |base| {
+                base.child(EmptyState::new(
+                    (self.id.clone(), "empty"),
+                    "No rows",
+                    "There are no rows to display.",
+                    palette,
+                ))
+            })
+            .when(empty && !state.rows.is_empty(), |base| {
                 base.child(
                     EmptyState::new(
                         (self.id.clone(), "empty"),

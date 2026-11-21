@@ -74,7 +74,8 @@ them; selection and action columns remain mounted. Hiding a column preserves
 filtering, sorting, selection and pagination; filtering still searches its displayed text.
 `is_column_visible` exposes each source column's visibility.
 
-An empty result replaces the row viewport with EmptyState and Clear filter.
+A table with no source rows shows **No rows**. If a filter hides every supplied row,
+the row viewport instead shows **No matching rows** and a **Clear filter** action.
 Clearing restores the rows and query focus without applying a row action. With
 results, focus follows query → Columns → page checkbox → visible sort Buttons →
 enabled row checkboxes/actions → enabled page Buttons. Horizontal and vertical ScrollArea scrolling reveals focused controls;

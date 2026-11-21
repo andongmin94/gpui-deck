@@ -220,7 +220,7 @@ fn add(names: Vec<String>, to: &Path) -> Result<Installed> {
             Some(_) if has_manifest && previous_files.contains_key(&path) => {
                 result.kept.push(path);
             }
-            Some(contents) if contents == source.as_bytes() => result.kept.push(path),
+            Some(contents) if matches_text(&contents, source) => result.kept.push(path),
             Some(_) => bail!(
                 "{} already exists with different contents; choose a dedicated module directory",
                 to.join(&path).display()
@@ -505,7 +505,16 @@ mod tests {
         for path in paths {
             assert_eq!(fs::read_to_string(to.join(path)).unwrap(), checkout[path]);
         }
+        let badge = recipe("badge").unwrap().source;
+        let existing_badge = if badge.contains("\r\n") {
+            badge.replace("\r\n", "\n")
+        } else {
+            badge.replace('\n', "\r\n")
+        };
+        let badge_path = to.join("recipes/badge.rs");
+        fs::write(&badge_path, &existing_badge).unwrap();
         add(vec!["badge".into()], to).unwrap();
+        assert_eq!(fs::read_to_string(badge_path).unwrap(), existing_badge);
         for path in [
             "mod.rs",
             "LICENSE-APACHE",

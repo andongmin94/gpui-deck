@@ -372,7 +372,11 @@ impl RenderOnce for Drawer {
         });
         let panel = match side {
             Placement::Bottom => panel.children(handle).children(self.children),
-            Placement::Top => panel.children(self.children).children(handle),
+            // Keep the grip at the panel's lower edge when its body overflows.
+            Placement::Top => panel
+                .when(handle.is_some(), |panel| panel.justify_end())
+                .children(self.children)
+                .children(handle),
             Placement::Left | Placement::Right => {
                 let body = div()
                     .min_w_0()
@@ -477,6 +481,7 @@ mod tests {
                         .child(
                             crate::Button::new("body-action")
                                 .debug_selector(|| "body-action".into())
+                                .flex_shrink_0()
                                 .h(px(40.))
                                 .child("Body action"),
                         ),
@@ -600,6 +605,14 @@ mod tests {
         for side in [Placement::Bottom, Placement::Top] {
             let (cx, view) = open_drawer(cx, move |state| state.side(side).snap_points([0.4, 0.8]));
             let state = view.read_with(cx, |view, _| view.state.clone());
+            cx.simulate_resize(size(px(360.), px(100.)));
+            cx.update(|window, cx| window.draw(cx).clear(cx));
+            let grip = cx.debug_bounds("drawer-grip").unwrap();
+            match side {
+                Placement::Bottom => assert_eq!(grip.top(), px(60.)),
+                Placement::Top => assert_eq!(grip.bottom(), px(40.)),
+                _ => unreachable!(),
+            }
             cx.simulate_resize(size(px(360.), px(400.)));
             cx.update(|window, cx| {
                 window.draw(cx).clear(cx);

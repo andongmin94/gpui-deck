@@ -74,7 +74,8 @@ Columns 会打开一个原生的带勾选菜单。可切换任何数据列，包
 过滤、排序、选择和分页；过滤仍然搜索其显示的文本。
 `is_column_visible` 暴露每个源列的可见性。
 
-空结果会用 EmptyState 和 Clear filter 替换行视口。
+源数据没有行时，显示 **No rows**。如果筛选条件隐藏了所有行，则显示
+**No matching rows** 和 **Clear filter** 按钮。
 清除会恢复各行和查询焦点，而不会应用行动作。有
 结果时，焦点依次经过 查询 → Columns → 页复选框 → 可见的排序 Button →
 已启用的行复选框/动作 → 已启用的页码 Button。水平和垂直的 ScrollArea 滚动会显示获得焦点的控件；
