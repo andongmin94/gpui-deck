@@ -2,9 +2,9 @@
 
 use gpui::{
     AnyElement, App, Bounds, Div, Element, ElementId, GlobalElementId, InspectorElementId,
-    InteractiveElement as _, IntoElement, LayoutId, ParentElement, Pixels, Refineable as _,
-    RenderOnce, Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, StyleRefinement,
-    Styled, Window, div, px,
+    InteractiveElement as _, IntoElement, LayoutId, Overflow, ParentElement, Pixels,
+    Refineable as _, RenderOnce, Role, ScrollHandle, SharedString, StatefulInteractiveElement as _,
+    StyleRefinement, Styled, Window, div, px,
 };
 
 use crate::{
@@ -136,18 +136,36 @@ pub(crate) struct RevealViewport {
     viewport: gpui::Stateful<Div>,
     handle: ScrollHandle,
     axis: ScrollbarAxis,
+    popup: bool,
 }
 
 impl RevealViewport {
-    pub(crate) fn new(
-        viewport: gpui::Stateful<Div>,
-        handle: ScrollHandle,
-        axis: ScrollbarAxis,
-    ) -> Self {
+    fn new(viewport: gpui::Stateful<Div>, handle: ScrollHandle, axis: ScrollbarAxis) -> Self {
         Self {
             viewport,
             handle,
             axis,
+            popup: false,
+        }
+    }
+
+    pub(crate) fn popup(
+        id: &'static str,
+        height: Pixels,
+        handle: ScrollHandle,
+        content: Option<AnyElement>,
+    ) -> Self {
+        let viewport = div()
+            .id(id)
+            .max_h(height)
+            .overflow_y_scroll()
+            .track_scroll(&handle)
+            .children(content);
+        Self {
+            viewport,
+            handle,
+            axis: ScrollbarAxis::Vertical,
+            popup: true,
         }
     }
 
@@ -278,6 +296,15 @@ impl Element for RevealViewport {
         window: &mut Window,
         cx: &mut App,
     ) {
+        // GPUI measures the scroll range in prepaint. Allow a fitted popup's
+        // surface to paint its own shadow outside the list's bounds.
+        if self.popup {
+            self.viewport.style().overflow.y = Some(if self.handle.max_offset().y > px(0.) {
+                Overflow::Scroll
+            } else {
+                Overflow::Visible
+            });
+        }
         self.viewport
             .paint(id, inspector, bounds, layout, prepaint, window, cx);
     }

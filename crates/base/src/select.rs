@@ -13,7 +13,7 @@ use gpui::{
 use web_time::Instant;
 
 use crate::{
-    ElementExt as _, Popup, ScrollbarAxis, StyledExt as _, TestSupportExt as _,
+    ElementExt as _, Popup, StyledExt as _, TestSupportExt as _,
     a11y_disabled::A11yDisabledExt as _,
     actions::{Cancel, Confirm, SelectDown, SelectFirst, SelectLast, SelectUp},
     global_state::{DeferredPopover, GlobalState},
@@ -599,15 +599,11 @@ impl RenderOnce for Select {
                         .on_mouse_down_out(move |_, window, cx| {
                             outside_state.update(cx, |state, cx| state.close(window, cx));
                         })
-                        .child(RevealViewport::new(
-                            div()
-                                .id("select-viewport")
-                                .max_h(height)
-                                .overflow_y_scroll()
-                                .track_scroll(&scroll)
-                                .children(self.content),
+                        .child(RevealViewport::popup(
+                            "select-viewport",
+                            height,
                             scroll,
-                            ScrollbarAxis::Vertical,
+                            self.content,
                         )),
                 )
             });

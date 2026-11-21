@@ -8,8 +8,8 @@ use gpui::{
 };
 
 use crate::{
-    CheckboxState, Direction, ElementExt as _, Popover, PopoverState, Popup, ScrollbarAxis,
-    StyledExt as _, TestSupportExt as _,
+    CheckboxState, Direction, ElementExt as _, Popover, PopoverState, Popup, StyledExt as _,
+    TestSupportExt as _,
     a11y_disabled::A11yDisabledExt as _,
     actions::{
         Cancel, Confirm, SelectDown, SelectFirst, SelectLast, SelectLeft, SelectRight, SelectUp,
@@ -612,15 +612,11 @@ pub(crate) fn menu_content_with_direction(
         .on_key_down(move |event, window, cx| {
             typeahead.update(cx, |state, cx| state.typeahead(event, window, cx));
         })
-        .child(RevealViewport::new(
-            div()
-                .id("menu-viewport")
-                .max_h(Popup::available_height(window))
-                .overflow_y_scroll()
-                .track_scroll(&scroll)
-                .children(children),
+        .child(RevealViewport::popup(
+            "menu-viewport",
+            Popup::available_height(window),
             scroll,
-            ScrollbarAxis::Vertical,
+            children,
         ))
 }
 
