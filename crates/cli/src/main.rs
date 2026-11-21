@@ -4,8 +4,9 @@ use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsString,
     fs,
-    io::ErrorKind,
+    io::{self, ErrorKind, Write},
     path::{Path, PathBuf},
+    process::{Command as ProcessCommand, Stdio},
 };
 
 use anyhow::{Context as _, Result, bail};
@@ -16,6 +17,7 @@ const USAGE: &str = "GPUI Design source recipes
 Usage:
   gpui-design list
   gpui-design add <recipe>... --to <module-directory>
+  gpui-design diff --to <module-directory>
 
 Example:
   gpui-design add data-table avatar --to src/ui
@@ -23,7 +25,9 @@ Example:
 Adds recipe dependencies, presentation tokens, module declarations and license.
 Existing installed recipe and token edits are kept. Modified generated module
 declarations or conflicting new files stop the command before any files change.
-The consumer supplies its gpui and gpui-design Cargo dependencies.";
+The consumer supplies its gpui and gpui-design Cargo dependencies.
+Use diff to review installed files against the sources bundled with this CLI.
+It prints changes using Git and leaves the installation untouched.";
 
 const ROOT_MODULE: &str = "//! Application-owned GPUI Design presentation sources.
 
@@ -39,6 +43,7 @@ enum Command {
     Help,
     List,
     Add { names: Vec<String>, to: PathBuf },
+    Diff { to: PathBuf },
 }
 
 fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
@@ -50,6 +55,16 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
                 bail!("list does not accept arguments");
             }
             Ok(Command::List)
+        }
+        Some("diff") => {
+            if arguments.next().as_deref() != Some("--to".as_ref()) {
+                bail!("diff requires --to <module-directory>");
+            }
+            let to = arguments.next().context("--to needs a directory")?;
+            if arguments.next().is_some() {
+                bail!("diff takes one --to <module-directory>");
+            }
+            Ok(Command::Diff { to: to.into() })
         }
         Some("add") => {
             let mut names = Vec::new();
@@ -134,6 +149,34 @@ fn read(path: &Path) -> Result<Option<Vec<u8>>> {
     }
 }
 
+fn installed_recipes(to: &Path) -> Result<Option<BTreeSet<String>>> {
+    let path = to.join(MANIFEST);
+    let Some(contents) = read(&path)? else {
+        return Ok(None);
+    };
+    let names = std::str::from_utf8(&contents)
+        .context("installed recipe metadata must be UTF-8")?
+        .lines()
+        .map(str::to_owned)
+        .collect();
+    if contents != manifest_source(&names).as_bytes() {
+        bail!(
+            "{} was modified; keep its recipe names in generated order",
+            path.display()
+        );
+    }
+    Ok(Some(names))
+}
+
+fn generated_files(names: &BTreeSet<String>) -> Result<BTreeMap<PathBuf, String>> {
+    Ok(BTreeMap::from([
+        ("mod.rs".into(), ROOT_MODULE.to_owned()),
+        ("recipes/mod.rs".into(), module_source(names)?),
+        (MANIFEST.into(), manifest_source(names)),
+        ("LICENSE-APACHE".into(), LICENSE.to_owned()),
+    ]))
+}
+
 fn source_files(names: &BTreeSet<String>) -> Result<BTreeMap<PathBuf, &'static str>> {
     let mut files = BTreeMap::from([(PathBuf::from("presentation.rs"), PRESENTATION)]);
     for name in names {
@@ -157,31 +200,16 @@ struct Installed {
 
 fn add(names: Vec<String>, to: &Path) -> Result<Installed> {
     // Resolve and preflight the complete addition before writing any source.
-    let previous_manifest = read(&to.join(MANIFEST))?;
-    let previous: BTreeSet<String> = if let Some(contents) = &previous_manifest {
-        std::str::from_utf8(contents)
-            .context("installed recipe metadata must be UTF-8")?
-            .lines()
-            .map(str::to_owned)
-            .collect()
-    } else {
-        BTreeSet::new()
-    };
-    if let Some(contents) = &previous_manifest {
-        if *contents != manifest_source(&previous).as_bytes() {
-            bail!(
-                "{} was modified; keep its recipe names in generated order",
-                to.join(MANIFEST).display()
-            );
-        }
-    }
+    let installed = installed_recipes(to)?;
+    let has_manifest = installed.is_some();
+    let previous = installed.unwrap_or_default();
     let selected = resolve(previous.iter().cloned().chain(names))?;
     let previous_files = source_files(&previous)?;
     let mut pending = BTreeMap::new();
     let mut result = Installed::default();
     for (path, source) in source_files(&selected)? {
         match read(&to.join(&path))? {
-            Some(_) if previous_manifest.is_some() && previous_files.contains_key(&path) => {
+            Some(_) if has_manifest && previous_files.contains_key(&path) => {
                 result.kept.push(path);
             }
             Some(contents) if contents == source.as_bytes() => result.kept.push(path),
@@ -194,31 +222,19 @@ fn add(names: Vec<String>, to: &Path) -> Result<Installed> {
             }
         }
     }
-    for (path, old, new) in [
-        ("mod.rs", ROOT_MODULE.to_owned(), ROOT_MODULE.to_owned()),
-        (
-            "recipes/mod.rs",
-            module_source(&previous)?,
-            module_source(&selected)?,
-        ),
-        (
-            MANIFEST,
-            manifest_source(&previous),
-            manifest_source(&selected),
-        ),
-        ("LICENSE-APACHE", LICENSE.to_owned(), LICENSE.to_owned()),
-    ] {
-        match read(&to.join(path))? {
-            Some(contents) if contents == new.as_bytes() => result.kept.push(PathBuf::from(path)),
-            Some(contents) if contents == old.as_bytes() => {
-                pending.insert(PathBuf::from(path), new);
+    let old = generated_files(&previous)?;
+    for (path, new) in generated_files(&selected)? {
+        match read(&to.join(&path))? {
+            Some(contents) if contents == new.as_bytes() => result.kept.push(path),
+            Some(contents) if contents == old[&path].as_bytes() => {
+                pending.insert(path, new);
             }
             Some(_) => bail!(
                 "{} was modified; preserve your changes and add the module declarations manually or choose another --to directory",
-                to.join(path).display()
+                to.join(&path).display()
             ),
             None => {
-                pending.insert(PathBuf::from(path), new);
+                pending.insert(path, new);
             }
         }
     }
@@ -231,6 +247,71 @@ fn add(names: Vec<String>, to: &Path) -> Result<Installed> {
         result.written.push(path);
     }
     Ok(result)
+}
+
+fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
+    let installed = installed_recipes(to)?
+        .with_context(|| format!("no installed recipe manifest in {}", to.display()))?;
+    let selected = resolve(installed)?;
+    let mut files = generated_files(&selected)?;
+    files.extend(
+        source_files(&selected)?
+            .into_iter()
+            .map(|(path, source)| (path, source.to_owned())),
+    );
+    let mut different = false;
+    for (path, bundled) in files {
+        let local = read(&to.join(&path))?;
+        if local.as_deref() == Some(bundled.as_bytes()) {
+            continue;
+        }
+        // Git accepts '-' as stdin in --no-index mode, so the bundled version
+        // never has to be written to the installation or to a temporary file.
+        let old_path = if local.is_some() {
+            path.as_path()
+        } else {
+            Path::new("/dev/null")
+        };
+        let mut child = ProcessCommand::new("git")
+            .current_dir(to)
+            .args([
+                "-c",
+                "core.autocrlf=false",
+                "diff",
+                "--no-index",
+                "--no-ext-diff",
+                "--no-textconv",
+                "--no-color",
+                "--ignore-cr-at-eol",
+                "--",
+            ])
+            .arg(old_path)
+            .arg("-")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .context("run git diff (Git must be on PATH)")?;
+        child.stdin.take().unwrap().write_all(bundled.as_bytes())?;
+        let output = child.wait_with_output()?;
+        match output.status.code() {
+            Some(0) => continue,
+            Some(1) => {
+                writeln!(writer, "{} (installed -> bundled)", path.display())?;
+                writer.write_all(&output.stdout)?;
+                different = true;
+            }
+            _ => bail!(
+                "git diff for {}: {}",
+                path.display(),
+                String::from_utf8_lossy(&output.stderr).trim()
+            ),
+        }
+    }
+    if !different {
+        writeln!(writer, "Installed files match the bundled sources.")?;
+    }
+    Ok(())
 }
 
 fn run() -> Result<()> {
@@ -249,6 +330,7 @@ fn run() -> Result<()> {
                 }
             }
         }
+        Command::Diff { to } => diff(&to, io::stdout().lock())?,
         Command::Add { names, to } => {
             let result = add(names, &to)?;
             for path in result.written {
@@ -306,6 +388,12 @@ mod tests {
         let arguments = |items: &[&str]| items.iter().map(OsString::from).collect::<Vec<_>>();
         assert_eq!(parse(arguments(&["list"])).unwrap(), Command::List);
         assert_eq!(
+            parse(arguments(&["diff", "--to", "src/ui"])).unwrap(),
+            Command::Diff {
+                to: "src/ui".into()
+            }
+        );
+        assert_eq!(
             parse(arguments(&["add", "card", "badge", "--to", "src/ui"])).unwrap(),
             Command::Add {
                 names: vec!["card".into(), "badge".into()],
@@ -318,6 +406,10 @@ mod tests {
             vec!["add", "--to", "src/ui"],
             vec!["add", "card", "--to"],
             vec!["add", "card", "--to", "a", "--to", "b"],
+            vec!["diff"],
+            vec!["diff", "--to"],
+            vec!["diff", "card", "--to", "src/ui"],
+            vec!["diff", "--to", "a", "--to", "b"],
         ] {
             assert!(parse(arguments(&invalid)).is_err());
         }
@@ -371,6 +463,38 @@ mod tests {
             fs::read_to_string(directory.0.join(MANIFEST)).unwrap(),
             "card\nmessage\ntypography\n"
         );
+    }
+
+    #[test]
+    fn diff_shows_installed_edits_and_missing_files_without_writing() {
+        let directory = Directory::new();
+        let to = &directory.0;
+        let mut output = Vec::new();
+        assert!(diff(to, &mut output).is_err());
+        assert_eq!(fs::read_dir(to).unwrap().count(), 0);
+
+        add(vec!["avatar".into()], to).unwrap();
+        diff(to, &mut output).unwrap();
+        assert_eq!(output, b"Installed files match the bundled sources.\n");
+        output.clear();
+        fs::write(to.join("recipes/avatar.rs"), "// custom avatar\n").unwrap();
+        fs::write(to.join("mod.rs"), "// custom root\n").unwrap();
+        fs::remove_file(to.join("assets/preset-avatar.svg")).unwrap();
+        fs::write(to.join("unrelated.txt"), "app content\n").unwrap();
+        diff(to, &mut output).unwrap();
+
+        let report = String::from_utf8(output).unwrap();
+        assert!(report.contains("-// custom avatar"));
+        assert!(report.contains("-// custom root"));
+        assert!(report.contains("+pub(crate) mod recipes;"));
+        assert!(report.contains("preset-avatar.svg (installed -> bundled)"));
+        assert!(!report.contains("unrelated.txt"));
+        assert_eq!(
+            fs::read(to.join("recipes/avatar.rs")).unwrap(),
+            b"// custom avatar\n"
+        );
+        assert_eq!(fs::read(to.join("mod.rs")).unwrap(), b"// custom root\n");
+        assert!(!to.join("assets/preset-avatar.svg").exists());
     }
 
     #[test]

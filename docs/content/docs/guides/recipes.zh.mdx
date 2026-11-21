@@ -42,6 +42,14 @@ test-support = ["gpui-design/test-support"]
 CLI 会在写入前停止，并说明如何手动添加声明。
 存在冲突的新文件同样会被拒绝。复制的源码归应用所有。
 
+更新仓库后，运行 `diff` 即可比较已安装的文件和当前 CLI 内置的源码。请确保 `PATH` 中有 Git。
+此命令读取已安装的配方清单，显示受管文件的更改和缺失情况。补丁中的 `-` 表示应用中的行，
+`+` 表示 CLI 内置的行。应用文件保持不变。
+
+```sh
+cargo run -p gpui-design-cli --locked -- diff --to ../my-app/src/ui
+```
+
 手动复制的步骤：
 
 1. 把所需文件从
