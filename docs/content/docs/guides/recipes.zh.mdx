@@ -4,8 +4,8 @@ description: "这 23 个目录配方是可复用的应用源码，被原生 two-
 ---
 
 这 23 个目录配方是可复用的应用源码，被原生
-[two-style 示例](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)和
-[catalogue 示例](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/catalogue.rs)使用。Button 和 Chart 也提供与其公开控件配套的呈现配方。它们把 GPUI
+[two-style 示例](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs)和
+[catalogue 示例](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/catalogue.rs)使用。Button 和 Chart 也提供与其公开控件配套的呈现配方。它们把 GPUI
 布局与现有控件组合起来，并把颜色、间距和尺寸保留在
 使用方的 `Palette` 或应用提供的 `Styled` 值中。
 
@@ -15,8 +15,8 @@ description: "这 23 个目录配方是可复用的应用源码，被原生 two-
 令牌源码、模块声明、许可证和所需资源：
 
 ```sh
-cargo run -p gpui-design-cli --locked -- list
-cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- list
+cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
 ```
 
 在使用方中声明 `mod ui;`，并使用 `ui::recipes::{DataTable, Avatar}` 以及
@@ -29,7 +29,7 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 
 ```toml
 [features]
-test-support = ["gpui-design/test-support"]
+test-support = ["gpui-deck/test-support"]
 ```
 
 复制的配方测试由这个使用方 feature 控制。声明它也会让 Rust 知晓
@@ -37,7 +37,7 @@ test-support = ["gpui-design/test-support"]
 
 再次运行 `add` 并传入更多名称，即可扩展同一目录。已有的配方
 和调色板修改会被保留。生成的 `mod.rs` 声明和
-`recipes/.gpui-design` 记录已安装的集合；如果这些脚手架被编辑过，
+`recipes/.gpui-deck` 记录已安装的集合；如果这些脚手架被编辑过，
 CLI 会在写入前停止，并说明如何手动添加声明。
 存在冲突的新文件同样会被拒绝。复制的源码归应用所有。
 
@@ -46,18 +46,18 @@ CLI 会在写入前停止，并说明如何手动添加声明。
 `+` 表示 CLI 内置的行。应用文件保持不变。
 
 ```sh
-cargo run -p gpui-design-cli --locked -- diff --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- diff --to ../my-app/src/ui
 ```
 
 手动复制的步骤：
 
 1. 把所需文件从
-   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes)复制到
+   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes)复制到
    应用的某个模块中，并保留仓库的许可条款。
 2. 声明复制的模块并重新导出类型，参照小巧的
-   [`mod.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/mod.rs)。只复制应用
+   [`mod.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/mod.rs)。只复制应用
    所需的模块，也只列出这些模块。
-3. 把 [`presentation.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/presentation.rs)复制到
+3. 把 [`presentation.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/presentation.rs)复制到
    应用的 `recipes` 目录旁边。它包含经过测试的示例所使用的实际 `Palette` 和两种
    外观，不含 Demo 及其行为。
    声明它，并在配方的父模块中暴露其令牌：
@@ -74,7 +74,7 @@ cargo run -p gpui-design-cli --locked -- diff --to ../my-app/src/ui
    现有的令牌类型。AspectRatio 不接收调色板；其视觉样式由使用方提供。
    Bubble 和 Chart 目前保留各自可复制的样式。
 4. 从该应用模块导入这些类型。它们使用 `pub(crate)` 可见性，
-   不会从 `gpui_design` 导出。无需额外的依赖。
+   不会从 `gpui_deck` 导出。无需额外的依赖。
 
 调色板模块和配方都是应用源码，不在库的导出之内。
 CLI 提供本地源码分发；这些视觉令牌不会

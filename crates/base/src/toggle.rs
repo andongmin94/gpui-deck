@@ -1,5 +1,5 @@
 //! A controlled pressed button composed from the existing Button primitive.
-//! Derived from GPUI Kit v0.9.0's toggle contract; GPUI Design delegates native
+//! Derived from GPUI Kit v0.9.0's toggle contract; GPUI Deck delegates native
 //! activation, focus, disabled behavior, and geometry to Button.
 
 use std::rc::Rc;

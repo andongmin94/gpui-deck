@@ -1,6 +1,6 @@
 # Input module layout
 
-Modified from GPUI Kit v0.9.0 for GPUI Design: `Input` and `Textarea` are the
+Modified from GPUI Kit v0.9.0 for GPUI Deck: `Input` and `Textarea` are the
 supported rendered text controls. Both use the same editing engine for layout,
 selection, clipboard, IME, undo, and text shaping. Their regression tests remain
 with that shared engine.

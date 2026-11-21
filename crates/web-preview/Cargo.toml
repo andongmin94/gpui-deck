@@ -1,6 +1,6 @@
 [package]
-name = "gpui-design-web-preview"
-description = "Live documentation previews of GPUI Design components in the browser"
+name = "gpui-deck-web-preview"
+description = "Live documentation previews of GPUI Deck components in the browser"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -11,11 +11,11 @@ publish = false
 crate-type = ["cdylib", "rlib"]
 
 [features]
-test-support = ["gpui-design/test-support"]
+test-support = ["gpui-deck/test-support"]
 
 [dependencies]
 gpui.workspace = true
-gpui-design = { path = "../base" }
+gpui-deck = { path = "../base" }
 
 [target.'cfg(target_family = "wasm")'.dependencies]
 gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", default-features = false }

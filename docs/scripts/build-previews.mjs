@@ -62,14 +62,14 @@ if (
 run("cargo", [
   "build",
   "-p",
-  "gpui-design-web-preview",
+  "gpui-deck-web-preview",
   "--target",
   TARGET,
   "--profile",
   "web-preview",
   "--locked",
 ]);
-const wasm = join("target", TARGET, "web-preview", "gpui_design_web_preview.wasm");
+const wasm = join("target", TARGET, "web-preview", "gpui_deck_web_preview.wasm");
 if (!existsSync(new URL(wasm.replaceAll("\\", "/"), root))) throw new Error(`missing ${wasm}`);
 
 const out = new URL("../public/preview/", import.meta.url);
@@ -84,8 +84,8 @@ run("wasm-bindgen", [
   wasm,
 ]);
 const hash = createHash("sha256")
-  .update(readFileSync(new URL("gpui_design_web_preview_bg.wasm", staging)))
-  .update(readFileSync(new URL("gpui_design_web_preview.js", staging)))
+  .update(readFileSync(new URL("gpui_deck_web_preview_bg.wasm", staging)))
+  .update(readFileSync(new URL("gpui_deck_web_preview.js", staging)))
   .digest("hex")
   .slice(0, 12);
 renameSync(staging, new URL(`${hash}/`, out));
@@ -93,7 +93,7 @@ copyFileSync(
   new URL("crates/base/examples/assets/fonts/LICENSE", root),
   new URL("Pretendard-LICENSE.txt", out),
 );
-writeFileSync(new URL("index.html", out), hostPage(`/preview/${hash}/gpui_design_web_preview.js`));
+writeFileSync(new URL("index.html", out), hostPage(`/preview/${hash}/gpui_deck_web_preview.js`));
 
 /**
  * The frame page. A same-origin frame follows the theme of the docs page and
@@ -106,7 +106,7 @@ function hostPage(module) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>GPUI Design preview</title>
+    <title>GPUI Deck preview</title>
     <link rel="license" title="Embedded Pretendard fonts" href="/preview/Pretendard-LICENSE.txt" />
     <link rel="modulepreload" href="${module}" />
     <style>

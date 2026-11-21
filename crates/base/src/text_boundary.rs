@@ -1,4 +1,4 @@
-// Modified for GPUI Design: retain character-based word selection used by Input.
+// Modified for GPUI Deck: retain character-based word selection used by Input.
 use std::ops::Range;
 
 #[derive(Clone, Copy)]

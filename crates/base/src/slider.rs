@@ -1,5 +1,5 @@
 //! A linear slider with independently focusable thumbs and application-owned visuals.
-//! Derived from GPUI Kit v0.9.0's slider pointer/geometry primitives; GPUI Design
+//! Derived from GPUI Kit v0.9.0's slider pointer/geometry primitives; GPUI Deck
 //! adds retained ordered values, keyboard, focus, and numeric accessibility.
 
 use std::ops::RangeInclusive;

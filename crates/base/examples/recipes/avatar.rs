@@ -6,7 +6,7 @@ use gpui::{
     StatefulInteractiveElement as _, StyleRefinement, Styled, StyledImage as _, Window, div, img,
     prelude::FluentBuilder as _, rems,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _, TestTextExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _, TestTextExt as _};
 
 use super::super::Palette;
 
@@ -219,7 +219,7 @@ mod tests {
         AppContext as _, Context, Image, ImageCacheError, ImageFormat, Render, TestAppContext,
         VisualTestContext, px,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -282,7 +282,7 @@ mod tests {
 
     #[gpui::test]
     fn image_transitions_preserve_fallback_geometry_and_native_name(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let (root, cx) = cx.add_window_view(|window, cx| {
             let sample = cx.new(|_| Sample { source: None });
             Root::new(sample, window, cx)
@@ -348,7 +348,7 @@ mod tests {
 
     #[gpui::test]
     fn groups_overlap_visible_avatars_and_name_the_hidden_people(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let (_, cx) = cx.add_window_view(|window, cx| {
             let sample = cx.new(|_| GroupSample);
             Root::new(sample, window, cx)

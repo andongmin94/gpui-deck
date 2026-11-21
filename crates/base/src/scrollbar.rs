@@ -1,4 +1,4 @@
-// Modified for GPUI Design: use input ink defaults and caller-owned thumb radius.
+// Modified for GPUI Deck: use input ink defaults and caller-owned thumb radius.
 use std::{cell::Cell, ops::Deref, panic::Location, rc::Rc};
 
 use instant::{Duration, Instant};

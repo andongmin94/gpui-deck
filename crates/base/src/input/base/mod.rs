@@ -1,4 +1,4 @@
-// Modified for GPUI Design: observe public input wrappers and update crate references.
+// Modified for GPUI Deck: observe public input wrappers and update crate references.
 use crate::{StateStyle, StyledExt as _, TestSupportExt as _, a11y_disabled::A11yDisabledExt as _};
 use gpui::{
     AnyElement, App, Div, ElementId, InteractiveElement, Interactivity, IntoElement, ParentElement,
@@ -13,7 +13,7 @@ use gpui::{
 /// breaking the menu builders.
 ///
 /// ```
-/// use gpui_design::input::InputContextMenuCapabilities;
+/// use gpui_deck::input::InputContextMenuCapabilities;
 ///
 /// let capabilities = InputContextMenuCapabilities::new()
 ///     .code_editor(true)

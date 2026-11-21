@@ -6,7 +6,7 @@ use gpui::{
     RenderOnce, Role, ScrollHandle, SharedString, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, rems,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Collapsible, CollapsibleContent, CollapsibleState, CollapsibleTrigger, DialogClose,
     DialogState, ObservedElement, TestSupportExt as _,
 };
@@ -42,7 +42,7 @@ use super::{Sheet, SheetSide};
 pub(crate) struct Sidebar {
     base: ObservedElement<Stateful<Div>>,
     id: ElementId,
-    state: Entity<gpui_design::TabsState>,
+    state: Entity<gpui_deck::TabsState>,
     label: SharedString,
     palette: Palette,
     collapse: Option<Entity<CollapsibleState>>,
@@ -71,7 +71,7 @@ struct SidebarGroup {
 impl Sidebar {
     pub(crate) fn new(
         id: impl Into<ElementId>,
-        state: &Entity<gpui_design::TabsState>,
+        state: &Entity<gpui_deck::TabsState>,
         label: impl Into<SharedString>,
         palette: Palette,
     ) -> Self {
@@ -533,7 +533,7 @@ fn disclosure_trigger(
 #[cfg(all(test, feature = "test-support"))]
 mod tests {
     use gpui::{Render, Subscription, TestAppContext, px};
-    use gpui_design::{Root, TabItem, TabsState, test_support};
+    use gpui_deck::{Root, TabItem, TabsState, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -559,7 +559,7 @@ mod tests {
 
     #[gpui::test]
     fn the_rail_keeps_named_current_entries_and_focus_while_narrow(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let (root, cx) = cx.add_window_view(|window, cx| {
             let sample = cx.new(|cx| {
                 let tabs = cx.new(|cx| {

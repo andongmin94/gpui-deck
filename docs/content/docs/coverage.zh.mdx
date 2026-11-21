@@ -8,7 +8,7 @@ description: "参考目录检查于 **2026-11-21**：shadcn/ui All Components。
 其主目录包含 **66 个条目**，下文每个条目只列出一次。独立的
 AI Elements 目录不在本次比较范围内；主目录中已有的对话类组件仍然包含在内。
 
-GPUI Design 记录了 **42 个公开的库组件族和 23 个可复制的
+GPUI Deck 记录了 **42 个公开的库组件族和 23 个可复制的
 呈现/组合配方**，提供 **65 个不同的实现**。
 其余的目录条目 Native Select 被明确地**映射到 Select**
 （针对 GPUI）。下文中的全部 **66 个参考条目都有已实现的范围或平台
@@ -152,7 +152,7 @@ GPUI Design 记录了 **42 个公开的库组件族和 23 个可复制的
 | 4 | 源码分发与开发者体验 | 小而完整的 starter、可编译的公开示例、明确的受支持 API 边界，以及能解析配方依赖和令牌的源码复制工作流 | Starter、doctest 关卡、应用令牌和感知依赖的源码 CLI 已实现；受支持的输入/控件边界和使用方测试 feature 已记录；已移除未使用的 ThemeAppearance |
 | 5 | 发布验证 | 现有的格式化、lint、完整行为测试套件和原生示例构建均通过；有代表性的原生 IME、屏幕阅读器、DPI 和视觉流程有针对具体平台的观察 | 未完成 |
 
-每个版本的 Rust 检查和原生示例构建结果可在 [Verify 工作流](https://github.com/andongmin94/gpui-design/actions/workflows/verify.yml)中查看。[Docs 工作流](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml)检查安装示例的 GPUI 版本，构建 WebAssembly 预览，并运行网站的浏览器测试。
+每个版本的 Rust 检查和原生示例构建结果可在 [Verify 工作流](https://github.com/andongmin94/gpui-deck/actions/workflows/verify.yml)中查看。[Docs 工作流](https://github.com/andongmin94/gpui-deck/actions/workflows/docs.yml)检查安装示例的 GPUI 版本，构建 WebAssembly 预览，并运行网站的浏览器测试。
 
 shadcn 官方示例所涉及的“未提供”限制现在已在明确的边界内
 实现：键入的日期接受 ISO 和少数几种英文
@@ -207,9 +207,9 @@ Component APIs。在 `two_styles` 中，它观察了 Item 的媒体/页眉/页�
 在仓库根目录打开 PowerShell，一次运行一个示例。关闭当前示例窗口后，再运行下一条命令。
 
 ```powershell
-cargo run -p gpui-design --example starter --locked
-cargo run -p gpui-design --example catalogue --locked
-cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-deck --example starter --locked
+cargo run -p gpui-deck --example catalogue --locked
+cargo run -p gpui-deck --example two_styles --locked -- settings
 ```
 
 除了 Navigation，`catalogue` 还包含 OTP、Drawer、Toast、媒体、图表、对话和问卷示例。

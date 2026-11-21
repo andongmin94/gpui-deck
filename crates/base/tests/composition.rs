@@ -22,7 +22,7 @@ use gpui::{
     Keystroke, Modifiers, MouseButton, Role, ScrollDelta, ScrollEvent, TestAppContext,
     VisualTestContext, point, px,
 };
-use gpui_design::{
+use gpui_deck::{
     CalendarSelection, ComboboxEvent, CommandEvent, Date, MenuEvent, RadioGroupEvent, Root,
     SelectEvent, TabsEvent, test_support,
 };
@@ -32,7 +32,7 @@ fn harness(
     cx: &mut TestAppContext,
     appearance: Appearance,
 ) -> (&mut VisualTestContext, Entity<Demo>) {
-    cx.update(gpui_design::init);
+    cx.update(gpui_deck::init);
     let (root, cx) = cx.add_window_view(move |window, cx| {
         let demo = cx.new(|cx| Demo::new(appearance, window, cx));
         Root::new(demo, window, cx)
@@ -4164,7 +4164,7 @@ fn disabled_select_and_composition_commit_do_not_leak_actions(cx: &mut TestAppCo
 
 #[gpui::test]
 fn catalogue_sheets_keep_each_edge_and_scroll_body_within_the_viewport(cx: &mut TestAppContext) {
-    cx.update(gpui_design::init);
+    cx.update(gpui_deck::init);
     let (root, cx) = cx.add_window_view(|window, cx| {
         let catalogue = cx.new(|cx| catalogue::Catalogue::new(window, cx));
         Root::new(catalogue, window, cx)
@@ -4289,7 +4289,7 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
             );
         }
     };
-    cx.update(gpui_design::init);
+    cx.update(gpui_deck::init);
     let (root, cx) = cx.add_window_view(|window, cx| {
         let catalogue = cx.new(|cx| catalogue::Catalogue::new(window, cx));
         Root::new(catalogue, window, cx)

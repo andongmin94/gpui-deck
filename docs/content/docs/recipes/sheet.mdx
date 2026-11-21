@@ -5,7 +5,7 @@ description: "Four-edge modal presentation over Dialog, viewport-limited size, f
 
 <ComponentPreview name="sheet" height={360} />
 
-[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs) presents existing Dialog
+[`sheet.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/sheet.rs) presents existing Dialog
 content at a chosen window edge, defaulting to a full-height right panel:
 
 ```rust
@@ -19,7 +19,7 @@ Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", pale
     )
 ```
 
-Keep the Sheet mounted under `gpui_design::Root` while closed. The application
+Keep the Sheet mounted under `gpui_deck::Root` while closed. The application
 owns and retains both the supplied `Entity<DialogState>` and `ScrollHandle`.
 Configure initial focus on that existing DialogState and use its `open` and
 `close` methods. Dialog continues to own modal focus containment, Escape and

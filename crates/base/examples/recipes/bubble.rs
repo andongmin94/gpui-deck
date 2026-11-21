@@ -5,7 +5,7 @@ use gpui::{
     ParentElement as _, RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, px, relative, rgb,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _, TestTextExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _, TestTextExt as _};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum BubbleSide {

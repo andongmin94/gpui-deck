@@ -12,31 +12,31 @@ use std::{
 use anyhow::{Context as _, Result, bail};
 use catalogue::{LICENSE, PRESENTATION, RECIPES, Recipe};
 
-const USAGE: &str = "GPUI Design source recipes
+const USAGE: &str = "GPUI Deck source recipes
 
 Usage:
-  gpui-design list
-  gpui-design add <recipe>... --to <module-directory>
-  gpui-design diff --to <module-directory>
+  gpui-deck list
+  gpui-deck add <recipe>... --to <module-directory>
+  gpui-deck diff --to <module-directory>
 
 Example:
-  gpui-design add data-table avatar --to src/ui
+  gpui-deck add data-table avatar --to src/ui
 
 Adds recipe dependencies, presentation tokens, module declarations and license.
 Existing installed recipe and token edits are kept. Modified generated module
 declarations or conflicting new files stop the command before any files change.
-The consumer supplies its gpui and gpui-design Cargo dependencies.
+The consumer supplies its gpui and gpui-deck Cargo dependencies.
 Use diff to review installed files against the sources bundled with this CLI.
 It prints changes using Git and leaves the installation untouched.";
 
-const ROOT_MODULE: &str = "//! Application-owned GPUI Design presentation sources.
+const ROOT_MODULE: &str = "//! Application-owned GPUI Deck presentation sources.
 
 mod presentation;
 pub(crate) mod recipes;
 
 pub(crate) use presentation::{Appearance, Palette};
 ";
-const MANIFEST: &str = "recipes/.gpui-design";
+const MANIFEST: &str = "recipes/.gpui-deck";
 
 #[derive(Debug, PartialEq, Eq)]
 enum Command {
@@ -119,7 +119,9 @@ fn resolve(names: impl IntoIterator<Item = String>) -> Result<BTreeSet<String>> 
 }
 
 fn module_source(names: &BTreeSet<String>) -> Result<String> {
-    let mut source = "//! Recipe modules managed by gpui-design add; edit the recipe files to customize them.\n\n".to_owned();
+    let mut source =
+        "//! Recipe modules managed by gpui-deck add; edit the recipe files to customize them.\n\n"
+            .to_owned();
     for name in names {
         let recipe = recipe(name)?;
         source.push_str(&format!("mod {};\n", recipe.module));
@@ -377,7 +379,7 @@ mod tests {
             static NEXT: AtomicUsize = AtomicUsize::new(0);
             let root = std::env::temp_dir().canonicalize().unwrap();
             let path = root.join(format!(
-                "gpui-design-cli-{}-{}",
+                "gpui-deck-cli-{}-{}",
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)
             ));

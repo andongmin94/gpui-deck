@@ -5,7 +5,7 @@ description: "明示的なフォールバックテキストを持つ名前付き
 
 <ComponentPreview name="avatar" height={160} />
 
-[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs) は、明示的な代替テキストと
+[`avatar.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/avatar.rs) は、明示的な代替テキストと
 アプリケーションが渡すフォールバックテキストを持つ、円形の画像を表示します。
 
 ```rust
@@ -29,7 +29,7 @@ Avatar::new("preset-avatar", "Balanced preset artwork", "BL", palette)
 高さを等しく保ってください。画像には GPUI の cover フィットが使われます。ステータスバッジや
 インタラクティブなアクションは、アプリケーションでの構成のままです。
 
-このサンプルは、Balanced プリセット用に [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)
+このサンプルは、Balanced プリセット用に [`preset-avatar.svg`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/assets/preset-avatar.svg)
 を埋め込んでいます。他のプリセットは `PR` や `HQ` のような明示的なテキストを使用し、
 未選択の場合は `?` を使用します。アクセシブルな名前は、現在のプリセットのラベルから導出されます。
 ソースは、保持されている Combobox の状態から既存の HoverCard を描画する際に選ばれ、

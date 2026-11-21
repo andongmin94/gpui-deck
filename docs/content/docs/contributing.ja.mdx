@@ -6,7 +6,7 @@ description: "各部分のソースの場所と、変更の検証方法を説明
 | 場所 | 責務 |
 | --- | --- |
 | `crates/cli/` | ソースコピー CLI とレシピの依存関係カタログ |
-| `crates/base/src/` | `gpui-design` ライブラリと、その動作レベルのテスト |
+| `crates/base/src/` | `gpui-deck` ライブラリと、その動作レベルのテスト |
 | `crates/base/tests/` | 公開 API を使用する統合テスト |
 | `crates/base/examples/starter.rs` | 公開 API のみを使用する、小さく完結したアプリケーション |
 | `crates/base/examples/two_styles.rs` | ネイティブのサンプルと、アプリケーションが所有するスタイル |
@@ -17,14 +17,14 @@ description: "各部分のソースの場所と、変更の検証方法を説明
 | `crates/web-preview/` | GPUI の Web バックエンドで WebAssembly にコンパイルされる、ドキュメントのライブプレビュー |
 | `Cargo.toml` / `Cargo.lock` | ワークスペースと、対応する依存関係のセット |
 
-`gpui_design::init(cx)` でライブラリを初期化し、アプリケーションのコンテンツは
-`gpui_design::Root` 内にホストします。小さな起動処理のリファレンスには starter を、より大きな構成には他のネイティブサンプルを使用してください。
+`gpui_deck::init(cx)` でライブラリを初期化し、アプリケーションのコンテンツは
+`gpui_deck::Root` 内にホストします。小さな起動処理のリファレンスには starter を、より大きな構成には他のネイティブサンプルを使用してください。
 コンシューマーアプリケーションは、このソースを直接扱い、動作レイヤーを再利用しながら、独自のプレゼンテーションを用意できます。
 
 ## 変更を検証する
 
 README の
-[Verify changes](https://github.com/andongmin94/gpui-design#verify-changes) に記載されているフォーマット、Clippy、テスト、ビルドのコマンドを実行してください。Verify ワークフローは、Linux、Windows、macOS で同じマトリクスを実行します。
+[Verify changes](https://github.com/andongmin94/gpui-deck#verify-changes) に記載されているフォーマット、Clippy、テスト、ビルドのコマンドを実行してください。Verify ワークフローは、Linux、Windows、macOS で同じマトリクスを実行します。
 
 ## ドキュメントサイト
 

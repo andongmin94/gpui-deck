@@ -1,6 +1,6 @@
 # Project guidance
 
-GPUI Design is an independently maintained, source-owned headless UI foundation
+GPUI Deck is an independently maintained, source-owned headless UI foundation
 for Rust and GPUI. Read the relevant implementation, its public exports, and its
 tests before changing a behavior. The README describes the current scope.
 

@@ -5,7 +5,7 @@ description: "Dialog 위에 네 가장자리 중 하나로 표시되는 모달 �
 
 <ComponentPreview name="sheet" height={360} />
 
-[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs)는 기존 Dialog
+[`sheet.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/sheet.rs)는 기존 Dialog
 콘텐츠를 선택한 창 가장자리에 표시하며, 기본값은 전체 높이의 오른쪽 패널입니다.
 
 ```rust
@@ -19,7 +19,7 @@ Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", pale
     )
 ```
 
-닫혀 있는 동안에도 Sheet를 `gpui_design::Root` 아래에 마운트해 두세요. 전달된
+닫혀 있는 동안에도 Sheet를 `gpui_deck::Root` 아래에 마운트해 두세요. 전달된
 `Entity<DialogState>`와 `ScrollHandle`은 모두 애플리케이션이 소유하고 유지합니다. 초기
 포커스는 그 기존 DialogState에서 구성하고, `open`과 `close` 메서드를 사용하세요. 모달 포커스
 가두기, Escape와 배경 클릭 닫기, 포커스 복귀는 계속 Dialog가 소유합니다. Sheet는 열림 상태나

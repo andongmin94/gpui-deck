@@ -29,7 +29,7 @@ const labels = {
 } as const;
 
 /**
- * A live GPUI Design component rendered by GPUI's web backend inside an
+ * A live GPUI Deck component rendered by GPUI's web backend inside an
  * isolated frame, with its source in a Code tab when one is given.
  */
 export function ComponentPreview({

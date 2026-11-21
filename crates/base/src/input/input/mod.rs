@@ -1,4 +1,4 @@
-// Modified for GPUI Design: remove the styled-runtime recommendation.
+// Modified for GPUI Deck: remove the styled-runtime recommendation.
 use gpui::{App, Entity, IntoElement, RenderOnce, Window};
 
 use super::{InputBaseState, InputMode};

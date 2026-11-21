@@ -1,5 +1,5 @@
 //! Native compositions for navigation, notifications, media/data, and conversation.
-//! Run `cargo run -p gpui-design --example catalogue --locked`.
+//! Run `cargo run -p gpui-deck --example catalogue --locked`.
 
 #[cfg(not(test))]
 #[path = "assets/fonts/mod.rs"]
@@ -25,7 +25,7 @@ use gpui::{
     AppContext as _, Context, Entity, FontWeight, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, ScrollHandle, Styled as _, Subscription, Window, div, px, rgb,
 };
-use gpui_design::{ScrollArea, Tab, TabItem, TabList, TabPanel, TabsEvent, TabsState};
+use gpui_deck::{ScrollArea, Tab, TabItem, TabList, TabPanel, TabsEvent, TabsState};
 
 pub(crate) struct Catalogue {
     pub(crate) tabs: Entity<TabsState>,
@@ -98,7 +98,7 @@ impl Render for Catalogue {
             .collect::<Vec<_>>();
         div().size_full().flex().flex_col().gap_4().p_5()
             .bg(rgb(0x0b1220)).text_color(rgb(0xe2e8f0))
-            .child(div().text_2xl().font_weight(FontWeight::BOLD).child("GPUI Design · Catalogue"))
+            .child(div().text_2xl().font_weight(FontWeight::BOLD).child("GPUI Deck · Catalogue"))
             .child(div().text_sm().text_color(rgb(0x94a3b8)).child("Native behavior. Application-owned presentation. Explore each working composition."))
             .child(TabList::new("catalogue-sections",&self.tabs).accessibility_label("Component catalogue")
                 .flex().flex_wrap().gap_2().children(entries))
@@ -118,10 +118,10 @@ impl Render for Catalogue {
 #[cfg(not(test))]
 fn main() {
     use gpui::{TitlebarOptions, WindowBounds, WindowOptions, size};
-    use gpui_design::Root;
+    use gpui_deck::Root;
     gpui_platform::application().run(|cx| {
         app_fonts::register(cx);
-        gpui_design::init(cx);
+        gpui_deck::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
                 cx.quit();
@@ -131,7 +131,7 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 titlebar: Some(TitlebarOptions {
-                    title: Some("GPUI Design · Catalogue".into()),
+                    title: Some("GPUI Deck · Catalogue".into()),
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::centered(size(px(980.), px(840.)), cx)),

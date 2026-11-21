@@ -5,7 +5,7 @@ use gpui::{
     RenderOnce, Role, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled,
     Window, div, prelude::FluentBuilder as _, px,
 };
-use gpui_design::{Button, Separator, StyledExt as _};
+use gpui_deck::{Button, Separator, StyledExt as _};
 
 use super::super::Palette;
 

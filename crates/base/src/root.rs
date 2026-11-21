@@ -1,5 +1,5 @@
 //! Window content and modal focus navigation.
-//! Modified for GPUI Design: removed styled-layer plugins and rich-text hosting.
+//! Modified for GPUI Deck: removed styled-layer plugins and rich-text hosting.
 use crate::StyledExt;
 use gpui::{
     Action, AnyView, App, Context, InteractiveElement, IntoElement, KeyBinding, ParentElement,
@@ -100,7 +100,7 @@ impl Root {
         window
             .root::<Self>()
             .flatten()
-            .expect("window must have a GPUI Design Root")
+            .expect("window must have a GPUI Deck Root")
             .read(cx)
     }
     pub fn update<R>(
@@ -111,7 +111,7 @@ impl Root {
         let root = window
             .root::<Self>()
             .flatten()
-            .expect("window must have a GPUI Design Root");
+            .expect("window must have a GPUI Deck Root");
         root.update(cx, |root, cx| f(root, window, cx))
     }
     fn on_action_tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {

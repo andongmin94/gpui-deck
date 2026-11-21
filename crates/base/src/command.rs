@@ -1,5 +1,5 @@
 //! Searchable actions composed from the existing text input and GPUI scrolling.
-//! GPUI Design owns matching and the highlighted action; applications own the
+//! GPUI Deck owns matching and the highlighted action; applications own the
 //! surrounding surface, item presentation, and the action's effects.
 
 use gpui::{

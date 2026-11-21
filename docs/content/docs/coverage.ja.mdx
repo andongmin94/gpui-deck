@@ -8,7 +8,7 @@ description: "**2026-11-21** に確認した参照カタログ: shadcn/ui All Co
 そのメインカタログには **66 のエントリー** があり、以下にそれぞれ 1 回ずつ記載しています。別枠の
 AI Elements カタログはこの比較の対象外ですが、メインカタログにすでに含まれている会話系コンポーネントは対象に含めています。
 
-GPUI Design は **42 の公開ライブラリファミリーと、コピーして使える 23 の
+GPUI Deck は **42 の公開ライブラリファミリーと、コピーして使える 23 の
 プレゼンテーション/構成レシピ** をドキュメント化しており、**65 の個別の実装** を提供します。
 残る 1 つのカタログエントリーである Native Select は、GPUI では **Select にマッピング** されます。
 **66 の参照エントリーすべてに、実装済みのスコープまたはプラットフォームへのマッピングがあります**。
@@ -133,7 +133,7 @@ GPUI Design は **42 の公開ライブラリファミリーと、コピーし�
 | 4 | ソース配布と開発者体験 | 小さく完結したスターター、コンパイル可能な公開サンプル、明示されたサポート対象 API の境界、レシピの依存関係とトークンを解決するソースコピーのワークフロー | スターター、doctest のゲート、アプリケーショントークン、依存関係を認識するソース CLI は実装済み。サポート対象の入力/コントロールの境界とコンシューマー向けのテスト feature はドキュメント化済み。未使用の ThemeAppearance は削除済み |
 | 5 | リリースの検証 | 既存のフォーマット、lint、動作テストスイート全体、ネイティブサンプルのビルドが通る。代表的なネイティブの IME、スクリーンリーダー、DPI、視覚的なフローについて、プラットフォームごとの観察がある | 未完了 |
 
-各リビジョンの Rust の検査とネイティブサンプルのビルド結果は [Verify ワークフロー](https://github.com/andongmin94/gpui-design/actions/workflows/verify.yml)に記録されます。[Docs ワークフロー](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml)はインストール例の GPUI バージョンを検査し、WebAssembly プレビューをビルドしてブラウザーテストを実行します。
+各リビジョンの Rust の検査とネイティブサンプルのビルド結果は [Verify ワークフロー](https://github.com/andongmin94/gpui-deck/actions/workflows/verify.yml)に記録されます。[Docs ワークフロー](https://github.com/andongmin94/gpui-deck/actions/workflows/docs.yml)はインストール例の GPUI バージョンを検査し、WebAssembly プレビューをビルドしてブラウザーテストを実行します。
 
 shadcn の公式サンプルがカバーする「提供されない」制限は、明示的な境界の範囲内で実装されました。入力された日付は、任意の自然言語ではなく ISO といくつかの英語の相対表現を受け付け、レイアウトの保存はアプリケーションに残ります。タッチの長押しは、GPUI のシミュレートされたタッチイベントでのみ検証されており、タッチハードウェアでは試していません。Carousel の自動再生、
 Sidebar のレール、ControlField、AvatarGroup は、ヘッドレスと構成のカバレッジのみで、
@@ -184,9 +184,9 @@ Item のメディアにあったフォント依存の記録グリフは、描画
 リポジトリのルートで PowerShell を開き、確認したいサンプルのコマンドを実行します。次のサンプルを起動する前に、開いているサンプルのウィンドウを閉じてください。
 
 ```powershell
-cargo run -p gpui-design --example starter --locked
-cargo run -p gpui-design --example catalogue --locked
-cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-deck --example starter --locked
+cargo run -p gpui-deck --example catalogue --locked
+cargo run -p gpui-deck --example two_styles --locked -- settings
 ```
 
 `catalogue` では Navigation のほか、OTP、Drawer、Toast、メディア、チャート、会話、アンケートのサンプルも確認できます。

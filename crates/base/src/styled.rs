@@ -1,4 +1,4 @@
-// Modified for GPUI Design: update references to the extracted crate.
+// Modified for GPUI Deck: update references to the extracted crate.
 use gpui::{
     App, BoxShadow, Corners, DefiniteLength, Div, Edges, FocusHandle, Hsla, Pixels,
     Refineable as _, Role, StyleRefinement, Styled, Window, div, hsla, point,
@@ -97,7 +97,7 @@ pub trait StyledExt: Styled + Sized {
     /// scroll region that has to resolve against the row's height.
     ///
     /// ```
-    /// use gpui_design::StyledExt as _;
+    /// use gpui_deck::StyledExt as _;
     /// use gpui::{ParentElement as _, Styled as _, div};
     ///
     /// // A sidebar beside a detail pane, both spanning the full height.

@@ -1,5 +1,5 @@
 //! A retained modal lifecycle with application-owned presentation.
-//! Modified for GPUI Design: retained focus ownership replaces styled-host callbacks.
+//! Modified for GPUI Deck: retained focus ownership replaces styled-host callbacks.
 
 use gpui::{
     AnyElement, App, Context, Entity, EventEmitter, FocusHandle, InteractiveElement as _,

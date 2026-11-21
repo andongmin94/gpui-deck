@@ -1,4 +1,4 @@
-// Modified for GPUI Design: resolve text colors against the narrow InputColors baseline.
+// Modified for GPUI Deck: resolve text colors against the narrow InputColors baseline.
 use std::{ops::Range, rc::Rc, sync::Arc};
 
 use gpui::{AnyElement, Context, HighlightStyle, Hsla, SharedString, Window};

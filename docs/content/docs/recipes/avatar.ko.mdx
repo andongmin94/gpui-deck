@@ -5,7 +5,7 @@ description: "GPUI의 이미지 로더와 캐시를 사용하며 명시적인 �
 
 <ComponentPreview name="avatar" height={160} />
 
-[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs)는 명시적인 대체
+[`avatar.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/avatar.rs)는 명시적인 대체
 텍스트와 애플리케이션이 전달한 폴백 텍스트를 갖는 원형 이미지를 표시합니다.
 
 ```rust
@@ -28,7 +28,7 @@ Avatar::new("preset-avatar", "Balanced preset artwork", "BL", palette)
 cover fit을 사용합니다. 상태 배지, 아바타 그룹, 상호작용 액션은 애플리케이션 조합으로
 남습니다.
 
-예제는 Balanced 프리셋에 [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)를
+예제는 Balanced 프리셋에 [`preset-avatar.svg`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/assets/preset-avatar.svg)를
 포함합니다. 다른 프리셋은 `PR`, `HQ` 같은 명시적인 텍스트를, 선택이 비어 있으면 `?`를
 사용하며, 접근 가능한 이름은 현재 프리셋 레이블에서 만듭니다. 소스는 유지되는 Combobox
 상태로부터 기존 HoverCard를 렌더링하는 동안 선택되며, 두 번째 선택 프리셋 값은 없습니다.

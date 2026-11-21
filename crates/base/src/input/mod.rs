@@ -1,4 +1,4 @@
-// Modified for GPUI Design: expose Input while retaining its shared editing engine.
+// Modified for GPUI Deck: expose Input while retaining its shared editing engine.
 //! Text input: the shared editing engine and the three states built on it.
 //!
 //! Nothing here should be `pub` unless it is reachable from outside the crate.

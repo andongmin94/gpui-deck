@@ -5,7 +5,7 @@ description: "具名的圆形图像，带显式的后备文本，使用 GPUI 的
 
 <ComponentPreview name="avatar" height={160} />
 
-[`avatar.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/avatar.rs) 呈现一个圆形图像，
+[`avatar.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/avatar.rs) 呈现一个圆形图像，
 带显式的替代文本和应用提供的后备文本：
 
 ```rust
@@ -29,7 +29,7 @@ GPUI 负责解码、加载、缓存和重绘。该配方不增加单独的
 和高度相等以得到圆形。图像使用 GPUI 的 cover 适配。状态徽标、
 头像组和可交互的动作仍属于应用的组合。
 
-示例为 Balanced 预设嵌入了 [`preset-avatar.svg`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/assets/preset-avatar.svg)。
+示例为 Balanced 预设嵌入了 [`preset-avatar.svg`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/assets/preset-avatar.svg)。
 其他预设使用 `PR` 和 `HQ` 之类的显式文本，
 空选择则使用 `?`，其无障碍名称由当前的
 预设标签派生。图像源是在渲染现有 HoverCard 时，根据保留的

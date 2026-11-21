@@ -1,5 +1,5 @@
 //! Tabs with automatic or manual activation, roving focus, and active-only panels.
-//! Derived from GPUI Kit v0.9.0's tab primitive; GPUI Design adds retained
+//! Derived from GPUI Kit v0.9.0's tab primitive; GPUI Deck adds retained
 //! selection, keyboard navigation, focus activation, and panel lifecycle.
 
 use gpui::{

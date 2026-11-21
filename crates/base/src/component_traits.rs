@@ -1,4 +1,4 @@
-// Modified for GPUI Design: keep the selected-state contract used by Button.
+// Modified for GPUI Deck: keep the selected-state contract used by Button.
 /// An element or component that exposes controlled selected state.
 ///
 /// `selected` is the application's own meaning of selection: the current

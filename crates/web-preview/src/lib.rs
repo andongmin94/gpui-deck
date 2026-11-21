@@ -1,4 +1,4 @@
-//! Live documentation previews: GPUI Design components rendered by GPUI's web
+//! Live documentation previews: GPUI Deck components rendered by GPUI's web
 //! backend into a browser canvas for the documentation site.
 //!
 //! The demos compile on every target so native checks cover them; only the
@@ -22,7 +22,7 @@ mod recipes;
 #[cfg(target_family = "wasm")]
 mod web {
     use gpui::{App, AppContext as _, Styled as _, WindowOptions};
-    use gpui_design::Root;
+    use gpui_deck::Root;
     use wasm_bindgen::prelude::*;
     use web_sys::{MutationObserver, MutationObserverInit, UrlSearchParams};
 
@@ -33,7 +33,7 @@ mod web {
         gpui_platform::web_init();
         gpui_platform::single_threaded_web().run(move |cx: &mut App| {
             app_fonts::register(cx);
-            gpui_design::init(cx);
+            gpui_deck::init(cx);
             cx.open_window(WindowOptions::default(), move |window, cx| {
                 let browser = web_sys::window().expect("browser preview window");
                 let params =

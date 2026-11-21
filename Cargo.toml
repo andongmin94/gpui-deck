@@ -1,4 +1,4 @@
-# Modified for GPUI Design: focused workspace extracted from GPUI Kit v0.9.0.
+# Modified for GPUI Deck: focused workspace extracted from GPUI Kit v0.9.0.
 [workspace]
 members = ["crates/base", "crates/cli", "crates/web-preview"]
 default-members = ["crates/base", "crates/cli"]
@@ -8,7 +8,7 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 license = "Apache-2.0"
-repository = "https://github.com/andongmin94/gpui-design"
+repository = "https://github.com/andongmin94/gpui-deck"
 publish = false
 
 [workspace.dependencies]

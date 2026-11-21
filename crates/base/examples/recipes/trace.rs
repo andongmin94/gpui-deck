@@ -5,7 +5,7 @@ use gpui::{
     ParentElement as _, RenderOnce, SharedString, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, relative,
 };
-use gpui_design::{
+use gpui_deck::{
     Collapsible, CollapsibleContent, CollapsibleState, CollapsibleTrigger, TestSupportExt as _,
     TestTextExt as _,
 };
@@ -161,7 +161,7 @@ mod tests {
         AppContext as _, Context, Pixels, Render, Role, Subscription, TestAppContext,
         VisualTestContext, px, size,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -230,7 +230,7 @@ mod tests {
 
     #[gpui::test]
     fn trace_summary_and_details_wrap_with_disclosure_semantics(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let summary = format!(
             "설정 상세 보기 {} {}",
             "공백없는긴한글요약".repeat(4),

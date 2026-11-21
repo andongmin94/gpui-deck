@@ -1,5 +1,5 @@
 //! Single or multiple selection composed from Toggle, with one roving Tab stop.
-//! GPUI Kit v0.9.0 supplied an unstyled toggle-group container; GPUI Design adds
+//! GPUI Kit v0.9.0 supplied an unstyled toggle-group container; GPUI Deck adds
 //! retained selection and independent, orientation-aware focus movement.
 
 use gpui::{

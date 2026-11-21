@@ -27,7 +27,7 @@ test("the invoice workspace loads GPUI only when launched and links to its imple
   await expect(workspace.getByRole("img")).toBeVisible();
   await expect(workspace.getByRole("link", { name: "Rust 소스 보기" })).toHaveAttribute(
     "href",
-    "https://github.com/andongmin94/gpui-design/blob/main/crates/web-preview/src/demos/invoice_workspace.rs",
+    "https://github.com/andongmin94/gpui-deck/blob/main/crates/web-preview/src/demos/invoice_workspace.rs",
   );
   expect(previewRequests).toEqual([]);
   await expect(async () => {
@@ -105,7 +105,7 @@ test("component and recipe previews follow the selected accent without restartin
   await button.scrollIntoViewIfNeeded();
   await expect(button.contentFrame().locator("title")).toHaveJSProperty(
     "text",
-    "GPUI Design preview",
+    "GPUI Deck preview",
   );
   const original = await button.evaluateHandle((frame: HTMLIFrameElement) => frame.contentDocument);
   const picker = page.getByRole("button", { name: /^Accent color/ });

@@ -5,7 +5,7 @@ description: "基于 Dialog 的四边模态呈现，尺寸受视口限制，带�
 
 <ComponentPreview name="sheet" height={360} />
 
-[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs) 把现有的 Dialog
+[`sheet.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/sheet.rs) 把现有的 Dialog
 内容呈现在所选的窗口边缘，默认是全高的右侧面板：
 
 ```rust
@@ -19,7 +19,7 @@ Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", pale
     )
 ```
 
-关闭时也请把 Sheet 挂载在 `gpui_design::Root` 之下。应用
+关闭时也请把 Sheet 挂载在 `gpui_deck::Root` 之下。应用
 拥有并保留所提供的 `Entity<DialogState>` 和 `ScrollHandle`。
 请在该现有的 DialogState 上配置初始焦点，并使用其 `open` 和
 `close` 方法。Dialog 继续负责模态的焦点约束、Escape 和

@@ -4,7 +4,7 @@ use gpui::{
     AnyView, App, AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render,
     RenderOnce, SharedString, Styled as _, Subscription, Window, px,
 };
-use gpui_design::Button;
+use gpui_deck::Button;
 
 use super::{data::style_editor, frame};
 use crate::recipes::{

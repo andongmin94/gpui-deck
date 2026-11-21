@@ -6,7 +6,7 @@ use gpui::{
     Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription,
     Window, accesskit::SortDirection, div, prelude::FluentBuilder as _, px,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Carousel, CarouselControl,
     CarouselSlide, CarouselState, ChartSeries, ChartState, Combobox, ComboboxList, ComboboxOption,
     ComboboxState, Date, DatePicker, DatePickerState, Direction, DirectionProvider, Field, Input,
@@ -1115,8 +1115,8 @@ fn pane(name: &'static str, share: f32) -> Div {
 fn grip(
     theme: Theme,
     axis: Axis,
-    handle: gpui_design::ResizableHandle,
-) -> gpui_design::ResizableHandle {
+    handle: gpui_deck::ResizableHandle,
+) -> gpui_deck::ResizableHandle {
     let line = div().bg(theme.border);
     let horizontal = axis == Axis::Horizontal;
     handle

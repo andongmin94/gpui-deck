@@ -5,7 +5,7 @@ use gpui::{
     RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _, StyleRefinement,
     Styled, Window, div, px, relative,
 };
-use gpui_design::{ObservedElement, Separator, TestSupportExt as _, TestTextExt as _};
+use gpui_deck::{ObservedElement, Separator, TestSupportExt as _, TestTextExt as _};
 
 use super::super::Palette;
 
@@ -92,7 +92,7 @@ impl RenderOnce for Marker {
 #[cfg(all(test, feature = "test-support"))]
 mod tests {
     use gpui::{AppContext as _, Context, FocusHandle, Pixels, Render, TestAppContext, size};
-    use gpui_design::{Button, Root, test_support};
+    use gpui_deck::{Button, Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -141,7 +141,7 @@ mod tests {
         );
         let marker_id = ElementId::from("sample-marker");
         let label_id = (marker_id.clone(), "label").into();
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         for appearance in [Appearance::Compact, Appearance::Settings] {
             let (root, cx) = cx.add_window_view(|window, cx| {
                 let sample = cx.new(|cx| Sample {

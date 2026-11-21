@@ -5,7 +5,7 @@ use gpui::{
     ParentElement as _, Render, Styled as _, Subscription, Window, div,
     prelude::FluentBuilder as _, px, relative,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Checkbox, CheckboxState, Progress, RadioGroup, RadioGroupState, RadioItem, RadioOption,
     Separator, Slider, SliderState, SliderThumb, Switch, Toggle, ToggleGroup, ToggleGroupState,
     ToggleItem, ToggleOption,
@@ -507,7 +507,7 @@ impl Render for SeparatorDemo {
                 .child(
                     div()
                         .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .child("GPUI Design"),
+                        .child("GPUI Deck"),
                 )
                 .child(
                     div()

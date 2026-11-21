@@ -9,7 +9,7 @@ use gpui::{
     Animation, AnimationExt as _, App, ElementId, IntoElement, ParentElement as _, PathBuilder,
     RenderOnce, SharedString, StyleRefinement, Styled, Window, canvas, div, point, px, rems,
 };
-use gpui_design::Progress;
+use gpui_deck::Progress;
 
 use super::super::Palette;
 

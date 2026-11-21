@@ -1,6 +1,6 @@
-# GPUI Design
+# GPUI Deck
 
-**Documentation:** <https://gpui-design.andongmin.com/>
+**Documentation:** <https://gpui-deck.andongmin.com/>
 
 A source-owned, headless UI foundation for Rust and GPUI.
 
@@ -16,7 +16,7 @@ sidebar presentations. The source is maintained in this repository, with GPUI
 kept as an exactly pinned rendering
 dependency.
 
-The [completion criteria and current work](https://gpui-design.andongmin.com/en/docs/coverage/#completion-criteria-and-current-work)
+The [completion criteria and current work](https://gpui-deck.andongmin.com/en/docs/coverage/#completion-criteria-and-current-work)
 track behavior, accessibility, visual defaults, source distribution, and native
 validation. Catalogue coverage alone is not a claim of shadcn/ui-level completeness.
 
@@ -71,8 +71,8 @@ Shared support includes the window root, popup positioning, input infrastructure
 and opt-in test observations. Internal editing machinery retained for Input is
 not a separate editor product. Public APIs are still being developed.
 
-The [crate exports](https://github.com/andongmin94/gpui-design/blob/main/crates/base/src/lib.rs) define the public control and support
-surface. The [input module](https://github.com/andongmin94/gpui-design/blob/main/crates/base/src/input/mod.rs) intentionally also exposes
+The [crate exports](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/src/lib.rs) define the public control and support
+surface. The [input module](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/src/input/mod.rs) intentionally also exposes
 `EditorState`, display mapping, diagnostics and provider types used by its shared
 engine; its standalone `Editor` renderer is available only to inherited tests.
 `Input` and `Textarea` are the supported rendered text controls. Native test
@@ -82,11 +82,11 @@ and scrollbars; application palettes own light/dark appearance.
 
 ### Copyable presentation recipes
 
-The [recipe modules](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes) are application-owned source
-compositions, documented in the [presentation guide](https://gpui-design.andongmin.com/en/docs/guides/recipes/).
+The [recipe modules](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes) are application-owned source
+compositions, documented in the [presentation guide](https://gpui-deck.andongmin.com/en/docs/guides/recipes/).
 Copy the desired module and adapt its styling and any palette import to your
 application tokens.
-These types live in the example, outside the `gpui_design` crate exports.
+These types live in the example, outside the `gpui_deck` crate exports.
 
 | Recipe | Supplied presentation | Existing example use |
 | --- | --- | --- |
@@ -115,7 +115,7 @@ These types live in the example, outside the `gpui_design` crate exports.
 | **Bubble** | Incoming/outgoing surfaces, grouped author/time labels and supplied reactions | Catalogue transcript with retained reaction Buttons |
 
 The breadth target is the range of screens and interactions supported by
-shadcn/ui. The [component coverage map](https://gpui-design.andongmin.com/en/docs/coverage/) compares all
+shadcn/ui. The [component coverage map](https://gpui-deck.andongmin.com/en/docs/coverage/) compares all
 66 entries in its current main catalogue with the actual public scope here.
 It distinguishes behavior, source-owned presentation recipes, and larger
 compositions. The 42 library families and 23 recipes supply 65 distinct
@@ -140,7 +140,7 @@ Applications can replace items while preserving native query editing and stable
 selected values. Fetching, request ordering and free-form values belong to the
 application rather than a second input or network engine.
 
-The [two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) applies a compact dark
+The [two-style example](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs) applies a compact dark
 presentation and a light settings presentation to shared form controls, with
 different section navigation. Its styles live in application code, outside the
 behavior layer. A Session actions menu and
@@ -241,7 +241,7 @@ and keeps no separate message history or copy of the note.
 An informational Alert explains that the example retains preferences without
 scheduling an actual recording. Its date bounds are 2026–2027.
 
-The separate [catalogue example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/catalogue.rs) connects the
+The separate [catalogue example](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/catalogue.rs) connects the
 remaining families into five retained views. Navigation demonstrates coordinated
 menus, destination links, a collapsed breadcrumb with a dropdown of hidden ancestors and collapsible grouped project navigation; Forms and feedback runs numeric code entry through
 a confirmation Drawer into a stacked, pausing Toast, plus help Sheets at all four edges; Media and data supplies RTL-aware
@@ -254,19 +254,19 @@ and make no network requests.
 
 ## Documentation
 
-The [documentation site](https://gpui-design.andongmin.com/) (English,
-Korean, Japanese and Chinese) covers [installation](https://gpui-design.andongmin.com/en/docs/installation/) — toolchain, native
+The [documentation site](https://gpui-deck.andongmin.com/) (English,
+Korean, Japanese and Chinese) covers [installation](https://gpui-deck.andongmin.com/en/docs/installation/) — toolchain, native
 prerequisites, running the examples, depending on the crate and copying recipes
-with the CLI — the [architecture](https://gpui-design.andongmin.com/en/docs/architecture/) of the rendering,
+with the CLI — the [architecture](https://gpui-deck.andongmin.com/en/docs/architecture/) of the rendering,
 behavior and presentation layers, one page per component and recipe with live
-previews, and [where each part of the source lives](https://gpui-design.andongmin.com/en/docs/contributing/).
+previews, and [where each part of the source lives](https://gpui-deck.andongmin.com/en/docs/contributing/).
 
 Run the examples from a checkout:
 
 ```sh
-cargo run -p gpui-design --example two_styles --locked -- settings
-cargo run -p gpui-design --example catalogue --locked
-cargo run -p gpui-design --example starter --locked
+cargo run -p gpui-deck --example two_styles --locked -- settings
+cargo run -p gpui-deck --example catalogue --locked
+cargo run -p gpui-deck --example starter --locked
 ```
 
 ## Verify changes
@@ -275,16 +275,16 @@ Run the checks for the completed change set:
 
 ```sh
 cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --features gpui-design/test-support --locked -- -D warnings
-cargo test --workspace --features gpui-design/test-support --locked
+cargo clippy --workspace --all-targets --features gpui-deck/test-support --locked -- -D warnings
+cargo test --workspace --features gpui-deck/test-support --locked
 cargo build --workspace --bins --examples --locked
 ```
 
-The [Verify workflow](https://github.com/andongmin94/gpui-design/actions/workflows/verify.yml)
+The [Verify workflow](https://github.com/andongmin94/gpui-deck/actions/workflows/verify.yml)
 uses one matrix for Linux, Windows, and macOS. Platform-independent checks run
 once; each platform still compiles its native dependencies and all examples.
 
-The [Docs workflow](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml)
+The [Docs workflow](https://github.com/andongmin94/gpui-deck/actions/workflows/docs.yml)
 lints, type-checks and builds the Fumapress site in `docs/` together with the
 live previews in `crates/web-preview` for WebAssembly, then runs its Playwright
 tests. Cloudflare Workers Builds deploys `main` to the site from `docs/` with
@@ -320,7 +320,7 @@ initial version. Performance claims also require measurements of the actual app.
 
 ## Source and license
 
-GPUI Design was extracted from [GPUI Kit](https://github.com/longbridge/gpui-kit),
+GPUI Deck was extracted from [GPUI Kit](https://github.com/longbridge/gpui-kit),
 **v0.9.0**, at commit
 [`7591a35eced761e3613c01e71ff04c10129dae1a`](https://github.com/longbridge/gpui-kit/tree/7591a35eced761e3613c01e71ff04c10129dae1a).
 It is independently maintained.
@@ -370,7 +370,7 @@ Fast were not taken. As upstream main does after v0.10.0 (#4015), Calendar and D
 jiff's civil `Date` and `Weekday` instead of Chrono's, which limits Calendar
 dates to years 1 through 9998.
 
-Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gpui-design/blob/main/LICENSE-APACHE). The original
+Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gpui-deck/blob/main/LICENSE-APACHE). The original
 Longbridge copyright and license notices are retained. Dependencies keep their
 respective licenses.
 

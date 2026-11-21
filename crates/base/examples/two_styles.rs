@@ -13,7 +13,7 @@ use gpui::{
     ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription, Window,
     div, prelude::FluentBuilder as _, px, relative, rems,
 };
-use gpui_design::{
+use gpui_deck::{
     Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionState, AlertDialog,
     Breadcrumb, BreadcrumbItem, BreadcrumbList, Button, Calendar, CalendarDay, CalendarSelection,
     CalendarState, Checkbox, CheckboxState, Collapsible, CollapsibleContent, CollapsibleState,
@@ -2508,7 +2508,7 @@ impl Render for Demo {
 #[cfg(not(test))]
 fn main() {
     use gpui::{TitlebarOptions, WindowBounds, WindowOptions, size};
-    use gpui_design::Root;
+    use gpui_deck::Root;
 
     let appearance = match std::env::args().nth(1).as_deref() {
         None | Some("compact") => Appearance::Compact,
@@ -2520,7 +2520,7 @@ fn main() {
     };
     gpui_platform::application().run(move |cx| {
         app_fonts::register(cx);
-        gpui_design::init(cx);
+        gpui_deck::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
                 cx.quit();
@@ -2530,7 +2530,7 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 titlebar: Some(TitlebarOptions {
-                    title: Some("GPUI Design · Session settings".into()),
+                    title: Some("GPUI Deck · Session settings".into()),
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::centered(size(px(760.), px(780.)), cx)),

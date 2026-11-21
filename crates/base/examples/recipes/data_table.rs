@@ -8,7 +8,7 @@ use gpui::{
     ScrollHandle, SharedString, Stateful, StyleRefinement, Styled, Subscription, Window,
     accesskit::SortDirection, div, point, prelude::FluentBuilder as _, px,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Checkbox, CheckboxState, Date, DropdownMenu, Field, Input, InputBase, InputState,
     MenuEvent, MenuItem, MenuOption, MenuState, ScrollArea, ScrollbarAxis, Table, TableCaption,
     TableCell, TableColumn, TableRow,

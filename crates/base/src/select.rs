@@ -1,5 +1,5 @@
 //! Selection behavior and composable, unstyled trigger/listbox parts.
-//! Modified for GPUI Design: retained option navigation and focus lifecycle.
+//! Modified for GPUI Deck: retained option navigation and focus lifecycle.
 
 use std::{collections::HashSet, time::Duration};
 

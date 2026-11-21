@@ -7,7 +7,7 @@ use gpui::{
     RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _, StyleRefinement,
     Styled, Window, div, prelude::FluentBuilder as _,
 };
-use gpui_design::{Button, ObservedElement, TestSupportExt as _};
+use gpui_deck::{Button, ObservedElement, TestSupportExt as _};
 
 use super::super::Palette;
 

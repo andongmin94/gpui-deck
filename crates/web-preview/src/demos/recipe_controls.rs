@@ -5,7 +5,7 @@ use gpui::{
     ParentElement as _, Render, ScrollHandle, SharedString, Styled as _, Subscription, Window, div,
     px,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, CollapsibleState, DialogClose, DialogState, Input, InputState, TabItem, TabsState,
 };
 

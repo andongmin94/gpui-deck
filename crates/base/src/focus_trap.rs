@@ -27,7 +27,7 @@ pub trait FocusTrapElement: InteractiveElement + Sized {
     ///
     /// ```no_run
     /// use gpui::{FocusHandle, IntoElement, ParentElement as _};
-    /// use gpui_design::{Button, FocusTrapElement as _, v_flex};
+    /// use gpui_deck::{Button, FocusTrapElement as _, v_flex};
     ///
     /// fn content(container_focus_handle: &FocusHandle) -> impl IntoElement {
     ///     v_flex()

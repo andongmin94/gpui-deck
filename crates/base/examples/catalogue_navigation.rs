@@ -10,7 +10,7 @@ use gpui::{
     IntoElement, ParentElement as _, Render, Role, SharedString, StatefulInteractiveElement as _,
     Styled as _, Subscription, Window, div, prelude::FluentBuilder as _, px, rgb,
 };
-use gpui_design::{
+use gpui_deck::{
     Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionState, Align, Breadcrumb,
     BreadcrumbItem, BreadcrumbList, Button, CheckboxState, CollapsibleState, Direction,
     DirectionProvider, DropdownMenu, MenuEvent, MenuItem, MenuOption, MenuState, MenuSubmenu,

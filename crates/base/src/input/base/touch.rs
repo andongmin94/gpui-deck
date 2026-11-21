@@ -1,4 +1,4 @@
-// Modified for GPUI Design: remove coupling to excluded window-wide rich-text selection.
+// Modified for GPUI Deck: remove coupling to excluded window-wide rich-text selection.
 //! Touch selection for the input engine: long press, grab handles, edit menu.
 //!
 //! A long press selects the word under the finger and keeps following the

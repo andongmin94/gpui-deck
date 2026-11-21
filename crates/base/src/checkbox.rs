@@ -1,5 +1,5 @@
 //! Controlled, unstyled checkbox behavior and accessibility semantics.
-// Modified for GPUI Design from GPUI Kit v0.9.0: retain the controlled root,
+// Modified for GPUI Deck from GPUI Kit v0.9.0: retain the controlled root,
 // remove decorative parts, and preserve traversal when disabled while focused.
 
 use std::rc::Rc;

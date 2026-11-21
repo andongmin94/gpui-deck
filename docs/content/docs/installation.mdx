@@ -21,35 +21,35 @@ sudo apt-get install --no-install-recommends -y \
 Then clone and run from a native desktop session:
 
 ```sh
-git clone https://github.com/andongmin94/gpui-design.git
-cd gpui-design
-cargo run -p gpui-design --example two_styles --locked -- compact
-cargo run -p gpui-design --example two_styles --locked -- settings
-cargo run -p gpui-design --example catalogue --locked
-cargo run -p gpui-design --example starter --locked
+git clone https://github.com/andongmin94/gpui-deck.git
+cd gpui-deck
+cargo run -p gpui-deck --example two_styles --locked -- compact
+cargo run -p gpui-deck --example two_styles --locked -- settings
+cargo run -p gpui-deck --example catalogue --locked
+cargo run -p gpui-deck --example starter --locked
 ```
 
 `compact` is the default when no appearance argument is supplied. Both commands
 run the same session-settings interaction with application-owned styling.
 
-Start with [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) for a small complete
+Start with [`starter.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/starter.rs) for a small complete
 application. It uses only public APIs: `init`, `Root`, a retained `InputState`,
 `Field`, and `Button`. The application keeps its observation and event subscriptions,
 owns the colors and layout, and handles both Enter and button activation.
 For a new app, copy `starter.rs` to `src/main.rs` and the entire
-[`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-design/tree/main/crates/base/examples/assets/fonts) directory to `src/assets/fonts`, including the font files and their license. The starter registers Pretendard when it launches.
+[`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-deck/tree/main/crates/base/examples/assets/fonts) directory to `src/assets/fonts`, including the font files and their license. The starter registers Pretendard when it launches.
 
 In an existing Rust application, depend on the checked-out source and matching
 GPUI snapshots, replacing the path with your checkout:
 
 ```toml
 [dependencies]
-gpui-design = { path = "../gpui-design/crates/base" }
+gpui-deck = { path = "../gpui-deck/crates/base" }
 gpui = { package = "gpui-pre", version = "=0.3.12" }
 gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
 
 [features]
-test-support = ["gpui-design/test-support"]
+test-support = ["gpui-deck/test-support"]
 ```
 
 The feature declaration supports the test guards in copied recipe source;
@@ -64,8 +64,8 @@ Copy application-owned presentation source with its required recipe modules,
 light/dark tokens and license:
 
 ```sh
-cargo run -p gpui-design-cli --locked -- list
-cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- list
+cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
 ```
 
 Declare `mod ui;` in the consumer. The tool preserves edits to previously installed

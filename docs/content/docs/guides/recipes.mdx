@@ -4,8 +4,8 @@ description: "These 23 catalogue recipes are reusable application source, used b
 ---
 
 These 23 catalogue recipes are reusable application source, used by the native
-[two-style example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) and
-[catalogue example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/catalogue.rs). Button and Chart also have presentation recipes for their public controls. They compose GPUI
+[two-style example](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs) and
+[catalogue example](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/catalogue.rs). Button and Chart also have presentation recipes for their public controls. They compose GPUI
 layout with the existing controls and keep colors, spacing, and sizing in the
 consumer's `Palette` or application-supplied `Styled` values.
 
@@ -15,8 +15,8 @@ The source CLI copies a recipe with its transitive recipe dependencies, light/da
 token source, module declarations, license and required assets:
 
 ```sh
-cargo run -p gpui-design-cli --locked -- list
-cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- list
+cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
 ```
 
 Declare `mod ui;` in the consumer and use `ui::recipes::{DataTable, Avatar}` and
@@ -29,7 +29,7 @@ Keep this feature declaration in the consumer manifest:
 
 ```toml
 [features]
-test-support = ["gpui-design/test-support"]
+test-support = ["gpui-deck/test-support"]
 ```
 
 Copied recipe tests are guarded by this consumer feature. Declaring it also makes
@@ -37,7 +37,7 @@ their `cfg` values known to Rust; enable it to run the existing GPUI tests.
 
 Run `add` again with more names to extend the same directory. Existing recipe
 and palette edits are preserved. Generated `mod.rs` declarations and
-`recipes/.gpui-design` track the installed set; if those scaffolds were edited,
+`recipes/.gpui-deck` track the installed set; if those scaffolds were edited,
 the CLI stops before writing and explains how to add declarations manually.
 Conflicting new files are also rejected. The copied source belongs to the
 application.
@@ -49,18 +49,18 @@ files. In each patch, `-` lines are from your app and `+` lines are from the CLI
 It leaves the app unchanged.
 
 ```sh
-cargo run -p gpui-design-cli --locked -- diff --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- diff --to ../my-app/src/ui
 ```
 
 To copy manually:
 
 1. Copy the desired files from
-   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes) into an
+   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes) into an
    application module, preserving the repository's license terms.
 2. Declare the copied modules and re-export the types, following the small
-   [`mod.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/mod.rs). Copy only the modules needed
+   [`mod.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/mod.rs). Copy only the modules needed
    by the application and list only those modules.
-3. Copy [`presentation.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/presentation.rs) beside the
+3. Copy [`presentation.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/presentation.rs) beside the
    application's `recipes` directory. It contains the actual `Palette` and both
    appearances used by the tested example, without the Demo or its behavior.
    Declare it and expose its tokens in the recipes' parent module:
@@ -77,7 +77,7 @@ To copy manually:
    existing token type. AspectRatio takes no palette; its consumer supplies the
    visual style. Bubble and Chart currently keep their own copyable styling.
 4. Import the types from that application module. They use `pub(crate)` visibility
-   and are not exported from `gpui_design`. No extra dependency is required.
+   and are not exported from `gpui_deck`. No extra dependency is required.
 
 The palette module and recipes are application source, outside the library
 exports. The CLI provides local source distribution; these visual tokens do not

@@ -5,7 +5,7 @@ use gpui::{
     ParentElement as _, RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, relative,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _, TestTextExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _, TestTextExt as _};
 
 use super::{super::Palette, Paragraph};
 
@@ -127,7 +127,7 @@ mod tests {
         AppContext as _, Context, Entity, Pixels, Render, TestAppContext, VisualTestContext, px,
         size,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -179,7 +179,7 @@ mod tests {
 
     #[gpui::test]
     fn message_provenance_and_body_wrap_once_without_extra_semantics(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let author = format!("작성자 이름 {}", "long_author_name_0123456789".repeat(3));
         let time = "Edited 2026-11-10 08:30 UTC · 작성자가 제공한 시각과 시간대";
         let body = format!(

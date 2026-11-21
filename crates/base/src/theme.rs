@@ -1,4 +1,4 @@
-// Modified for GPUI Design: retain only input colors, caret, and scrollbar defaults.
+// Modified for GPUI Deck: retain only input colors, caret, and scrollbar defaults.
 use gpui::{App, Global, Hsla, hsla};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

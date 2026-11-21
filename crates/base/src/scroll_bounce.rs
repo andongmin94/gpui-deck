@@ -1,4 +1,4 @@
-// Modified for GPUI Design: remove the reference to the excluded motion API.
+// Modified for GPUI Deck: remove the reference to the excluded motion API.
 //! Boundary displacement only: the list keeps its clamped logical position.
 
 use crate::overscroll::Overscroll;

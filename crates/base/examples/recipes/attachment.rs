@@ -5,7 +5,7 @@ use gpui::{
     ParentElement as _, RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, relative,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _, TestTextExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _, TestTextExt as _};
 
 use super::super::Palette;
 
@@ -124,7 +124,7 @@ mod tests {
         AppContext as _, Context, Entity, Pixels, Render, TestAppContext, VisualTestContext, px,
         size,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -176,7 +176,7 @@ mod tests {
 
     #[gpui::test]
     fn attachment_metadata_wraps_with_one_name_and_description(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let file_name = format!(
             "회의 설정 {}{}.json",
             "공백없는한글파일이름".repeat(8),

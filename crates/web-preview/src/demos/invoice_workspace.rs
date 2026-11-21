@@ -6,7 +6,7 @@ use gpui::{
     IntoElement, ParentElement as _, Render, Role, StatefulInteractiveElement as _, Styled as _,
     Subscription, Window, div, prelude::FluentBuilder as _, px,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Chart, ChartSeries, ChartState, Checkbox, CheckboxState, Table, TableCell, TableColumn,
     TableRow,
 };

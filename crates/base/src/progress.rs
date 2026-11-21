@@ -1,5 +1,5 @@
 //! Controlled progress semantics with application-owned presentation.
-// Modified for GPUI Design from GPUI Kit v0.9.0: retain the percentage root,
+// Modified for GPUI Deck from GPUI Kit v0.9.0: retain the percentage root,
 // remove decorative part wrappers, and reject non-finite values.
 
 use gpui::{

@@ -5,7 +5,7 @@ use gpui::{
     RenderOnce, ScrollHandle, SharedString, StyleRefinement, Styled, Window, div,
     prelude::FluentBuilder as _, px,
 };
-use gpui_design::{
+use gpui_deck::{
     Dialog, DialogBackdrop, DialogDescription, DialogPopup, DialogState, DialogTitle, ScrollArea,
     StyledExt as _, TestSupportExt as _,
 };

@@ -5,7 +5,7 @@ use gpui::{
     IntoElement, ObjectFit, ParentElement as _, Render, Role, StatefulInteractiveElement as _,
     Styled as _, StyledImage as _, Window, div, img, px, relative,
 };
-use gpui_design::Button;
+use gpui_deck::Button;
 
 use super::frame;
 #[path = "../../../base/examples/recipes/bubble.rs"]

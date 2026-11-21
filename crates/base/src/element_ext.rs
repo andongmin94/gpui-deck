@@ -1,4 +1,4 @@
-// Modified for GPUI Design: retain prepaint observation without rich-text scopes.
+// Modified for GPUI Deck: retain prepaint observation without rich-text scopes.
 use gpui::{App, Bounds, ParentElement, Pixels, Styled as _, Window, canvas};
 
 /// Extends a GPUI parent element with post-layout prepaint observation.

@@ -9,7 +9,7 @@ description: "**2026-11-21**에 확인한 참조 카탈로그: shadcn/ui All Com
 AI Elements 카탈로그는 이 비교 대상이 아닙니다. 주 카탈로그에 이미 있는 대화
 컴포넌트는 계속 포함합니다.
 
-GPUI Design은 **42개의 공개 라이브러리 패밀리와 23개의 복사 가능한 화면 표현/조합
+GPUI Deck은 **42개의 공개 라이브러리 패밀리와 23개의 복사 가능한 화면 표현/조합
 레시피**를 문서화하며, 이를 통해 **65개의 서로 다른 구현**을 제공합니다.
 나머지 카탈로그 항목인 Native Select는 GPUI에서 명시적으로 **Select에 매핑**됩니다.
 아래 **66개 참조 항목 모두가 구현된 범위나 플랫폼 매핑을 가지며**, 할당되지 않았거나
@@ -151,7 +151,7 @@ shadcn의 내부 아키텍처가 아니라 우리의 구현 책임을 설명합�
 | 4 | 소스 배포와 개발자 경험 | 작고 완전한 starter, 컴파일 가능한 공개 예제, 명시적으로 지원되는 API 경계, 레시피 의존성과 토큰을 해결하는 소스 복사 워크플로 | Starter, doctest 게이트, 애플리케이션 토큰, 의존성을 인식하는 소스 CLI 구현됨. 지원되는 입력/컨트롤 경계와 소비자 테스트 feature 문서화. 사용하지 않는 ThemeAppearance 제거 |
 | 5 | 출시 검증 | 기존 포매팅, 린트, 전체 동작 스위트, 네이티브 예제 빌드 통과. 대표적인 네이티브 IME, 스크린리더, DPI, 시각 흐름에 대한 플랫폼별 관찰 확보 | 완료되지 않음 |
 
-각 리비전의 Rust 검사와 네이티브 예제 빌드 결과는 [Verify 워크플로](https://github.com/andongmin94/gpui-design/actions/workflows/verify.yml)에서 확인할 수 있습니다. [Docs 워크플로](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml)는 설치 예제의 GPUI 버전, WebAssembly 미리보기 빌드와 사이트의 브라우저 테스트를 확인합니다.
+각 리비전의 Rust 검사와 네이티브 예제 빌드 결과는 [Verify 워크플로](https://github.com/andongmin94/gpui-deck/actions/workflows/verify.yml)에서 확인할 수 있습니다. [Docs 워크플로](https://github.com/andongmin94/gpui-deck/actions/workflows/docs.yml)는 설치 예제의 GPUI 버전, WebAssembly 미리보기 빌드와 사이트의 브라우저 테스트를 확인합니다.
 
 shadcn의 공식 예제가 다루는 "제공하지 않음" 한계는 이제 명시적인 경계 안에서
 구현되었습니다. 입력된 날짜는 임의의 자연어가 아니라 ISO와 몇 가지 영어 상대 표현을
@@ -204,9 +204,9 @@ radar 방사형 레이블을 테두리에서 떨어지도록 옮기고, Item 미
 저장소 루트의 PowerShell에서 해당 예제 하나를 실행합니다. 다음 명령은 이전 예제 창을 닫은 뒤 실행합니다.
 
 ```powershell
-cargo run -p gpui-design --example starter --locked
-cargo run -p gpui-design --example catalogue --locked
-cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-deck --example starter --locked
+cargo run -p gpui-deck --example catalogue --locked
+cargo run -p gpui-deck --example two_styles --locked -- settings
 ```
 
 `catalogue`에서는 Navigation 외에 OTP·Drawer·Toast, 미디어·차트, 대화·설문 예제도 확인할 수 있습니다.

@@ -3,16 +3,16 @@ title: Forms
 description: "The native settings example is a complete consumer of the public API."
 ---
 
-The [native settings example](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs) is a complete
+The [native settings example](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs) is a complete
 consumer of the public API. Run it in either appearance using the commands in the
-[README](https://github.com/andongmin94/gpui-design#run-the-example). It combines Button, Input, Select,
+[README](https://github.com/andongmin94/gpui-deck#run-the-example). It combines Button, Input, Select,
 Textarea, Field, Label, Combobox, Calendar, DatePicker, Checkbox, Switch, RadioGroup, Slider, Progress, Toggle, and ToggleGroup
 with the navigation and overlay controls,
 without putting appearance in the library. The [navigation and overlay guide](./navigation-overlays.mdx)
 describes its tabs and keyboard-help popover. The [layout and data guide](./layout-data.mdx)
 covers the Schedule table and the form's ScrollArea composition.
 
-Call `gpui_design::init(cx)` once and host window content in `gpui_design::Root`.
+Call `gpui_deck::init(cx)` once and host window content in `gpui_deck::Root`.
 Root supplies Tab traversal and contains it inside an open Dialog. Give each
 control a stable element ID and an accessible label.
 

@@ -6,7 +6,7 @@ description: "Where each part of the source lives and how to verify a change."
 | Location | Responsibility |
 | --- | --- |
 | `crates/cli/` | Source-copy CLI and recipe dependency catalogue |
-| `crates/base/src/` | The `gpui-design` library and its behavior-level tests |
+| `crates/base/src/` | The `gpui-deck` library and its behavior-level tests |
 | `crates/base/tests/` | Integration tests using the public API |
 | `crates/base/examples/starter.rs` | Small complete application using only public APIs |
 | `crates/base/examples/two_styles.rs` | Native example and application-owned styles |
@@ -17,8 +17,8 @@ description: "Where each part of the source lives and how to verify a change."
 | `crates/web-preview/` | Live documentation previews compiled to WebAssembly with GPUI's web backend |
 | `Cargo.toml` / `Cargo.lock` | Workspace and matching dependency set |
 
-Initialize the library with `gpui_design::init(cx)` and host application content
-in `gpui_design::Root`. Use the starter as the small startup reference and the
+Initialize the library with `gpui_deck::init(cx)` and host application content
+in `gpui_deck::Root`. Use the starter as the small startup reference and the
 other native examples for larger compositions.
 Consumer applications can work directly with this source and supply their own
 presentation while reusing the behavior layer.
@@ -26,7 +26,7 @@ presentation while reusing the behavior layer.
 ## Verify a change
 
 Run the formatting, Clippy, test and build commands listed under
-[Verify changes](https://github.com/andongmin94/gpui-design#verify-changes) in the
+[Verify changes](https://github.com/andongmin94/gpui-deck#verify-changes) in the
 README; the Verify workflow runs the same matrix on Linux, Windows and macOS.
 
 ## Documentation site

@@ -7,7 +7,7 @@ use gpui::{
     AnyView, App, AppContext as _, Context, Div, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, SharedString, Styled as _, Window, div, px,
 };
-use gpui_design::Button;
+use gpui_deck::Button;
 
 use crate::theme::Theme;
 

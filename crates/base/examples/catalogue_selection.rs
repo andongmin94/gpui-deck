@@ -6,7 +6,7 @@ use gpui::{
     StatefulInteractiveElement as _, Styled as _, Subscription, Window, div,
     prelude::FluentBuilder as _, px, rgb,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Combobox, ComboboxGroup,
     ComboboxList, ComboboxOption, ComboboxState, Date, DatePicker, DatePickerState, Direction,
     DirectionProvider, InputEditorStyle, SearchItem, Select, SelectEvent, SelectItem, SelectOption,

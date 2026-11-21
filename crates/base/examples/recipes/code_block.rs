@@ -5,7 +5,7 @@ use gpui::{
     MouseButton, ParentElement as _, RenderOnce, Role, ScrollHandle, SharedString, Stateful,
     StatefulInteractiveElement as _, StyleRefinement, Styled, Window, div, px, relative, rems,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, ElementExt as _, ObservedElement, ScrollArea, ScrollbarAxis, TestSupportExt as _,
     TestTextExt as _,
 };
@@ -210,7 +210,7 @@ mod tests {
         AppContext as _, Context, Entity, KeyDownEvent, KeyUpEvent, Keystroke, Pixels, Render,
         ScrollDelta, ScrollEvent, TestAppContext, VisualTestContext, point,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -269,7 +269,7 @@ mod tests {
         appearance: Appearance,
         code: String,
     ) -> (&mut VisualTestContext, Entity<Sample>) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let (root, cx) = cx.add_window_view(move |window, cx| {
             let sample = cx.new(|cx| Sample {
                 appearance,

@@ -1,5 +1,5 @@
 //! Exclusive selection with one tab stop and application-owned presentation.
-//! Derived from GPUI Kit v0.9.0's radio primitives; GPUI Design adds retained
+//! Derived from GPUI Kit v0.9.0's radio primitives; GPUI Deck adds retained
 //! group selection, roving focus, keyboard navigation, and group-level semantics.
 
 use gpui::{

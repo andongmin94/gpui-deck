@@ -1,5 +1,5 @@
 //! Retained, non-modal popover behavior with application-owned presentation.
-// Modified for GPUI Design from GPUI Kit v0.9.0: use a native Button trigger,
+// Modified for GPUI Deck from GPUI Kit v0.9.0: use a native Button trigger,
 // retained focus lifecycle, and non-modal traversal with no styled facade.
 
 use std::{cell::Cell, rc::Rc};

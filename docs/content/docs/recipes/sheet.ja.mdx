@@ -5,7 +5,7 @@ description: "Dialog 上の 4 辺のモーダルプレゼンテーション。�
 
 <ComponentPreview name="sheet" height={360} />
 
-[`sheet.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/sheet.rs) は、既存の Dialog の
+[`sheet.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/sheet.rs) は、既存の Dialog の
 コンテンツを、選んだウィンドウの端に表示します。デフォルトは全高の右パネルです。
 
 ```rust
@@ -19,7 +19,7 @@ Sheet::new("session-settings", &dialog, &fields_scroll, "Session settings", pale
     )
 ```
 
-閉じている間も、Sheet は `gpui_design::Root` の下にマウントしたままにしてください。アプリケーションは、
+閉じている間も、Sheet は `gpui_deck::Root` の下にマウントしたままにしてください。アプリケーションは、
 渡した `Entity<DialogState>` と `ScrollHandle` の両方を所有し、保持します。
 初期フォーカスはその既存の DialogState で設定し、その `open` と
 `close` メソッドを使用します。Dialog は引き続き、モーダルのフォーカスの封じ込め、Escape と

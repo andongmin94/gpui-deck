@@ -5,7 +5,7 @@ use gpui::{
     FontWeight, InteractiveElement as _, IntoElement, ParentElement as _, Render, SharedString,
     Styled as _, Subscription, Window, div, prelude::FluentBuilder as _, px,
 };
-use gpui_design::{
+use gpui_deck::{
     Accordion, AccordionHeader, AccordionItem, AccordionPanel, AccordionState, AlertDialog,
     Breadcrumb, BreadcrumbItem, BreadcrumbList, Button, Collapsible, CollapsibleContent,
     CollapsibleState, CollapsibleTrigger, Command, CommandEvent, CommandGroup, CommandInput,
@@ -537,11 +537,11 @@ impl Render for HoverCardDemo {
         let theme = self.theme.resolve(cx);
         frame(theme).items_start().pt(px(64.)).child(
             HoverCard::new("profile-card", &self.state)
-                .accessibility_label("@gpui-design profile")
+                .accessibility_label("@gpui-deck profile")
                 .offset(px(8.))
                 .trigger(|button| {
                     button
-                        .accessibility_label("@gpui-design")
+                        .accessibility_label("@gpui-deck")
                         .h(px(32.))
                         .px(px(8.))
                         .flex()
@@ -550,7 +550,7 @@ impl Render for HoverCardDemo {
                         .font_weight(FontWeight::MEDIUM)
                         .hover(|style| style.underline())
                         .focus_visible(|style| style.underline().bg(theme.accent))
-                        .child("@gpui-design")
+                        .child("@gpui-deck")
                 })
                 .content(
                     panel(theme)
@@ -575,7 +575,7 @@ impl Render for HoverCardDemo {
                                 .flex()
                                 .flex_col()
                                 .gap(px(4.))
-                                .child(div().font_weight(FontWeight::SEMIBOLD).child("@gpui-design"))
+                                .child(div().font_weight(FontWeight::SEMIBOLD).child("@gpui-deck"))
                                 .child("Headless components for GPUI, with behavior and focus in the library.")
                                 .child(caption(theme, "Joined November 2026")),
                         ),

@@ -9,7 +9,7 @@ Its main catalogue contains **66 entries**, each listed once below. The separate
 AI Elements catalogue is outside this comparison; conversation components already
 in the main catalogue remain included.
 
-GPUI Design documents **42 public library families and 23 copyable
+GPUI Deck documents **42 public library families and 23 copyable
 presentation/composition recipes**, supplying **65 distinct implementations**.
 The remaining catalogue entry, Native Select, is explicitly **mapped to Select**
 for GPUI. All **66 reference entries have an implemented scope or platform
@@ -154,7 +154,7 @@ documented. Platform observations are recorded separately from automated checks.
 | 4 | Source distribution and developer experience | A small complete starter, compilable public examples, explicit supported API boundary, and a source-copy workflow that resolves recipe dependencies and tokens | Starter, doctest gate, application tokens and dependency-aware source CLI implemented; supported input/control boundary and consumer test feature documented; unused ThemeAppearance removed |
 | 5 | Release validation | Existing formatting, lint, full behavior suite and native example builds pass; representative native IME, screen-reader, DPI, and visual flows have platform-specific observations | Not complete |
 
-The [Verify workflow](https://github.com/andongmin94/gpui-design/actions/workflows/verify.yml) records Rust checks and native example builds for each revision. The [Docs workflow](https://github.com/andongmin94/gpui-design/actions/workflows/docs.yml) checks the installation snippet's GPUI pins, builds the WebAssembly previews and runs the site's browser tests.
+The [Verify workflow](https://github.com/andongmin94/gpui-deck/actions/workflows/verify.yml) records Rust checks and native example builds for each revision. The [Docs workflow](https://github.com/andongmin94/gpui-deck/actions/workflows/docs.yml) checks the installation snippet's GPUI pins, builds the WebAssembly previews and runs the site's browser tests.
 
 The "not supplied" limits that shadcn's official examples cover are now
 implemented within explicit boundaries: typed dates accept ISO and a few English
@@ -214,9 +214,9 @@ equivalent rather than an extra alias.
 Run the example you need from PowerShell at the repository root. Close its window before starting the next example.
 
 ```powershell
-cargo run -p gpui-design --example starter --locked
-cargo run -p gpui-design --example catalogue --locked
-cargo run -p gpui-design --example two_styles --locked -- settings
+cargo run -p gpui-deck --example starter --locked
+cargo run -p gpui-deck --example catalogue --locked
+cargo run -p gpui-deck --example two_styles --locked -- settings
 ```
 
 Alongside Navigation, `catalogue` includes OTP, Drawer, Toast, media, charts, conversation and questionnaire examples.

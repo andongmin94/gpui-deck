@@ -10,7 +10,7 @@ use gpui::{
     Subscription, Window, canvas, div, fill, point, prelude::FluentBuilder as _, px, relative, rgb,
     size,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Carousel, CarouselControl, CarouselSlide, CarouselState, ChartSeries, ChartState,
     Direction, DirectionProvider, Slider, SliderState, SliderThumb,
 };

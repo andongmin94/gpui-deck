@@ -1,4 +1,4 @@
-// Modified for GPUI Design: expose the existing multiline engine without editor
+// Modified for GPUI Deck: expose the existing multiline engine without editor
 // presentation or a second focus owner.
 use gpui::{App, Entity, IntoElement, RenderOnce, Window};
 

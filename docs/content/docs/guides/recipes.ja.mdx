@@ -4,8 +4,8 @@ description: "23 のカタログレシピは、再利用可能なアプリケー
 ---
 
 23 のカタログレシピは、再利用可能なアプリケーションソースで、ネイティブの
-[two-style サンプル](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)と
-[カタログサンプル](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/catalogue.rs)で使用されています。Button と Chart にも公開コントロール用の表示レシピがあります。これらは GPUI の
+[two-style サンプル](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs)と
+[カタログサンプル](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/catalogue.rs)で使用されています。Button と Chart にも公開コントロール用の表示レシピがあります。これらは GPUI の
 レイアウトを既存のコントロールと合成し、色、余白、サイズは
 コンシューマーの `Palette` またはアプリケーションが渡す `Styled` の値に置いています。
 
@@ -15,8 +15,8 @@ description: "23 のカタログレシピは、再利用可能なアプリケー
 トークンソース、モジュール宣言、ライセンス、必要なアセットとともにコピーします。
 
 ```sh
-cargo run -p gpui-design-cli --locked -- list
-cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- list
+cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
 ```
 
 コンシューマーで `mod ui;` を宣言し、`ui::recipes::{DataTable, Avatar}` と
@@ -29,7 +29,7 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 
 ```toml
 [features]
-test-support = ["gpui-design/test-support"]
+test-support = ["gpui-deck/test-support"]
 ```
 
 コピーされたレシピのテストは、このコンシューマーの feature で制御されています。これを宣言すると、
@@ -37,7 +37,7 @@ test-support = ["gpui-design/test-support"]
 
 さらに名前を指定して `add` を再度実行すると、同じディレクトリを拡張できます。既存のレシピと
 パレットへの編集は保持されます。生成された `mod.rs` の宣言と
-`recipes/.gpui-design` は、インストール済みのセットを記録しています。それらのスキャフォールドが編集されている場合は、
+`recipes/.gpui-deck` は、インストール済みのセットを記録しています。それらのスキャフォールドが編集されている場合は、
 CLI は書き込む前に停止し、宣言を手動で追加する方法を説明します。
 衝突する新しいファイルも拒否されます。コピーされたソースは
 アプリケーションのものです。
@@ -47,18 +47,18 @@ CLI は書き込む前に停止し、宣言を手動で追加する方法を説�
 パッチの `-` はアプリの行、`+` は CLI に含まれる行です。アプリのファイルは変更されません。
 
 ```sh
-cargo run -p gpui-design-cli --locked -- diff --to ../my-app/src/ui
+cargo run -p gpui-deck-cli --locked -- diff --to ../my-app/src/ui
 ```
 
 手動でコピーするには、次のようにします。
 
 1. 必要なファイルを
-   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes) から
+   [`crates/base/examples/recipes`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes) から
    アプリケーションのモジュールにコピーします。リポジトリのライセンス条件は保持してください。
 2. 小さな
-   [`mod.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/recipes/mod.rs) に倣って、コピーしたモジュールを宣言し、型を再エクスポートします。アプリケーションが必要とするモジュールだけを
+   [`mod.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/recipes/mod.rs) に倣って、コピーしたモジュールを宣言し、型を再エクスポートします。アプリケーションが必要とするモジュールだけを
    コピーし、それらのモジュールだけを列挙してください。
-3. [`presentation.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/presentation.rs) を、
+3. [`presentation.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/presentation.rs) を、
    アプリケーションの `recipes` ディレクトリの隣にコピーします。これには、テスト済みのサンプルで使われている実際の `Palette` と両方の
    外観が含まれており、Demo やその動作は含まれません。
    これを宣言し、レシピの親モジュールでそのトークンを公開します。
@@ -75,7 +75,7 @@ cargo run -p gpui-design-cli --locked -- diff --to ../my-app/src/ui
    既存のトークン型に置き換えてください。AspectRatio はパレットを取りません。その視覚スタイルは
    コンシューマーが用意します。Bubble と Chart は、現時点ではそれぞれ独自のコピー可能なスタイリングを持っています。
 4. そのアプリケーションのモジュールから型をインポートします。それらは `pub(crate)` の可視性を持ち、
-   `gpui_design` からはエクスポートされません。追加の依存関係は不要です。
+   `gpui_deck` からはエクスポートされません。追加の依存関係は不要です。
 
 パレットモジュールとレシピはアプリケーションのソースであり、ライブラリの
 エクスポートの外にあります。CLI はローカルでのソース配布を提供しますが、これらの視覚トークンは

@@ -6,7 +6,7 @@ description: "各部分源码的位置，以及如何验证一次更改。"
 | Location | Responsibility |
 | --- | --- |
 | `crates/cli/` | 源码复制 CLI 与配方依赖目录 |
-| `crates/base/src/` | `gpui-design` 库及其行为级测试 |
+| `crates/base/src/` | `gpui-deck` 库及其行为级测试 |
 | `crates/base/tests/` | 使用公开 API 的集成测试 |
 | `crates/base/examples/starter.rs` | 仅使用公开 API 的小型完整应用 |
 | `crates/base/examples/two_styles.rs` | 原生示例与应用自有样式 |
@@ -17,14 +17,14 @@ description: "各部分源码的位置，以及如何验证一次更改。"
 | `crates/web-preview/` | 使用 GPUI 的 web 后端编译为 WebAssembly 的在线文档预览 |
 | `Cargo.toml` / `Cargo.lock` | 工作区及与之匹配的依赖集合 |
 
-使用 `gpui_design::init(cx)` 初始化库，并在 `gpui_design::Root` 中承载应用内容。
+使用 `gpui_deck::init(cx)` 初始化库，并在 `gpui_deck::Root` 中承载应用内容。
 以 starter 作为小型启动参考，以其他原生示例作为较大组合的参考。
 使用方应用可以直接使用这份源码，并提供自己的呈现，同时复用行为层。
 
 ## 验证更改
 
 运行 README 中
-[Verify changes](https://github.com/andongmin94/gpui-design#verify-changes) 一节列出的格式化、Clippy、测试和构建命令；Verify 工作流会在 Linux、Windows 和 macOS 上运行同样的矩阵。
+[Verify changes](https://github.com/andongmin94/gpui-deck#verify-changes) 一节列出的格式化、Clippy、测试和构建命令；Verify 工作流会在 Linux、Windows 和 macOS 上运行同样的矩阵。
 
 ## 文档站点
 

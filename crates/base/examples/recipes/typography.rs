@@ -7,7 +7,7 @@ use gpui::{
     ParentElement as _, RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, StyledText, Window, div, relative,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _, TestTextExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _, TestTextExt as _};
 
 use super::super::Palette;
 
@@ -202,7 +202,7 @@ mod tests {
         AppContext as _, Context, Element as _, Pixels, Render, TestAppContext, accesskit, canvas,
         px, size,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -315,7 +315,7 @@ mod tests {
                     .child(InlineCode::new("code", CODE, palette))
             }
         }
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         for appearance in [Appearance::Compact, Appearance::Settings] {
             let (root, cx) = cx.add_window_view(|window, cx| {
                 let sample = cx.new(|_| Sample {

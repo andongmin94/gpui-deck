@@ -1,5 +1,5 @@
-//! A small native application using only GPUI Design's public API.
-//! Run `cargo run -p gpui-design --example starter --locked`.
+//! A small native application using only GPUI Deck's public API.
+//! Run `cargo run -p gpui-deck --example starter --locked`.
 
 #[path = "assets/fonts/mod.rs"]
 mod app_fonts;
@@ -9,7 +9,7 @@ use gpui::{
     ParentElement as _, Render, Role, SharedString, StatefulInteractiveElement as _, Styled as _,
     Subscription, TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, size,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Field, Input, InputBase, InputEditorStyle, InputState, Root, input::InputEvent,
 };
 
@@ -151,7 +151,7 @@ impl Render for Starter {
 fn main() {
     gpui_platform::application().run(|cx| {
         app_fonts::register(cx);
-        gpui_design::init(cx);
+        gpui_deck::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
                 cx.quit();
@@ -161,7 +161,7 @@ fn main() {
         cx.open_window(
             WindowOptions {
                 titlebar: Some(TitlebarOptions {
-                    title: Some("GPUI Design · Starter".into()),
+                    title: Some("GPUI Deck · Starter".into()),
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::centered(size(px(520.), px(360.)), cx)),

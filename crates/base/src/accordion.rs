@@ -1,5 +1,5 @@
 //! A single- or multiple-open, collapsible accordion with native header activation.
-//! Derived from GPUI Kit v0.9.0's accordion primitive; GPUI Design adds retained
+//! Derived from GPUI Kit v0.9.0's accordion primitive; GPUI Deck adds retained
 //! state, keyboard navigation, focus ownership, and active-only panels.
 
 use gpui::{

@@ -3,15 +3,15 @@ title: フォーム
 description: "ネイティブの設定サンプルは、公開 API を完全に利用するコンシューマーです。"
 ---
 
-[ネイティブの設定サンプル](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)は、公開 API を完全に利用する
-コンシューマーです。[README](https://github.com/andongmin94/gpui-design#run-the-example) のコマンドを使って、どちらの外観でも実行できます。このサンプルは Button、Input、Select、
+[ネイティブの設定サンプル](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs)は、公開 API を完全に利用する
+コンシューマーです。[README](https://github.com/andongmin94/gpui-deck#run-the-example) のコマンドを使って、どちらの外観でも実行できます。このサンプルは Button、Input、Select、
 Textarea、Field、Label、Combobox、Calendar、DatePicker、Checkbox、Switch、RadioGroup、Slider、Progress、Toggle、ToggleGroup を
 ナビゲーションとオーバーレイのコントロールと組み合わせており、
 ライブラリに外観を持ち込んでいません。[ナビゲーションとオーバーレイのガイド](./navigation-overlays.mdx)
 では、そのタブとキーボードヘルプのポップオーバーを説明しています。[レイアウトとデータのガイド](./layout-data.mdx)
 では、Schedule テーブルとフォームの ScrollArea の構成を扱います。
 
-`gpui_design::init(cx)` を一度だけ呼び出し、ウィンドウのコンテンツを `gpui_design::Root` 内にホストしてください。
+`gpui_deck::init(cx)` を一度だけ呼び出し、ウィンドウのコンテンツを `gpui_deck::Root` 内にホストしてください。
 Root は Tab による移動を提供し、開いている Dialog の内部にそれを封じ込めます。各コントロールには、
 安定した要素 ID とアクセシブルなラベルを付けてください。
 

@@ -1,5 +1,6 @@
 {
-  "name": "gpui-design",
+  "name": "gpui-deck",
+  "routes": [{ "pattern": "gpui-deck.andongmin.com", "custom_domain": true }],
   "compatibility_date": "2026-11-20",
   "assets": {
     "directory": "./dist/public",

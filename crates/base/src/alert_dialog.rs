@@ -1,5 +1,5 @@
 //! A confirmation surface composed from the retained Dialog host.
-//! Adapted from GPUI Kit v0.9.0's AlertDialog specialization; GPUI Design reuses
+//! Adapted from GPUI Kit v0.9.0's AlertDialog specialization; GPUI Deck reuses
 //! DialogState and the existing Dialog parts instead of callback-owned lifecycle.
 
 use gpui::{

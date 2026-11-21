@@ -9,7 +9,7 @@ use gpui::{
     FontWeight, InteractiveElement as _, IntoElement, ParentElement as _, Render, Role,
     SharedString, Styled, Subscription, Window, div, prelude::FluentBuilder as _, px, rgb,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, Input, InputAccessibility, InputBase, InputEditorStyle, InputState, Label,
     MessageScroller, MessageScrollerState, Questionnaire, QuestionnaireStage, QuestionnaireState,
 };

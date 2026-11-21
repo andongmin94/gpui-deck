@@ -5,7 +5,7 @@ use gpui::{
     RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _, StyleRefinement,
     Styled, Window, div,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _};
 
 use super::super::Palette;
 

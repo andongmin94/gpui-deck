@@ -1,4 +1,4 @@
-// Modified for GPUI Design: update references to the extracted crate.
+// Modified for GPUI Deck: update references to the extracted crate.
 //! Registers native elements without accepting a second description of their state.
 use gpui::{Element, Hitbox, InteractiveElement, IntoElement, SharedString};
 
@@ -15,7 +15,7 @@ pub type ObservedElement<E> = E;
 /// Test-only values cannot override the native control:
 /// ```compile_fail
 /// use gpui::{div, prelude::*};
-/// use gpui_design::TestSupportExt;
+/// use gpui_deck::TestSupportExt;
 /// div().id("input").test_support().test_props(|props| props.value("invented"));
 /// ```
 pub trait TestSupportExt:

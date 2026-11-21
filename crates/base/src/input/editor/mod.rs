@@ -1,4 +1,4 @@
-// Modified for GPUI Design: retain Editor rendering only for shared-engine regression tests.
+// Modified for GPUI Deck: retain Editor rendering only for shared-engine regression tests.
 use gpui::{App, Div, Entity, InteractiveElement as _, Stateful, Window};
 #[cfg(test)]
 use gpui::{IntoElement, RenderOnce};

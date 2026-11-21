@@ -1,4 +1,4 @@
-// Modified for GPUI Design: retain input touch and deferred-context state only.
+// Modified for GPUI Deck: retain input touch and deferred-context state only.
 use std::rc::{Rc, Weak};
 #[cfg(not(target_family = "wasm"))]
 use std::time::Instant;

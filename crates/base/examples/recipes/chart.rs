@@ -6,7 +6,7 @@ use gpui::{
     PathBuilder, Pixels, Point, RenderOnce, Role, SharedString, StatefulInteractiveElement as _,
     Styled, Window, canvas, div, fill, point, px, rgb, size,
 };
-use gpui_design::{
+use gpui_deck::{
     Chart, ChartLayout, ChartState, Direction, Table, TableCell, TableColumn, TableRow, Toggle,
 };
 use std::f32::consts::TAU;

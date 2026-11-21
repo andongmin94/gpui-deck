@@ -1,4 +1,4 @@
-// Modified for GPUI Design: remove window-wide rich-text selection and spinbutton-only state.
+// Modified for GPUI Deck: remove window-wide rich-text selection and spinbutton-only state.
 //! A text input field that allows the user to enter text.
 //!
 //! Based on the `Input` example from the `gpui` crate.

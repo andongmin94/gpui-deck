@@ -3,15 +3,15 @@ title: 表单
 description: "原生设置示例是公开 API 的完整使用方。"
 ---
 
-[原生设置示例](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/two_styles.rs)是公开 API 的完整使用方。
-请使用 [README](https://github.com/andongmin94/gpui-design#run-the-example) 中的命令，以任一外观运行它。它把 Button、Input、Select、
+[原生设置示例](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/two_styles.rs)是公开 API 的完整使用方。
+请使用 [README](https://github.com/andongmin94/gpui-deck#run-the-example) 中的命令，以任一外观运行它。它把 Button、Input、Select、
 Textarea、Field、Label、Combobox、Calendar、DatePicker、Checkbox、Switch、RadioGroup、Slider、Progress、Toggle 和 ToggleGroup
 与导航和浮层控件组合在一起，
 而不把外观放进库中。[导航与浮层指南](./navigation-overlays.mdx)
 介绍了其标签页和键盘帮助弹出层。[布局与数据指南](./layout-data.mdx)
 涵盖 Schedule 表格以及表单的 ScrollArea 组合。
 
-只需调用一次 `gpui_design::init(cx)`，并把窗口内容托管在 `gpui_design::Root` 中。
+只需调用一次 `gpui_deck::init(cx)`，并把窗口内容托管在 `gpui_deck::Root` 中。
 Root 提供 Tab 遍历，并在打开的 Dialog 内限定该遍历。请为每个控件提供稳定的元素 ID 和无障碍标签。
 
 ## 状态归属

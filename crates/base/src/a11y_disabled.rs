@@ -1,4 +1,4 @@
-// Modified for GPUI Design: exercise the retained Button accessibility contract.
+// Modified for GPUI Deck: exercise the retained Button accessibility contract.
 //! Disabled and form-validation semantics on a control's accessibility node.
 //!
 //! GPUI has no `aria_disabled` setter, so a disabled control would reach

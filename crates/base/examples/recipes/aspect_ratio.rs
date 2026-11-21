@@ -4,7 +4,7 @@ use gpui::{
     AnyElement, App, Div, ElementId, InteractiveElement as _, IntoElement, ParentElement,
     RenderOnce, Stateful, StyleRefinement, Styled, Window, div,
 };
-use gpui_design::{ObservedElement, TestSupportExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _};
 
 /// A clipped frame whose preferred ratio is width divided by height.
 ///
@@ -70,7 +70,7 @@ mod tests {
     use gpui::{
         AppContext as _, Context, Modifiers, MouseButton, Pixels, Render, TestAppContext, point, px,
     };
-    use gpui_design::{Root, test_support};
+    use gpui_deck::{Root, test_support};
 
     use super::*;
 
@@ -98,7 +98,7 @@ mod tests {
 
     #[gpui::test]
     fn width_changes_preserve_ratio_and_clip_oversized_content(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let (root, cx) = cx.add_window_view(|window, cx| {
             let view = cx.new(|_| Sample {
                 width: px(320.),

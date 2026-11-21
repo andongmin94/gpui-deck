@@ -5,7 +5,7 @@ test("the mobile home menu supports keyboard navigation to localized docs", asyn
   await page.goto("/ko");
 
   const header = page.getByRole("banner");
-  await expect(header.getByRole("link", { name: "GPUI Design" })).toBeVisible();
+  await expect(header.getByRole("link", { name: "GPUI Deck" })).toBeVisible();
   const trigger = header.getByRole("button", { name: "탐색 열기/닫기" });
   const menu = page.getByRole("menu");
   await expect(async () => {

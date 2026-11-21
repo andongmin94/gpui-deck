@@ -1,8 +1,8 @@
-//! Application-owned appearances for an existing GPUI Design Button.
+//! Application-owned appearances for an existing GPUI Deck Button.
 
 use super::super::Palette;
 use gpui::{InteractiveElement as _, Styled as _, transparent_black};
-use gpui_design::Button;
+use gpui_deck::Button;
 
 #[derive(Clone, Copy)]
 #[allow(dead_code)] // An application can choose just the variants it needs.

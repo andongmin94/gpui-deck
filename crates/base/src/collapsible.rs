@@ -1,5 +1,5 @@
 //! A single disclosure composed from Button and an active-only content region.
-//! Derived from GPUI Kit v0.9.0's controlled Collapsible; GPUI Design adds retained
+//! Derived from GPUI Kit v0.9.0's controlled Collapsible; GPUI Deck adds retained
 //! open state, native trigger activation, and focused-content closure.
 
 use gpui::{

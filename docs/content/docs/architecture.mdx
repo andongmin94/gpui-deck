@@ -6,13 +6,13 @@ description: "How the rendering runtime, headless behavior and application prese
 | Layer | Implementation and origin | Responsibility |
 | --- | --- | --- |
 | Rendering and application runtime | Zed's GPUI, consumed through the pinned `gpui-pre` snapshot packages | Windows, layout, drawing, text, events, entities, and focus infrastructure |
-| Headless behavior | This repository's `gpui-design` crate, extracted from Longbridge's `gpui-base` 0.9.0 | Control state, interaction contracts, focus policy, and accessibility semantics |
+| Headless behavior | This repository's `gpui-deck` crate, extracted from Longbridge's `gpui-base` 0.9.0 | Control state, interaction contracts, focus policy, and accessibility semantics |
 | Presentation and composition | Application code, including the copyable `examples/recipes` modules used by `two_styles` | Colors, sizes, icons, component arrangement, and application actions |
 
 `crates/base` is the directory name inherited from GPUI Kit. Its Cargo package is
-now `gpui-design`; the selected source is maintained here. The original
+now `gpui-deck`; the selected source is maintained here. The original
 [`gpui-base` README](https://github.com/longbridge/gpui-kit/blob/7591a35eced761e3613c01e71ff04c10129dae1a/crates/base/README.md)
-already described an unstyled behavior foundation. GPUI Design builds on that
+already described an unstyled behavior foundation. GPUI Deck builds on that
 work with a narrower public surface and independently maintained state and focus
 contracts. Upstream source changes are reviewed and adopted explicitly.
 
@@ -46,7 +46,7 @@ native table semantics. ScrollArea composes GPUI's ScrollHandle viewport with th
 retained Scrollbar implementation, without another scrolling engine.
 Breadcrumb supplies native navigation/list structure and current-page metadata;
 the consumer composes ordinary Buttons and owns their destination callbacks.
-Appearance belongs in the application. The local `gpui-design-cli` copies selected
+Appearance belongs in the application. The local `gpui-deck-cli` copies selected
 presentation recipes and their dependencies into consumer-owned modules. A remote
 registry and separately published styled component package are not provided.
 

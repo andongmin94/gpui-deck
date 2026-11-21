@@ -7,7 +7,7 @@ use gpui::{
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _,
 };
 
-use gpui_design::{ObservedElement, TestSupportExt as _};
+use gpui_deck::{ObservedElement, TestSupportExt as _};
 
 use super::super::Palette;
 
@@ -175,7 +175,7 @@ impl RenderOnce for Item {
 #[cfg(all(test, feature = "test-support"))]
 mod tests {
     use gpui::{AppContext as _, Context, Render, TestAppContext, px, size};
-    use gpui_design::{Button, Root, test_support};
+    use gpui_deck::{Button, Root, test_support};
 
     use super::super::super::Appearance;
     use super::*;
@@ -201,7 +201,7 @@ mod tests {
 
     #[gpui::test]
     fn slots_surround_the_named_row_without_semantics_or_focus(cx: &mut TestAppContext) {
-        cx.update(gpui_design::init);
+        cx.update(gpui_deck::init);
         let (_, cx) = cx.add_window_view(|window, cx| {
             let sample = cx.new(|_| Sample);
             Root::new(sample, window, cx)

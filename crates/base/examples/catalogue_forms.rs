@@ -9,7 +9,7 @@ use gpui::{
     ParentElement as _, Render, ScrollHandle, SharedString, Styled as _, Subscription, Window, div,
     prelude::FluentBuilder as _, px, rgb,
 };
-use gpui_design::{
+use gpui_deck::{
     Button, DialogBackdrop, DialogClose, DialogState, Drawer, DrawerState, InputOtp, InputOtpEvent,
     InputOtpState, Label, ScrollArea, Toast, ToastClose, Toaster, ToasterState,
 };
