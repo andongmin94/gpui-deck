@@ -33,7 +33,7 @@ export function TableOfContents({ toc, title }: { toc: TOCItemType[]; title: str
           aria-current={active === item.url ? "location" : undefined}
           className={`transition-colors hover:text-fd-foreground ${
             item.depth > 2 ? "pl-4" : ""
-          } ${active === item.url ? "text-fd-foreground" : "text-fd-muted-foreground"}`}
+          } ${active === item.url ? "text-fd-primary" : "text-fd-muted-foreground"}`}
         >
           {item.title}
         </a>

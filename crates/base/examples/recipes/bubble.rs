@@ -1,7 +1,7 @@
 //! Source-owned conversation presentation. Message data and reaction state are local to the app.
 
 use gpui::{
-    AnyElement, App, Div, ElementId, FontWeight, InteractiveElement as _, IntoElement,
+    AnyElement, App, Div, ElementId, FontWeight, Hsla, InteractiveElement as _, IntoElement,
     ParentElement as _, RenderOnce, Role, SharedString, Stateful, StatefulInteractiveElement as _,
     StyleRefinement, Styled, Window, div, prelude::FluentBuilder as _, px, relative, rgb,
 };
@@ -23,6 +23,9 @@ pub(crate) struct Bubble {
     time: SharedString,
     body: SharedString,
     side: BubbleSide,
+    background: Hsla,
+    foreground: Hsla,
+    timestamp: Hsla,
     grouped: bool,
     action: Option<AnyElement>,
 }
@@ -49,6 +52,13 @@ impl Bubble {
             time: time.into(),
             body: body.into(),
             side,
+            background: rgb(match side {
+                BubbleSide::Incoming => 0x1e293b,
+                BubbleSide::Outgoing => 0x1e40af,
+            })
+            .into(),
+            foreground: rgb(0xf1f5f9).into(),
+            timestamp: rgb(0xcbd5e1).into(),
             grouped: false,
             action: None,
         }
@@ -63,6 +73,15 @@ impl Bubble {
 
     pub(crate) fn action(mut self, action: impl IntoElement) -> Self {
         self.action = Some(action.into_any_element());
+        self
+    }
+
+    /// Color the message surface, text and timestamp using the application's palette.
+    #[allow(dead_code)] // Consumers may use this recipe's default conversation colors.
+    pub(crate) fn colors(mut self, background: Hsla, foreground: Hsla, timestamp: Hsla) -> Self {
+        self.background = background;
+        self.foreground = foreground;
+        self.timestamp = timestamp;
         self
     }
 }
@@ -97,12 +116,8 @@ impl RenderOnce for Bubble {
             .gap_1()
             .p_3()
             .rounded(px(12.))
-            .bg(if outgoing {
-                rgb(0x1e40af)
-            } else {
-                rgb(0x1e293b)
-            })
-            .text_color(rgb(0xf1f5f9))
+            .bg(self.background)
+            .text_color(self.foreground)
             .text_size(px(14.))
             .line_height(relative(1.4));
         if self.grouped {
@@ -125,7 +140,7 @@ impl RenderOnce for Bubble {
             .child(
                 label("time", self.time)
                     .text_size(px(12.))
-                    .text_color(rgb(0xcbd5e1)),
+                    .text_color(self.timestamp),
             )
             .when_some(self.action, |body, action| {
                 body.child(div().flex().flex_wrap().gap_1().child(action))

@@ -3,6 +3,8 @@
 import { useI18n } from "fumadocs-ui/contexts/i18n";
 import { type ReactNode, useState } from "react";
 
+import { useAccent } from "./use-accent";
+
 const labels = {
   en: {
     preview: "Preview",
@@ -40,6 +42,7 @@ export function ComponentPreview({
   children?: ReactNode;
 }) {
   const { locale } = useI18n();
+  const accent = useAccent();
   const t = labels[(locale ?? "en") as keyof typeof labels] ?? labels.en;
   const [tab, setTab] = useState<"preview" | "code">("preview");
 
@@ -63,7 +66,7 @@ export function ComponentPreview({
               onClick={() => setTab(item.id)}
               className={`-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors ${
                 tab === item.id
-                  ? "border-fd-foreground text-fd-foreground"
+                  ? "border-fd-primary text-fd-primary"
                   : "border-transparent text-fd-muted-foreground hover:text-fd-foreground"
               }`}
             >
@@ -77,6 +80,7 @@ export function ComponentPreview({
           {/* The frame follows the page theme itself, so it starts before hydration. */}
           <iframe
             title={`${name} preview`}
+            data-accent={accent}
             src={`/preview?c=${encodeURIComponent(name)}`}
             loading="lazy"
             className="block w-full"

@@ -11,14 +11,14 @@ use gpui_design::{
     CollapsibleState, CollapsibleTrigger, Command, CommandEvent, CommandGroup, CommandInput,
     CommandList, CommandOption, CommandState, ContextMenu, Dialog, DialogBackdrop, DialogClose,
     DialogDescription, DialogPopup, DialogState, DialogTitle, Drawer, DrawerState, DropdownMenu,
-    HoverCard, HoverCardState, Input, InputAccessibility, InputEditorStyle, InputState, Label,
-    MenuEvent, MenuItem, MenuOption, MenuState, Menubar, MenubarItem, MenubarMenu, MenubarState,
-    NavigationMenu, NavigationMenuEntry, NavigationMenuEvent, NavigationMenuItem,
-    NavigationMenuLink, NavigationMenuState, Popover, PopoverState, SearchItem, Tab, TabItem,
-    TabList, TabPanel, TabsState, Toast, ToastClose, Toaster, ToasterState, Tooltip, TooltipState,
+    HoverCard, HoverCardState, Input, InputAccessibility, InputState, Label, MenuEvent, MenuItem,
+    MenuOption, MenuState, Menubar, MenubarItem, MenubarMenu, MenubarState, NavigationMenu,
+    NavigationMenuEntry, NavigationMenuEvent, NavigationMenuItem, NavigationMenuLink,
+    NavigationMenuState, Popover, PopoverState, SearchItem, Tab, TabItem, TabList, TabPanel,
+    TabsState, Toast, ToastClose, Toaster, ToasterState, Tooltip, TooltipState,
 };
 
-use super::{frame, outline, primary};
+use super::{data::style_editor, frame, outline, primary};
 use crate::theme::Theme;
 
 /// Demo names this module renders.
@@ -149,15 +149,6 @@ fn modal_popup(theme: Theme) -> DialogPopup {
         .shadow_lg()
 }
 
-fn input_style(theme: Theme) -> InputEditorStyle {
-    let mut style = InputEditorStyle::default();
-    style.foreground = theme.foreground;
-    style.muted_foreground = theme.muted_foreground;
-    style.caret = theme.foreground;
-    style.selection = theme.ring.opacity(0.35);
-    style
-}
-
 // Tabs
 
 struct TabsDemo {
@@ -168,7 +159,7 @@ struct TabsDemo {
 
 impl Render for TabsDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let state = self.tabs.read(cx);
         let selected = state.selected_index();
         let list = TabList::new("account-tabs", &self.tabs)
@@ -188,7 +179,7 @@ impl Render for TabsDemo {
                     .rounded(px(6.))
                     .font_weight(FontWeight::MEDIUM)
                     .text_color(if active {
-                        theme.foreground
+                        theme.primary
                     } else {
                         theme.muted_foreground
                     })
@@ -279,7 +270,7 @@ const ANSWERS: [&str; 3] = [
 
 impl Render for AccordionDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let state = self.state.read(cx);
         frame(theme).child(
             Accordion::new("faq", &self.state)
@@ -301,7 +292,7 @@ impl Render for AccordionDemo {
                                 .justify_between()
                                 .font_weight(FontWeight::MEDIUM)
                                 .hover(|style| style.underline())
-                                .focus_visible(|style| style.underline())
+                                .focus_visible(|style| style.text_color(theme.primary).underline())
                                 .child(item.label().clone())
                                 .child(
                                     div()
@@ -363,7 +354,7 @@ fn repository(theme: Theme, name: &'static str) -> Div {
 
 impl Render for CollapsibleDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let open = self.state.read(cx).is_open();
         frame(theme).child(
             Collapsible::new("starred", &self.state)
@@ -430,8 +421,8 @@ struct TooltipDemo {
 }
 
 impl Render for TooltipDemo {
-    fn render(&mut self, window: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         frame(theme)
             .flex_col()
             .child(
@@ -475,7 +466,7 @@ struct PopoverDemo {
 
 impl Render for PopoverDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let rows = [
             ("Width", "100%"),
             ("Max. width", "300px"),
@@ -542,8 +533,8 @@ struct HoverCardDemo {
 }
 
 impl Render for HoverCardDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         frame(theme).items_start().pt(px(64.)).child(
             HoverCard::new("profile-card", &self.state)
                 .accessibility_label("@gpui-design profile")
@@ -613,7 +604,7 @@ struct DropdownDemo {
 
 impl Render for DropdownDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         frame(theme)
             .flex_col()
             .justify_start()
@@ -692,7 +683,7 @@ struct ContextMenuDemo {
 
 impl Render for ContextMenuDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         frame(theme)
             .flex_col()
             .child(
@@ -781,7 +772,7 @@ struct MenubarDemo {
 
 impl Render for MenubarDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let open = self.bar.read(cx).open_index(cx);
         let [file, edit, view] = &self.menus;
         let contents = [
@@ -949,10 +940,10 @@ const COMPONENTS: [(&str, &str, &str); 3] = [
 impl NavigationDemo {
     fn links(
         &self,
+        theme: Theme,
         links: [(&'static str, &'static str, &'static str); 3],
         first: &FocusHandle,
     ) -> Div {
-        let theme = self.theme;
         panel(theme)
             .w(px(280.))
             .gap(px(2.))
@@ -1005,7 +996,7 @@ fn nav_trigger(theme: Theme, button: Button, label: &'static str, active: bool) 
 
 impl Render for NavigationDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let open = self.navigation.read(cx).open_index(cx);
         let title = GUIDES
             .iter()
@@ -1027,7 +1018,7 @@ impl Render for NavigationDemo {
                             .trigger(|button| {
                                 nav_trigger(theme, button, "Getting started", open == Some(0))
                             })
-                            .content(self.links(GUIDES, &self.first_links[0])),
+                            .content(self.links(theme, GUIDES, &self.first_links[0])),
                     )
                     .child(
                         NavigationMenuEntry::new(&self.navigation, 1)
@@ -1035,7 +1026,7 @@ impl Render for NavigationDemo {
                             .trigger(|button| {
                                 nav_trigger(theme, button, "Components", open == Some(1))
                             })
-                            .content(self.links(COMPONENTS, &self.first_links[1])),
+                            .content(self.links(theme, COMPONENTS, &self.first_links[1])),
                     )
                     .child(
                         NavigationMenuEntry::new(&self.navigation, 2)
@@ -1096,12 +1087,12 @@ struct BreadcrumbDemo {
 
 impl BreadcrumbDemo {
     fn link(&self, id: &'static str, label: &'static str, cx: &mut Context<Self>) -> Button {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         Button::new(id)
             .accessibility_label(label)
             .rounded(px(4.))
-            .hover(|style| style.text_color(theme.foreground))
-            .focus_visible(|style| style.text_color(theme.foreground).underline())
+            .hover(|style| style.text_color(theme.primary))
+            .focus_visible(|style| style.text_color(theme.primary).underline())
             .child(label)
             .on_click(cx.listener(move |this, _, _, cx| {
                 this.status = format!("Navigated to {label}").into();
@@ -1112,7 +1103,7 @@ impl BreadcrumbDemo {
 
 impl Render for BreadcrumbDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let separator = || div().text_color(theme.muted_foreground).child("›");
         let home = self.link("crumb-home", "Home", cx);
         let components = self.link("crumb-components", "Components", cx);
@@ -1210,7 +1201,7 @@ struct CommandDemo {
 
 impl Render for CommandDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let state = self.commands.read(cx);
         let groups = state.visible_groups().into_iter().map(|group| {
             let options = state
@@ -1315,9 +1306,11 @@ pub fn command(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
                 cx,
             )
         });
-        commands.read(cx).input().clone().update(cx, |input, _| {
-            input.set_editor_style(input_style(theme));
-        });
+        commands
+            .read(cx)
+            .input()
+            .clone()
+            .update(cx, |input, cx| style_editor(input, theme, cx));
         let subscriptions = [
             cx.observe(&commands, |_, _, cx| cx.notify()),
             cx.subscribe(&commands, |this: &mut CommandDemo, commands, event, cx| {
@@ -1363,7 +1356,7 @@ impl DialogDemo {
         window: &Window,
         cx: &App,
     ) -> Div {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let focus = input.focus_handle(cx);
         div()
             .flex()
@@ -1390,7 +1383,7 @@ impl DialogDemo {
 
 impl Render for DialogDemo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let description = "Make changes to your profile here. Click save when you're done.";
         frame(theme)
             .flex_col()
@@ -1464,7 +1457,7 @@ pub fn dialog(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
         let mut input = |label: &'static str, value: &'static str, cx: &mut Context<DialogDemo>| {
             cx.new(|cx| {
                 let mut state = InputState::new(window, cx).default_value(value);
-                state.set_editor_style(input_style(theme));
+                style_editor(&mut state, theme, cx);
                 state.set_accessibility(
                     InputAccessibility::new(Some(gpui::Role::TextInput))
                         .with_label(Some(label.into())),
@@ -1501,7 +1494,7 @@ struct AlertDialogDemo {
 
 impl Render for AlertDialogDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let title = "Are you absolutely sure?";
         let description = "This action cannot be undone. This permanently deletes your account and removes your data from our servers.";
         frame(theme)
@@ -1606,7 +1599,7 @@ impl DrawerDemo {
         cx: &mut Context<Self>,
     ) -> Button {
         let next = self.goal + delta;
-        outline(self.theme, Button::new(id))
+        outline(self.theme.resolve(cx), Button::new(id))
             .accessibility_label(label)
             .size(px(32.))
             .px(px(0.))
@@ -1622,7 +1615,7 @@ impl DrawerDemo {
 
 impl Render for DrawerDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let dialog = self.drawer.read(cx).dialog().clone();
         frame(theme)
             .flex_col()
@@ -1777,7 +1770,7 @@ struct ToastDemo {
 
 impl Render for ToastDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         frame(theme)
             .relative()
             .child(

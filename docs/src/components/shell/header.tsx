@@ -106,7 +106,7 @@ export function SiteHeader({
                 href={link.href}
                 aria-current={active ? "page" : undefined}
                 className={`rounded-md px-2.5 py-1.5 font-medium transition-colors hover:text-fd-foreground ${
-                  active ? "text-fd-foreground" : "text-fd-muted-foreground"
+                  active ? "text-fd-primary" : "text-fd-muted-foreground"
                 }`}
               >
                 {link.label}

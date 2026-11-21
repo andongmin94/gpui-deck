@@ -108,7 +108,7 @@ struct SheetDemo {
 
 impl Render for SheetDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let shortcuts = Sheet::new(
             "shortcuts",
             &self.dialog,
@@ -148,6 +148,7 @@ struct SidebarDemo {
 
 impl Render for SidebarDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         let state = self.sections.read(cx);
         let section = state.selected_item().unwrap();
         let content = match section.value().as_ref() {
@@ -155,13 +156,13 @@ impl Render for SidebarDemo {
             "projects" => "Design system · In progress",
             _ => "1 member · 1 project",
         };
-        frame(self.theme)
+        frame(theme)
             .child(
                 Sidebar::new(
                     "workspace",
                     &self.sections,
                     "Workspace",
-                    self.theme.recipe_palette(),
+                    theme.recipe_palette(),
                 )
                 .group("Workspace", ["overview", "members", "projects"])
                 .sheet_below(px(640.))
@@ -174,7 +175,7 @@ impl Render for SidebarDemo {
                     .flex_col()
                     .gap_2()
                     .child(section.label().clone())
-                    .child(div().text_color(self.theme.muted_foreground).child(content)),
+                    .child(div().text_color(theme.muted_foreground).child(content)),
             )
     }
 }
@@ -186,15 +187,16 @@ struct TraceDemo {
 }
 
 impl Render for TraceDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        frame(self.theme).child(
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
+        frame(theme).child(
             Trace::new(
                 "index-trace",
                 &self.disclosure,
                 "Indexed 3 documents",
                 "Indexed files",
                 "README.md\nCargo.toml\nLICENSE-APACHE",
-                self.theme.recipe_palette(),
+                theme.recipe_palette(),
             )
             .max_w(px(400.)),
         )
@@ -209,7 +211,8 @@ struct InputGroupDemo {
 
 impl Render for InputGroupDemo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let clear = outline(self.theme, Button::new("clear-username"))
+        let theme = self.theme.resolve(cx);
+        let clear = outline(theme, Button::new("clear-username"))
             .accessibility_label("Clear username")
             .child("Clear")
             .disabled(self.input.read(cx).value().is_empty())
@@ -219,16 +222,12 @@ impl Render for InputGroupDemo {
                     input.focus(window, cx);
                 });
             }));
-        frame(self.theme).child(
-            InputGroup::new(
-                "username",
-                Input::new(&self.input),
-                self.theme.recipe_palette(),
-            )
-            .max_w(px(360.))
-            .focused(self.input.focus_handle(cx).is_focused(window))
-            .leading("@")
-            .trailing(clear),
+        frame(theme).child(
+            InputGroup::new("username", Input::new(&self.input), theme.recipe_palette())
+                .max_w(px(360.))
+                .focused(self.input.focus_handle(cx).is_focused(window))
+                .leading("@")
+                .trailing(clear),
         )
     }
 }
@@ -240,15 +239,16 @@ struct CodeBlockDemo {
 }
 
 impl Render for CodeBlockDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        frame(self.theme).child(
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
+        frame(theme).child(
             CodeBlock::new(
                 "starter-source",
                 include_str!("../../../base/examples/starter.rs"),
                 "starter.rs",
                 &self.scroll,
                 &self.focus,
-                self.theme.recipe_palette(),
+                theme.recipe_palette(),
             )
             .max_w(px(600.)),
         )
@@ -262,13 +262,14 @@ struct PaginationDemo {
 
 impl Render for PaginationDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         let files = [
             ["accordion.rs", "alert_dialog.rs", "breadcrumb.rs"],
             ["button.rs", "calendar.rs", "carousel.rs"],
             ["chart.rs", "checkbox.rs", "collapsible.rs"],
         ];
         let owner = cx.entity();
-        frame(self.theme)
+        frame(theme)
             .flex_col()
             .child(div().flex().flex_col().gap_1().children(files[self.page]))
             .child(
@@ -277,7 +278,7 @@ impl Render for PaginationDemo {
                     "Source file pages",
                     self.page,
                     files.len(),
-                    self.theme.recipe_palette(),
+                    theme.recipe_palette(),
                 )
                 .on_change(move |page, _, cx| {
                     owner.update(cx, |this, cx| {

@@ -78,8 +78,9 @@ static RECORDING_ART: LazyLock<Arc<Image>> = LazyLock::new(|| {
 
 impl Render for DisplayDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let palette = self.theme.recipe_palette();
-        let view = frame(self.theme);
+        let theme = self.theme.resolve(cx);
+        let palette = theme.recipe_palette();
+        let view = frame(theme);
         match self.name {
             "alert" => view.child(column().child(Alert::new(
                 "sync-alert",
@@ -125,20 +126,34 @@ impl Render for DisplayDemo {
                 .child(Badge::new("published", "Published", palette).accent(true)),
             "bubble" => view.child(
                 column()
-                    .child(Bubble::new(
-                        "question",
-                        "Maya",
-                        "10:24",
-                        "Ready to record?",
-                        BubbleSide::Incoming,
-                    ))
-                    .child(Bubble::new(
-                        "reply",
-                        "You",
-                        "10:25",
-                        "The microphones are ready.",
-                        BubbleSide::Outgoing,
-                    )),
+                    .child(
+                        Bubble::new(
+                            "question",
+                            "Maya",
+                            "10:24",
+                            "Ready to record?",
+                            BubbleSide::Incoming,
+                        )
+                        .colors(
+                            theme.muted,
+                            theme.foreground,
+                            theme.muted_foreground,
+                        ),
+                    )
+                    .child(
+                        Bubble::new(
+                            "reply",
+                            "You",
+                            "10:25",
+                            "The microphones are ready.",
+                            BubbleSide::Outgoing,
+                        )
+                        .colors(
+                            theme.primary,
+                            theme.primary_foreground,
+                            theme.primary_foreground,
+                        ),
+                    ),
             ),
             "button-group" => view.child(
                 ButtonGroup::new("copies", "Number of copies", palette)

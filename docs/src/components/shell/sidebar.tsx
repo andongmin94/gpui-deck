@@ -46,7 +46,7 @@ function Items({
         aria-current={active ? "page" : undefined}
         className={`flex h-8 shrink-0 items-center rounded-md px-2 text-[0.8125rem] font-medium transition-colors ${
           active
-            ? "bg-fd-accent text-fd-accent-foreground"
+            ? "bg-fd-primary/10 text-fd-primary"
             : "text-fd-foreground/80 hover:bg-fd-accent/60 hover:text-fd-foreground"
         }`}
       >

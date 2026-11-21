@@ -74,6 +74,7 @@ pub(crate) struct ChartRecipe {
     table_label: SharedString,
     category_header: SharedString,
     format_value: Box<dyn Fn(f64) -> String>,
+    colors: Vec<Hsla>,
 }
 
 impl ChartRecipe {
@@ -95,12 +96,20 @@ impl ChartRecipe {
             table_label: table_label.into(),
             category_header: category_header.into(),
             format_value: Box::new(format_number),
+            colors: Vec::new(),
         }
     }
 
     /// Format axis ticks, the inspected category and table cells in the same units.
     pub(crate) fn format_value(mut self, formatter: impl Fn(f64) -> String + 'static) -> Self {
         self.format_value = Box::new(formatter);
+        self
+    }
+
+    /// Colors for series and their legend, or categories in a pie/donut chart.
+    #[allow(dead_code)] // Consumers may use the built-in categorical colors.
+    pub(crate) fn series_colors(mut self, colors: impl IntoIterator<Item = Hsla>) -> Self {
+        self.colors = colors.into_iter().collect();
         self
     }
 }
@@ -129,13 +138,13 @@ fn axis_ticks((min, max): (f64, f64)) -> impl Iterator<Item = f64> {
     .flatten()
 }
 
-fn series_color(index: usize, foreground: Hsla) -> Hsla {
+fn default_colors(foreground: Hsla) -> [Hsla; 6] {
     let colors = if foreground.l > 0.5 {
         [0x38bdf8, 0xfb923c, 0x4ade80, 0xc084fc, 0xf472b6, 0xfacc15]
     } else {
         [0x0369a1, 0x9a3412, 0x166534, 0x7e22ce, 0xbe185d, 0x854d0e]
     };
-    rgb(colors[index % colors.len()]).into()
+    colors.map(|color| rgb(color).into())
 }
 
 const RADIAL_WIDTH: f32 = 240.;
@@ -154,7 +163,7 @@ struct PlotSeries {
 
 struct Plot {
     series: Vec<PlotSeries>,
-    slices: Vec<(f32, f32)>,
+    slices: Vec<((f32, f32), Hsla)>,
     categories: usize,
     baseline: f32,
     inspected: Option<usize>,
@@ -429,7 +438,7 @@ impl Plot {
         } else {
             0.
         };
-        for (index, &slice) in self.slices.iter().enumerate() {
+        for (index, &(slice, color)) in self.slices.iter().enumerate() {
             if slice.0 >= slice.1 {
                 continue;
             }
@@ -444,7 +453,7 @@ impl Plot {
             } else {
                 points.push(center);
             }
-            polygon(&points, series_color(index, self.foreground), window);
+            polygon(&points, color, window);
         }
     }
 }
@@ -452,6 +461,14 @@ impl Plot {
 impl RenderOnce for ChartRecipe {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let foreground = window.text_style().color;
+        let focus_color = self.colors.first().copied().unwrap_or(foreground);
+        let defaults = default_colors(foreground);
+        let colors = if self.colors.is_empty() {
+            &defaults[..]
+        } else {
+            &self.colors[..]
+        };
+        let color = |index: usize| colors[index % colors.len()];
         let muted = foreground.opacity(0.75);
         let border = foreground.opacity(0.25);
         let model = self.state.read(cx);
@@ -486,13 +503,18 @@ impl RenderOnce for ChartRecipe {
                 } else {
                     Vec::new()
                 },
-                color: series_color(index, foreground),
+                color: color(index),
             })
             .collect();
         let direction = self.direction;
         let drawing = Plot {
             series: plotted,
-            slices: model.pie_slices(),
+            slices: model
+                .pie_slices()
+                .into_iter()
+                .enumerate()
+                .map(|(index, slice)| (slice, color(index)))
+                .collect(),
             categories: categories.len(),
             baseline,
             inspected,
@@ -507,7 +529,7 @@ impl RenderOnce for ChartRecipe {
             .flex_shrink_0()
             .border_1()
             .border_color(if model.focus_handle().is_focused(window) {
-                foreground
+                focus_color
             } else {
                 border
             })
@@ -551,14 +573,12 @@ impl RenderOnce for ChartRecipe {
                     .py_1()
                     .rounded(px(4.))
                     .border_1()
-                    .border_color(series_color(index, foreground))
-                    .text_color(if visible[index] {
-                        series_color(index, foreground)
-                    } else {
-                        muted
-                    })
+                    .border_color(color(index))
+                    .text_color(if visible[index] { color(index) } else { muted })
                     .focus_visible(|style| {
-                        style.bg(foreground.opacity(0.15)).border_color(foreground)
+                        style
+                            .bg(focus_color.opacity(0.15))
+                            .border_color(focus_color)
                     })
                     .child(format!(
                         "{} {}",
@@ -627,7 +647,7 @@ impl RenderOnce for ChartRecipe {
                 figure = figure.child(div().flex().flex_col().gap_1().text_size(px(12.)).children(
                     categories.iter().enumerate().map(|(index, category)| {
                         div()
-                            .text_color(series_color(index, foreground))
+                            .text_color(color(index))
                             .child(format!("● {category}"))
                     }),
                 ));

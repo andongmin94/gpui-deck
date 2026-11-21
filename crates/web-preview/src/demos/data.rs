@@ -4,7 +4,7 @@ use gpui::{
     AnyView, App, AppContext as _, Axis, Context, Div, ElementId, Entity, FocusHandle,
     Focusable as _, FontWeight, InteractiveElement as _, IntoElement, ParentElement as _, Render,
     Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, Styled as _, Subscription,
-    Window, accesskit::SortDirection, div, hsla, prelude::FluentBuilder as _, px,
+    Window, accesskit::SortDirection, div, prelude::FluentBuilder as _, px,
 };
 use gpui_design::{
     Button, Calendar, CalendarDay, CalendarSelection, CalendarState, Carousel, CarouselControl,
@@ -15,7 +15,8 @@ use gpui_design::{
     QuestionnaireState, Resizable, ResizablePanel, ResizableState, ScrollArea, ScrollbarMode,
     SearchItem, Select, SelectItem, SelectOption, SelectState, Table, TableCaption, TableCell,
     TableColumn, TableRow, Textarea, TextareaState, ToggleGroup, ToggleGroupState, ToggleItem,
-    ToggleOption, input::InputEvent,
+    ToggleOption,
+    input::{InputBaseState, InputEvent, InputModeKind},
 };
 
 use super::{frame, outline, primary};
@@ -74,10 +75,22 @@ fn editor_style(theme: Theme) -> InputEditorStyle {
     InputEditorStyle {
         foreground: theme.foreground,
         muted_foreground: theme.muted_foreground,
-        caret: theme.foreground,
+        caret: theme.primary,
         selection: theme.ring.opacity(0.35),
         ..Default::default()
     }
+}
+
+pub(super) fn style_editor<M: InputModeKind>(
+    input: &mut InputBaseState<M>,
+    theme: Theme,
+    cx: &mut Context<InputBaseState<M>>,
+) {
+    input.set_editor_style(editor_style(theme.resolve(cx)));
+    cx.observe_global::<Theme>(move |input, cx| {
+        input.set_editor_style(editor_style(theme.resolve(cx)));
+    })
+    .detach();
 }
 
 pub(super) fn text_input(
@@ -91,7 +104,7 @@ pub(super) fn text_input(
     let placeholder = SharedString::from(placeholder.to_owned());
     cx.new(|cx| {
         let mut state = InputState::new(window, cx).placeholder(placeholder.clone());
-        state.set_editor_style(editor_style(theme));
+        style_editor(&mut state, theme, cx);
         state.set_accessibility(
             InputAccessibility::new(Some(Role::TextInput))
                 .with_label(Some(label))
@@ -176,7 +189,7 @@ impl FieldDemo {
 
 impl Render for FieldDemo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         frame(theme).child(
             div()
                 .w(px(300.))
@@ -268,7 +281,7 @@ struct TextareaDemo {
 
 impl Render for TextareaDemo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let focused = self.notes.focus_handle(cx).is_focused(window);
         let value = self.notes.read(cx).value();
         let notes = self.notes.clone();
@@ -332,7 +345,7 @@ fn textarea(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
         let mut state = TextareaState::new(window, cx)
             .rows(4)
             .placeholder("Type your message here.");
-        state.set_editor_style(editor_style(theme));
+        style_editor(&mut state, theme, cx);
         state.set_accessibility(
             InputAccessibility::new(Some(Role::MultilineTextInput))
                 .with_placeholder(Some("Type your message here.".into())),
@@ -366,7 +379,7 @@ struct LabelDemo {
 
 impl Render for LabelDemo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         frame(theme).child(
             div()
                 .w(px(280.))
@@ -407,7 +420,7 @@ struct SelectDemo {
 
 impl Render for SelectDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let state = self.state.read(cx);
         let selected = state.selected_index();
         let highlighted = state.highlighted_index();
@@ -526,7 +539,7 @@ struct ComboboxDemo {
 
 impl Render for ComboboxDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let state = self.state.read(cx);
         let highlighted = state.highlighted_index(cx);
         let visible = state.visible_indices(cx).to_vec();
@@ -611,7 +624,7 @@ fn combobox(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
         .read(cx)
         .input()
         .clone()
-        .update(cx, |input, _| input.set_editor_style(editor_style(theme)));
+        .update(cx, |input, cx| style_editor(input, theme, cx));
     cx.new(|cx| {
         let observe = cx.observe(&state, |_, _, cx| cx.notify());
         ComboboxDemo {
@@ -633,8 +646,8 @@ struct InputOtpDemo {
 }
 
 impl Render for InputOtpDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         frame(theme)
             .flex_col()
             .child(
@@ -823,7 +836,7 @@ struct CalendarDemo {
 
 impl Render for CalendarDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let selected = self
             .state
             .read(cx)
@@ -861,7 +874,7 @@ struct DatePickerDemo {
 
 impl Render for DatePickerDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let date = self.picker.read(cx).selection(cx).first_date();
         let text = date
             .map(|date| date.strftime("%B %-d, %Y").to_string())
@@ -925,7 +938,7 @@ struct TableDemo {
 
 impl Render for TableDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let mut rows = INVOICES.to_vec();
         match self.sort {
             Some(SortDirection::Ascending) => rows.sort_by_key(|row| row.3),
@@ -1042,8 +1055,8 @@ struct ScrollAreaDemo {
 }
 
 impl Render for ScrollAreaDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         let tags = (1..=50).rev().map(|index| {
             div()
                 .py(px(8.))
@@ -1122,7 +1135,7 @@ fn grip(
 
 impl Render for ResizableDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let outer = self.outer.read(cx).sizes().to_vec();
         let inner = self.inner.read(cx).sizes().to_vec();
         let nested = Resizable::new("content-split", &self.inner)
@@ -1195,8 +1208,6 @@ fn resizable(theme: Theme, cx: &mut App) -> AnyView {
 
 // Carousel
 
-const SLIDE_HUES: [f32; 5] = [0.61, 0.47, 0.08, 0.83, 0.36];
-
 struct CarouselDemo {
     theme: Theme,
     state: Entity<CarouselState>,
@@ -1205,7 +1216,7 @@ struct CarouselDemo {
 
 impl Render for CarouselDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let model = self.state.read(cx);
         let selected = model.selected_index().unwrap_or(0);
         let count = model.labels().len();
@@ -1226,7 +1237,7 @@ impl Render for CarouselDemo {
         let mut carousel = Carousel::new("featured", &self.state, "Featured slides")
             .w(px(220.))
             .flex();
-        for (index, hue) in SLIDE_HUES.into_iter().enumerate() {
+        for index in 0..count {
             carousel = carousel.child(
                 CarouselSlide::new(&self.state, index)
                     .flex_1()
@@ -1235,8 +1246,8 @@ impl Render for CarouselDemo {
                     .items_center()
                     .justify_center()
                     .rounded(px(8.))
-                    .bg(hsla(hue, 0.65, 0.5, 1.))
-                    .text_color(gpui::white())
+                    .bg(theme.primary)
+                    .text_color(theme.primary_foreground)
                     .text_size(px(40.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(format!("{}", index + 1)),
@@ -1293,8 +1304,9 @@ struct ChartDemo {
 }
 
 impl Render for ChartDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        frame(self.theme).p(px(16.)).child(
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
+        frame(theme).p(px(16.)).child(
             div()
                 .w_full()
                 .max_w(px(540.))
@@ -1313,6 +1325,7 @@ impl Render for ChartDemo {
                         "All latency measurements",
                         "Route",
                     )
+                    .series_colors([theme.primary, theme.muted_foreground])
                     .format_value(|value| format!("{value} s")),
                 ),
         )
@@ -1352,7 +1365,7 @@ struct DirectionDemo {
 
 impl Render for DirectionDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let direction = self.direction;
         let group = self.group.read(cx);
         let options = (0..group.items().len()).map(|index| {
@@ -1452,7 +1465,7 @@ const REPLIES: [&str; 4] = [
 
 impl Render for MessageScrollerDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let model = self.state.read(cx);
         let unread = model.unread_count();
         let following = model.is_following();
@@ -1592,7 +1605,7 @@ impl QuestionnaireDemo {
 
 impl Render for QuestionnaireDemo {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let stage = self.state.stage();
         let title = match stage {
             QuestionnaireStage::Question(index) => format!("Question {} of 2", index + 1),

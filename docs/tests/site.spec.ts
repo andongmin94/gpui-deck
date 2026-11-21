@@ -94,13 +94,42 @@ test("the Korean home page and catalogue cards lead to the Korean component", as
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Chart");
 });
 
-test("a component page embeds its live preview", async ({ page }) => {
+test("component and recipe previews follow the selected accent without restarting", async ({
+  page,
+}) => {
   await page.goto("/en/docs/components/button");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Button");
-  await expect(page.locator('iframe[title="button preview"]')).toHaveAttribute(
-    "src",
-    /\/preview\?c=button$/,
+  const button = page.locator('iframe[title="button preview"]');
+  await expect(button).toHaveAttribute("data-accent", "neutral");
+  await expect(button).toHaveAttribute("src", "/preview?c=button");
+  await button.scrollIntoViewIfNeeded();
+  await expect(button.contentFrame().locator("title")).toHaveJSProperty(
+    "text",
+    "GPUI Design preview",
   );
+  const original = await button.evaluateHandle((frame: HTMLIFrameElement) => frame.contentDocument);
+  const picker = page.getByRole("button", { name: /^Accent color/ });
+  await expect(async () => {
+    await picker.click();
+    await expect(page.getByRole("menuitemradio", { name: "Rose" })).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await page.getByRole("menuitemradio", { name: "Rose" }).click();
+  await expect(button).toHaveAttribute("data-accent", "rose");
+  await expect(button).toHaveAttribute("src", "/preview?c=button");
+  expect(
+    await button.evaluate(
+      (frame: HTMLIFrameElement, doc) => frame.contentDocument === doc,
+      original,
+    ),
+  ).toBe(true);
+
+  await page.goto("/en/docs/recipes/badge");
+  const badge = page.locator('iframe[title="badge preview"]');
+  await expect(badge).toHaveAttribute("data-accent", "rose");
+  await picker.click();
+  await page.getByRole("menuitemradio", { name: "Neutral" }).click();
+  await expect(badge).toHaveAttribute("data-accent", "neutral");
+  await expect(badge).toHaveAttribute("src", "/preview?c=badge");
 });
 
 for (const lang of ["ko", "ja", "zh"]) {

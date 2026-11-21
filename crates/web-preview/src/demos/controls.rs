@@ -24,7 +24,7 @@ struct ButtonDemo {
 
 impl Render for ButtonDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let palette = theme.recipe_palette();
         let variants = [
             ("Primary", ButtonVariant::Primary),
@@ -88,7 +88,7 @@ struct ToggleDemo {
 
 impl Render for ToggleDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let group = self.group.read(cx);
         let options = (0..group.items().len()).map(|index| {
             let pressed = group.is_pressed(index);
@@ -118,6 +118,7 @@ impl Render for ToggleDemo {
                     .font_weight(gpui::FontWeight::BOLD)
                     .when(self.bold, |toggle| toggle.bg(theme.accent))
                     .hover(|style| style.bg(theme.accent))
+                    .focus_visible(|style| style.text_color(theme.primary).underline())
                     .child("B")
                     .on_change(move |pressed, _, _, cx| {
                         entity.update(cx, |this, cx| {
@@ -174,7 +175,7 @@ struct CheckboxDemo {
 
 impl Render for CheckboxDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let checked = self.terms == CheckboxState::Checked;
         let terms = cx.entity();
         let airplane = cx.entity();
@@ -187,7 +188,7 @@ impl Render for CheckboxDemo {
                     .flex()
                     .items_center()
                     .gap(px(8.))
-                    .focus_visible(|style| style.opacity(0.85))
+                    .focus_visible(|style| style.text_color(theme.primary).underline())
                     .child(
                         div()
                             .size(px(16.))
@@ -196,7 +197,11 @@ impl Render for CheckboxDemo {
                             .justify_center()
                             .rounded(px(4.))
                             .border_1()
-                            .border_color(if checked { theme.primary } else { theme.ring })
+                            .border_color(if checked {
+                                theme.primary
+                            } else {
+                                theme.control_border
+                            })
                             .when(checked, |indicator| {
                                 indicator
                                     .bg(theme.primary)
@@ -220,6 +225,7 @@ impl Render for CheckboxDemo {
                     .flex()
                     .items_center()
                     .gap(px(8.))
+                    .focus_visible(|style| style.text_color(theme.primary).underline())
                     .child(
                         div()
                             .w(px(36.))
@@ -265,7 +271,7 @@ struct RadioDemo {
 
 impl Render for RadioDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let state = self.state.read(cx);
         let selected = state.selected_index();
         let options = state.items().iter().enumerate().map(|(index, item)| {
@@ -274,6 +280,7 @@ impl Render for RadioDemo {
                 .flex()
                 .items_center()
                 .gap(px(8.))
+                .focus_visible(|style| style.text_color(theme.primary).underline())
                 .child(
                     div()
                         .size(px(16.))
@@ -282,7 +289,11 @@ impl Render for RadioDemo {
                         .justify_center()
                         .rounded_full()
                         .border_1()
-                        .border_color(if checked { theme.primary } else { theme.ring })
+                        .border_color(if checked {
+                            theme.primary
+                        } else {
+                            theme.control_border
+                        })
                         .when(checked, |ring| {
                             ring.child(div().size(px(8.)).rounded_full().bg(theme.primary))
                         }),
@@ -392,7 +403,7 @@ fn slider_rail(
 
 impl Render for SliderDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         let single = self.single.read(cx).values()[0];
         let range = self.range.read(cx).values().to_vec();
         frame(theme)
@@ -440,7 +451,7 @@ struct ProgressDemo {
 
 impl Render for ProgressDemo {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+        let theme = self.theme.resolve(cx);
         frame(theme)
             .flex_col()
             .child(
@@ -485,8 +496,8 @@ struct SeparatorDemo {
 }
 
 impl Render for SeparatorDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        let theme = self.theme;
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = self.theme.resolve(cx);
         frame(theme).child(
             div()
                 .w(px(280.))

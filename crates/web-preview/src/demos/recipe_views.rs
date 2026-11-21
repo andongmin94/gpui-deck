@@ -2,11 +2,11 @@ use std::collections::HashSet;
 
 use gpui::{
     AnyView, App, AppContext as _, Context, Entity, IntoElement, ParentElement as _, Render,
-    SharedString, Styled as _, Subscription, Window, px,
+    RenderOnce, SharedString, Styled as _, Subscription, Window, px,
 };
-use gpui_design::{Button, InputEditorStyle};
+use gpui_design::Button;
 
-use super::frame;
+use super::{data::style_editor, frame};
 use crate::recipes::{
     Badge, ButtonVariant, Card, DataTable, DataTableCell, DataTableColumn, DataTableRow,
     DataTableState,
@@ -28,13 +28,14 @@ struct DigestCard {
 
 impl Render for DigestCard {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let palette = self.theme.recipe_palette();
+        let theme = self.theme.resolve(cx);
+        let palette = theme.recipe_palette();
         let action = if self.subscribed {
             "Unsubscribe"
         } else {
             "Subscribe"
         };
-        frame(self.theme)
+        frame(theme)
             .bg(palette.canvas)
             .text_color(palette.foreground)
             .child(
@@ -73,6 +74,20 @@ struct Invoices {
     _observe: Subscription,
 }
 
+#[derive(IntoElement)]
+struct InvoiceStatus {
+    id: SharedString,
+    text: SharedString,
+    theme: Theme,
+}
+
+impl RenderOnce for InvoiceStatus {
+    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+        let paid = self.text.as_ref() == "Paid";
+        Badge::new(self.id, self.text, self.theme.resolve(cx).recipe_palette()).accent(paid)
+    }
+}
+
 fn invoice_rows(paid: &HashSet<SharedString>) -> Vec<DataTableRow> {
     [
         ("INV-101", 120),
@@ -98,25 +113,22 @@ fn invoice_rows(paid: &HashSet<SharedString>) -> Vec<DataTableRow> {
 
 pub(super) fn data_table(theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
     cx.new(|cx| {
-        let palette = theme.recipe_palette();
         let paid = HashSet::new();
         let columns = [
             DataTableColumn::new("Invoice", px(100.)),
-            DataTableColumn::new("Status", px(88.)).render_cell(move |row, text| {
-                Badge::new(row.id().clone(), text.clone(), palette).accent(text.as_ref() == "Paid")
+            DataTableColumn::new("Status", px(88.)).render_cell(move |row, text| InvoiceStatus {
+                id: row.id().clone(),
+                text: text.clone(),
+                theme,
             }),
             DataTableColumn::new("Amount", px(98.)).align_end(),
         ];
         let table = cx.new(|cx| DataTableState::new(columns, invoice_rows(&paid), 2, window, cx));
-        table.read(cx).query_input().clone().update(cx, |input, _| {
-            input.set_editor_style(InputEditorStyle {
-                foreground: palette.foreground,
-                muted_foreground: palette.muted,
-                caret: palette.accent,
-                selection: palette.highlight,
-                ..Default::default()
-            })
-        });
+        table
+            .read(cx)
+            .query_input()
+            .clone()
+            .update(cx, |input, cx| style_editor(input, theme, cx));
         let observe = cx.observe(&table, |_, _, cx| cx.notify());
         Invoices {
             theme,
@@ -130,7 +142,8 @@ pub(super) fn data_table(theme: Theme, window: &mut Window, cx: &mut App) -> Any
 
 impl Render for Invoices {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let palette = self.theme.recipe_palette();
+        let theme = self.theme.resolve(cx);
+        let palette = theme.recipe_palette();
         let next_size = if self.table.read(cx).page_size() == 2 {
             4
         } else {
@@ -138,7 +151,7 @@ impl Render for Invoices {
         };
         let resize_label = format!("Show {next_size} rows per page");
         let owner = cx.entity();
-        frame(self.theme)
+        frame(theme)
             .bg(palette.canvas)
             .text_color(palette.foreground)
             .flex_col()
