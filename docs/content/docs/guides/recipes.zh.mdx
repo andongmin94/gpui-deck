@@ -22,11 +22,11 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 
 在使用方中声明 `mod ui;`，并使用 `ui::recipes::{DataTable, Avatar}` 以及
 `ui::Appearance::Settings.palette()` 或 `ui::Appearance::Compact.palette()`。
-请使用 README 中对应的 Cargo 依赖。CLI 不会修改
+请使用[安装指南](/zh/docs/installation/)中的 Cargo 依赖。CLI 不会修改
 使用方的清单。它在构建时嵌入仓库当前的配方源码；
 没有远程注册表或更新服务。
 
-请保留 README 中的使用方 feature 声明：
+请在应用的清单中保留以下 feature 声明：
 
 ```toml
 [features]

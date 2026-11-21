@@ -22,11 +22,11 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 
 Declare `mod ui;` in the consumer and use `ui::recipes::{DataTable, Avatar}` and
 `ui::Appearance::Settings.palette()` or `ui::Appearance::Compact.palette()`.
-Use the matching Cargo dependencies in the README. The CLI does not change the
+Use the matching Cargo dependencies in the [installation guide](/en/docs/installation/). The CLI does not change the
 consumer's manifest. It embeds the repository's current recipe source when built;
 there is no remote registry or update service.
 
-Keep the README's consumer feature declaration:
+Keep this feature declaration in the consumer manifest:
 
 ```toml
 [features]

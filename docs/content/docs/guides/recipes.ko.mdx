@@ -22,11 +22,11 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 
 소비자에서 `mod ui;`를 선언하고 `ui::recipes::{DataTable, Avatar}`와
 `ui::Appearance::Settings.palette()` 또는 `ui::Appearance::Compact.palette()`를 사용합니다.
-README에 있는 해당 Cargo 의존성을 사용합니다. CLI는 소비자의 매니페스트를
+[설치 가이드](/ko/docs/installation/)에 있는 Cargo 의존성을 사용합니다. CLI는 소비자의 매니페스트를
 변경하지 않습니다. 빌드할 때 저장소의 현재 레시피 소스를 포함하며,
 원격 레지스트리나 업데이트 서비스는 없습니다.
 
-README의 소비자 기능 선언을 유지합니다.
+소비자 앱의 매니페스트에 다음 기능 선언을 유지합니다.
 
 ```toml
 [features]

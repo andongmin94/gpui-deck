@@ -22,11 +22,11 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 
 コンシューマーで `mod ui;` を宣言し、`ui::recipes::{DataTable, Avatar}` と
 `ui::Appearance::Settings.palette()` または `ui::Appearance::Compact.palette()` を使用してください。
-README に記載されている対応する Cargo の依存関係を使用します。CLI は
+[インストールガイド](/ja/docs/installation/)に記載されている Cargo の依存関係を使用します。CLI は
 コンシューマーのマニフェストを変更しません。ビルド時にリポジトリの現在のレシピソースを埋め込みます。
 リモートレジストリや更新サービスはありません。
 
-README のコンシューマー向け feature 宣言は残してください。
+アプリケーションのマニフェストに次の feature 宣言を残してください。
 
 ```toml
 [features]

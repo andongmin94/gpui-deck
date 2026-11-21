@@ -16,8 +16,8 @@ description: "渲染运行时、无头行为与应用呈现层如何分工。"
 公开接口范围更窄，并独立维护状态与焦点约定。上游源码的变更会经过审查后明确采纳。
 
 [`gpui-pre`](https://gpui-kit.com/docs/installation/#why-the-dependency-is-named-gpui-pre)
-发布与版本对齐的 Zed GPUI 快照。固定的 0.3.11 包记录的 Zed 修订为
-`f816e1f9263e3a8ef63c4baaa02e1441ce1c6038`。
+发布与版本对齐的 Zed GPUI 快照。固定的 0.3.12 包记录的 Zed 修订为
+`d2a4fb6ded7c470be25d1541281da3882495b65b`。
 
 上面列出的控件都属于行为层。复合控件复用该层：Toggle 和 Collapsible 的触发器组合 Button，
 ToggleGroup 组合 Toggle，AlertDialog 组合 Dialog。DropdownMenu 和 ContextMenu 共享
@@ -44,15 +44,15 @@ Breadcrumb 提供原生的导航/列表结构和当前页元数据；
 不提供远程注册表，也不提供单独发布的带样式组件包。
 
 关于状态归属、键盘约定和应用自有样式，请参阅
-[表单控件指南](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md)。
+[表单控件指南](/zh/docs/guides/forms/)。
 Checkbox 和 Switch 通过回调报告下一个值；应用保存该值并通知其视图。
 RadioGroup 在实体中保留选中项和选项焦点，接受固定有序且值唯一的选项，
 并在方向键导航时立即改变选中项。
 
-[导航与浮层指南](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md)涵盖
+[导航与浮层指南](/zh/docs/guides/navigation-overlays/)涵盖
 Breadcrumb、Tabs、Accordion、Collapsible、Popover、DropdownMenu、ContextMenu、Command、Tooltip、
 HoverCard 和 AlertDialog。未激活的面板不会产生布局、焦点或无障碍节点。
 Popover 复用现有的弹出定位原语，并允许键盘焦点在所属窗口或对话框内离开其内容。
 两种菜单触发器都使用该生命周期，并在派发命令之前关闭，因此命令可以打开另一个浮层而不丢失其新获得的焦点。
-[布局与数据指南](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md)解释了共享的 Table 列、
+[布局与数据指南](/zh/docs/guides/layout-data/)解释了共享的 Table 列、
 ScrollArea 组合、Resizable 面板及其当前限制。

@@ -17,8 +17,8 @@ work with a narrower public surface and independently maintained state and focus
 contracts. Upstream source changes are reviewed and adopted explicitly.
 
 [`gpui-pre`](https://gpui-kit.com/docs/installation/#why-the-dependency-is-named-gpui-pre)
-publishes version-aligned snapshots of Zed's GPUI. The pinned 0.3.11 package
-records Zed revision `f816e1f9263e3a8ef63c4baaa02e1441ce1c6038`.
+publishes version-aligned snapshots of Zed's GPUI. The pinned 0.3.12 package
+records Zed revision `d2a4fb6ded7c470be25d1541281da3882495b65b`.
 
 The controls listed above belong to the behavior layer. Compound controls reuse
 that layer: Toggle and Collapsible triggers compose Button, ToggleGroup composes
@@ -50,18 +50,18 @@ Appearance belongs in the application. The local `gpui-design-cli` copies select
 presentation recipes and their dependencies into consumer-owned modules. A remote
 registry and separately published styled component package are not provided.
 
-See the [form control guide](https://github.com/andongmin94/gpui-design/blob/main/docs/form-controls.md) for state ownership, keyboard
+See the [form control guide](/en/docs/guides/forms/) for state ownership, keyboard
 contracts, and application-owned styling. Checkbox and Switch report the next
 value through a callback; the application stores it and notifies its view.
 RadioGroup retains selection and option focus in an entity, accepts fixed ordered
 options with unique values, and changes selection immediately on arrow navigation.
 
-The [navigation and overlay guide](https://github.com/andongmin94/gpui-design/blob/main/docs/navigation-overlays.md) covers Breadcrumb, Tabs,
+The [navigation and overlay guide](/en/docs/guides/navigation-overlays/) covers Breadcrumb, Tabs,
 Accordion, Collapsible, Popover, DropdownMenu, ContextMenu, Command, Tooltip,
 HoverCard, and AlertDialog. Inactive panels do
 not contribute layout, focus, or accessibility nodes. Popover reuses the existing popup positioning
 primitive and lets keyboard focus leave its contents within the enclosing window
 or dialog. Both menu triggers use that lifecycle and close before dispatching a
 command, so a command can open another surface without losing its new focus.
-The [layout and data guide](https://github.com/andongmin94/gpui-design/blob/main/docs/layout-and-data.md) explains shared Table columns,
+The [layout and data guide](/en/docs/guides/layout-data/) explains shared Table columns,
 ScrollArea composition, Resizable panes, and their current limits.

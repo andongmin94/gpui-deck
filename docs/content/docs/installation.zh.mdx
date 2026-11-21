@@ -36,18 +36,18 @@ cargo run -p gpui-design --example starter --locked
 ```toml
 [dependencies]
 gpui-design = { path = "../gpui-design/crates/base" }
-gpui = { package = "gpui-pre", version = "=0.3.11" }
-gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
 
 [features]
 test-support = ["gpui-design/test-support"]
 ```
 
 该 feature 声明用于支持复制的配方源码中的测试守卫；运行这些 GPUI 测试时请启用它。请使用仓库固定的 Rust 工具链和上述原生前置依赖。按照
-[依赖与令牌说明](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application)，
+[依赖与令牌说明](/zh/docs/guides/recipes/)，
 将所需的呈现配方复制到应用中。
 
-GPUI 快照系列固定为 **`=0.3.11`**。更改渲染依赖时，请同时更新这些固定版本和
+GPUI 快照系列固定为 **`=0.3.12`**。更改渲染依赖时，请同时更新这些固定版本和
 `Cargo.lock`。
 
 将应用自有的呈现源码连同其所需的配方模块、浅色/深色令牌和许可证一并复制：
@@ -58,5 +58,5 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 ```
 
 在使用方中声明 `mod ui;`。该工具会保留你对先前安装的配方和调色板文件所做的修改；如果生成的模块声明被修改过，或存在新文件冲突，则会在写入前停止。Cargo 依赖由使用方自行处理。
-参见[源码复制指南](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application)。
+参见[源码复制指南](/zh/docs/guides/recipes/)。
 目录中的 Selection 部分演示了范围/多选日期、分组的录制目标、可移除的已选标签（chip），以及可替换的本地选项数据。

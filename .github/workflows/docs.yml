@@ -7,6 +7,7 @@ on:
     paths:
       - "docs/**"
       - "crates/**"
+      - "Cargo.toml"
       - "Cargo.lock"
       - "README.md"
       - ".github/workflows/docs.yml"
@@ -52,6 +53,25 @@ jobs:
 
       - name: Install site dependencies
         run: npm ci
+
+      - name: Check GPUI pins in the consumer installation examples
+        run: |
+          python3 - <<'PY'
+          import re
+          import tomllib
+          from pathlib import Path
+
+          workspace = tomllib.loads(Path("../Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]
+          for page in Path("content/docs").glob("installation*.mdx"):
+              snippet = re.search(r"^```toml\n(.+?)^```", page.read_text(encoding="utf-8"), re.M | re.S)
+              if not snippet:
+                  raise SystemExit(f"{page}: missing consumer Cargo.toml")
+              deps = tomllib.loads(snippet[1])["dependencies"]
+              for name in ("gpui", "gpui_platform"):
+                  for key in ("package", "version"):
+                      if deps[name][key] != workspace[name][key]:
+                          raise SystemExit(f"{page}: {name}.{key} must match workspace.dependencies")
+          PY
 
       - name: Lint and type-check
         run: |

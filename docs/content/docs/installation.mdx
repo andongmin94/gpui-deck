@@ -44,8 +44,8 @@ GPUI snapshots, replacing the path with your checkout:
 ```toml
 [dependencies]
 gpui-design = { path = "../gpui-design/crates/base" }
-gpui = { package = "gpui-pre", version = "=0.3.11" }
-gpui_platform = { package = "gpui-pre-platform", version = "=0.3.11", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
 
 [features]
 test-support = ["gpui-design/test-support"]
@@ -54,9 +54,9 @@ test-support = ["gpui-design/test-support"]
 The feature declaration supports the test guards in copied recipe source;
 enable it when running those GPUI tests. Use the repository's pinned Rust toolchain and native prerequisites above. Copy
 the desired presentation recipes into the application using their
-[dependency and token instructions](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application).
+[dependency and token instructions](/en/docs/guides/recipes/).
 
-The GPUI snapshot family is pinned to **`=0.3.11`**. Update those pins and
+The GPUI snapshot family is pinned to **`=0.3.12`**. Update those pins and
 `Cargo.lock` together when changing the rendering dependency.
 
 Copy application-owned presentation source with its required recipe modules,
@@ -70,6 +70,6 @@ cargo run -p gpui-design-cli --locked -- add data-table avatar --to ../my-app/sr
 Declare `mod ui;` in the consumer. The tool preserves edits to previously installed
 recipe and palette files; modified generated module declarations or new-file
 conflicts stop before writing. It leaves Cargo dependencies to the consumer.
-See the [source-copy guide](https://github.com/andongmin94/gpui-design/blob/main/docs/presentation-recipes.md#copy-into-an-application).
+See the [source-copy guide](/en/docs/guides/recipes/).
 The catalogue's Selection section demonstrates range/multiple dates, grouped
 recording targets, removable selected chips and replaceable local option data.
