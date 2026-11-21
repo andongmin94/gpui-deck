@@ -264,6 +264,11 @@ impl ChartState {
         ((value / scale - min / scale) / (max / scale - min / scale)).clamp(0., 1.) as f32
     }
     pub fn inspected_description(&self) -> SharedString {
+        self.inspected_description_with(|value| value.to_string())
+    }
+
+    /// Describe the inspected category using the application's value formatting.
+    pub fn inspected_description_with(&self, format_value: impl Fn(f64) -> String) -> SharedString {
         let Some(index) = self.inspected else {
             return "No chart data".into();
         };
@@ -272,7 +277,7 @@ impl ChartState {
             .iter()
             .zip(&self.visible)
             .filter(|(_, visible)| **visible)
-            .map(|(series, _)| format!("{}: {}", series.label, series.values[index]))
+            .map(|(series, _)| format!("{}: {}", series.label, format_value(series.values[index])))
             .collect::<Vec<_>>()
             .join(", ");
         format!(
@@ -367,6 +372,7 @@ pub struct Chart {
     base: crate::ObservedElement<gpui::Stateful<gpui::Div>>,
     state: Entity<ChartState>,
     label: SharedString,
+    value_description: Option<SharedString>,
     direction: Option<Direction>,
 }
 impl Chart {
@@ -379,8 +385,14 @@ impl Chart {
             base: div().id(id).test_support(),
             state: state.clone(),
             label: label.into(),
+            value_description: None,
             direction: None,
         }
+    }
+    /// Use the application's formatted inspection readout as the native value.
+    pub fn value_description(mut self, description: impl Into<SharedString>) -> Self {
+        self.value_description = Some(description.into());
+        self
     }
     pub fn direction(mut self, direction: Direction) -> Self {
         self.direction = Some(direction);
@@ -402,7 +414,9 @@ impl RenderOnce for Chart {
         let direction = self.direction.unwrap_or_else(|| Direction::current(cx));
         let model = self.state.read(cx);
         let focus = model.focus.clone();
-        let description = model.inspected_description();
+        let description = self
+            .value_description
+            .unwrap_or_else(|| model.inspected_description());
         let previous = self.state.clone();
         let next = self.state.clone();
         let first = self.state.clone();

@@ -406,12 +406,18 @@ impl Render for DataCatalogue {
                     .child("Chart · illustrative transfer samples (MB)"),
             )
             .child(modes)
-            .child(ChartRecipe::new(
-                "transfer-chart",
-                &self.chart,
-                self.chart_kind,
-                self.direction,
-            ))
+            .child(
+                ChartRecipe::new(
+                    "transfer-chart",
+                    &self.chart,
+                    self.chart_kind,
+                    self.direction,
+                    "Transfer samples in megabytes",
+                    "All transfer values in megabytes, including hidden series",
+                    "Day",
+                )
+                .format_value(|value| format!("{value} MB")),
+            )
             .child(self.render_carousel(cx))
             .child(self.render_trim(cx))
     }

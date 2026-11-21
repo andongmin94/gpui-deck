@@ -4538,7 +4538,12 @@ fn catalogue_connects_confirmation_data_and_conversation(cx: &mut TestAppContext
             .into_iter()
             .find(|node| node.label() == Some("Transfer samples in megabytes"))
             .unwrap();
-        assert_eq!(plot.value(), Some("Fri: Uploaded: 48, Removed: -16"));
+        assert_eq!(plot.value(), Some("Fri: Uploaded: 48 MB, Removed: -16 MB"));
+        assert!(
+            test_support::snapshots(window)
+                .iter()
+                .any(|node| node.role() == Some(Role::Cell) && node.label() == Some("48 MB"))
+        );
     });
     section(cx, 3);
     cx.update(|window, _| {

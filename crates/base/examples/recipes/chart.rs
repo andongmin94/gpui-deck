@@ -3,8 +3,8 @@
 
 use gpui::{
     App, Bounds, ElementId, Entity, Hsla, InteractiveElement as _, IntoElement, ParentElement as _,
-    PathBuilder, Pixels, Point, RenderOnce, Role, StatefulInteractiveElement as _, Styled, Window,
-    canvas, div, fill, point, px, rgb, size,
+    PathBuilder, Pixels, Point, RenderOnce, Role, SharedString, StatefulInteractiveElement as _,
+    Styled, Window, canvas, div, fill, point, px, rgb, size,
 };
 use gpui_design::{
     Chart, ChartLayout, ChartState, Direction, Table, TableCell, TableColumn, TableRow, Toggle,
@@ -70,6 +70,10 @@ pub(crate) struct ChartRecipe {
     state: Entity<ChartState>,
     kind: ChartKind,
     direction: Direction,
+    plot_label: SharedString,
+    table_label: SharedString,
+    category_header: SharedString,
+    format_value: Box<dyn Fn(f64) -> String>,
 }
 
 impl ChartRecipe {
@@ -78,14 +82,51 @@ impl ChartRecipe {
         state: &Entity<ChartState>,
         kind: ChartKind,
         direction: Direction,
+        plot_label: impl Into<SharedString>,
+        table_label: impl Into<SharedString>,
+        category_header: impl Into<SharedString>,
     ) -> Self {
         Self {
             id: id.into(),
             state: state.clone(),
             kind,
             direction,
+            plot_label: plot_label.into(),
+            table_label: table_label.into(),
+            category_header: category_header.into(),
+            format_value: Box::new(format_number),
         }
     }
+
+    /// Format axis ticks, the inspected category and table cells in the same units.
+    pub(crate) fn format_value(mut self, formatter: impl Fn(f64) -> String + 'static) -> Self {
+        self.format_value = Box::new(formatter);
+        self
+    }
+}
+
+fn format_number(value: f64) -> String {
+    // The shortest round-trip decimal, with scientific notation for extreme scales.
+    let mut label = format!("{value:?}");
+    if label.ends_with(".0") {
+        label.truncate(label.len() - 2);
+    }
+    label
+}
+
+fn axis_ticks((min, max): (f64, f64)) -> impl Iterator<Item = f64> {
+    // Trim floating-point arithmetic noise from the calculated middle tick only.
+    // Keep the measured endpoints and all inspected/table values exact.
+    let middle = format!("{:.14e}", min.midpoint(max))
+        .parse::<f64>()
+        .expect("a formatted float is a valid float");
+    [
+        Some(max),
+        (min < middle && middle < max).then_some(middle),
+        Some(min),
+    ]
+    .into_iter()
+    .flatten()
 }
 
 fn color(index: usize) -> Hsla {
@@ -400,7 +441,7 @@ impl RenderOnce for ChartRecipe {
         let range = model.range();
         let baseline = model.normalized_value(0.);
         let inspected = model.inspected_index();
-        let description = model.inspected_description();
+        let description = model.inspected_description_with(&self.format_value);
         let kind = self.kind;
         let visible: Vec<_> = (0..data.len())
             .map(|index| model.is_visible(index))
@@ -439,27 +480,24 @@ impl RenderOnce for ChartRecipe {
             kind,
             direction,
         };
-        let mut plot = Chart::new(
-            (self.id.clone(), "plot"),
-            &self.state,
-            "Transfer samples in megabytes",
-        )
-        .direction(direction)
-        .relative()
-        .flex_shrink_0()
-        .border_1()
-        .border_color(if model.focus_handle().is_focused(window) {
-            rgb(0x93c5fd)
-        } else {
-            rgb(0x334155)
-        })
-        .child(
-            canvas(
-                |_, _, _| (),
-                move |bounds, _, window, _| drawing.paint(bounds, window),
-            )
-            .size_full(),
-        );
+        let mut plot = Chart::new((self.id.clone(), "plot"), &self.state, self.plot_label)
+            .value_description(description.clone())
+            .direction(direction)
+            .relative()
+            .flex_shrink_0()
+            .border_1()
+            .border_color(if model.focus_handle().is_focused(window) {
+                rgb(0x93c5fd)
+            } else {
+                rgb(0x334155)
+            })
+            .child(
+                canvas(
+                    |_, _, _| (),
+                    move |bounds, _, window, _| drawing.paint(bounds, window),
+                )
+                .size_full(),
+            );
         plot = if kind.radial() {
             plot.w(px(RADIAL_WIDTH)).h(px(RADIAL_HEIGHT))
         } else {
@@ -515,15 +553,15 @@ impl RenderOnce for ChartRecipe {
             (self.id.clone(), "table"),
             (0..=data.len()).map(|_| TableColumn::flex(1.)),
         )
-        .accessibility_label("All transfer values in megabytes, including hidden series")
+        .accessibility_label(self.table_label)
         .w_full()
         .border_1()
         .border_color(rgb(0x334155));
         let mut header = TableRow::new((self.id.clone(), "header")).cell(
             TableCell::new((self.id.clone(), "category-header"))
-                .accessibility_label("Day")
+                .accessibility_label(self.category_header.clone())
                 .p_2()
-                .child("Day"),
+                .child(self.category_header),
         );
         for (index, series) in data.iter().enumerate() {
             header = header.cell(
@@ -543,11 +581,12 @@ impl RenderOnce for ChartRecipe {
                     .child(category.clone()),
             );
             for (series_index, series) in data.iter().enumerate() {
+                let text: SharedString = (self.format_value)(series.values()[index]).into();
                 row = row.cell(
                     TableCell::new((self.id.clone(), format!("value-{index}-{series_index}")))
-                        .accessibility_label(series.values()[index].to_string())
+                        .accessibility_label(text.clone())
                         .p_2()
-                        .child(series.values()[index].to_string()),
+                        .child(text),
                 );
             }
             table = table.row(row);
@@ -573,7 +612,7 @@ impl RenderOnce for ChartRecipe {
             figure.into_any_element()
         } else {
             let ticks = div()
-                .w(px(56.))
+                .min_w(px(56.))
                 .h(px(200.))
                 .flex_shrink_0()
                 .flex()
@@ -581,9 +620,7 @@ impl RenderOnce for ChartRecipe {
                 .justify_between()
                 .text_color(rgb(0x94a3b8))
                 .text_size(px(12.))
-                .child(format!("{:.0}", range.1))
-                .child(format!("{:.0}", (range.0 + range.1) / 2.))
-                .child(format!("{:.0}", range.0));
+                .children(axis_ticks(range).map(&self.format_value));
             let labels = direction
                 .row(div())
                 .w_full()
@@ -613,10 +650,10 @@ impl RenderOnce for ChartRecipe {
         };
         let hint = match kind {
             ChartKind::Pie | ChartKind::Donut => {
-                "Slices size each day's visible total; days with no positive total have none. Hover a slice, or focus the plot and use Left/Right, Home/End."
+                "Each slice represents a category's positive visible total. Hover a slice, or focus the plot and use Left/Right, Home/End."
             }
             ChartKind::Radar => {
-                "Each spoke is a day. Hover near a spoke, or focus the plot and use Left/Right, Home/End."
+                "Each spoke is a category. Hover near a spoke, or focus the plot and use Left/Right, Home/End."
             }
             ChartKind::StackedBar | ChartKind::StackedArea => {
                 "Positive and negative values stack separately from zero. Hover a category, or focus the plot and use Left/Right, Home/End."
@@ -643,5 +680,18 @@ impl RenderOnce for ChartRecipe {
                 "{hint} Legend buttons hide a series; the table keeps all values."
             ))
             .child(table)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{axis_ticks, format_number};
+
+    #[test]
+    fn axis_labels_distinguish_fractional_values() {
+        let labels = |range| axis_ticks(range).map(format_number).collect::<Vec<_>>();
+        assert_eq!(labels((0., 0.4)), ["0.4", "0.2", "0"]);
+        assert_eq!(labels((-0.1, 0.3)), ["0.3", "0.1", "-0.1"]);
+        assert_eq!(labels((0., 4e-15)), ["4e-15", "2e-15", "0"]);
     }
 }

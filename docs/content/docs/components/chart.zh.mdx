@@ -41,3 +41,12 @@ Pie/Radar 则按最大的居中圆内的角度检查；
 几何、调色板和数值格式属于使用方。这份分类数据
 约定不提供时间/对数刻度、按扇区的图例选择、缩放、
 流式数据接入，也不提供单独的渲染引擎。
+
+复制配方时，向 `ChartRecipe::new` 传入图表的无障碍名称、完整数据表的名称和类别列标题。
+默认刻度会保留小数。使用 `format_value` 指定单位后，坐标轴刻度、当前读数、原生无障碍读数和表格单元格都会采用相同的格式。
+
+```rust
+ChartRecipe::new("latency", &state, ChartKind::Line, Direction::Ltr,
+    "请求延迟", "全部延迟测量值", "路径")
+    .format_value(|value| format!("{value} ms"))
+```

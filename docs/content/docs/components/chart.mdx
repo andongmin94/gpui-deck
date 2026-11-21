@@ -41,3 +41,14 @@ both when switching kind or direction and retains legend/inspection state. Plot
 geometry, palette and numeric formatting belong to the consumer. This categorical
 contract does not supply time/log scales, per-slice legend selection, zoom,
 streaming data ingestion or a separate rendering engine.
+
+When copying the recipe, pass the plot's accessible name, the full table's name
+and its category column heading to `ChartRecipe::new`. The default ticks retain
+fractional values. Use `format_value` to apply your units to the ticks, visible
+readout, native plot value and table cells:
+
+```rust
+ChartRecipe::new("latency", &state, ChartKind::Line, Direction::Ltr,
+    "Request latency", "All latency measurements", "Route")
+    .format_value(|value| format!("{value} ms"))
+```
