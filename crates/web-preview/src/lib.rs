@@ -7,6 +7,10 @@
 pub mod demos;
 pub mod theme;
 
+// Render the installable block with the same sibling recipes and palette as a consumer.
+#[path = "../../../blocks/billing-dashboard/dashboard.rs"]
+mod billing_dashboard;
+
 #[cfg(target_family = "wasm")]
 #[path = "../../base/examples/assets/fonts/mod.rs"]
 mod app_fonts;
@@ -17,7 +21,16 @@ mod presentation;
 use presentation::{Appearance, Palette};
 #[path = "../../base/examples/recipes/mod.rs"]
 #[allow(dead_code, unused_imports)] // Each preview uses a subset of the recipe's optional slots.
-mod recipes;
+mod catalogue_recipes;
+#[path = "../../base/examples/recipes/chart.rs"]
+#[allow(dead_code)]
+mod chart_recipe;
+
+// The CLI exposes Chart alongside the catalogue recipes in the installed module.
+mod recipes {
+    pub(crate) use super::catalogue_recipes::*;
+    pub(crate) use super::chart_recipe::{ChartKind, ChartRecipe};
+}
 
 #[cfg(target_family = "wasm")]
 mod web {

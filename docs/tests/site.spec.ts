@@ -8,7 +8,7 @@ test("the root opens the English home page", async ({ page }) => {
   );
   await expect(page.getByRole("link", { name: "Install this block" })).toHaveAttribute(
     "href",
-    "/en/docs/guides/blocks",
+    "/en/blocks/billing-dashboard",
   );
   await expect(page.getByRole("link", { name: "block.json" })).toHaveAttribute(
     "href",

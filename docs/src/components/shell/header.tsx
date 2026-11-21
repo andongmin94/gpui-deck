@@ -47,7 +47,7 @@ export function SiteHeader({
     { href: `/${lang}/docs`, label: t.docs, exact: true },
     { href: `/${lang}/docs/components`, label: t.components },
     { href: `/${lang}/docs/recipes`, label: t.recipes },
-    { href: `/${lang}/docs/guides/blocks`, label: t.blocks, exact: true },
+    { href: `/${lang}/blocks`, label: t.blocks },
     { href: `/${lang}/docs/guides/forms`, label: t.guides, prefix: `/${lang}/docs/guides` },
   ];
   const activeLink =

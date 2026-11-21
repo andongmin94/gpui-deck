@@ -19,6 +19,7 @@ test("the mobile home menu supports keyboard navigation to localized docs", asyn
     "블록",
     "가이드",
   ]);
+  await expect(menu.getByRole("menuitem", { name: "블록" })).toHaveAttribute("href", "/ko/blocks");
   await page.keyboard.press("Escape");
   await expect(menu).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -33,4 +34,6 @@ test("the mobile home menu supports keyboard navigation to localized docs", asyn
 
   await trigger.click();
   await expect(page.getByRole("navigation", { name: "문서" })).toBeVisible();
+  await page.getByRole("link", { name: "블록", exact: true }).click();
+  await expect(page).toHaveURL(/\/ko\/blocks\/?$/);
 });

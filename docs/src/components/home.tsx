@@ -8,7 +8,7 @@ import {
   Table2,
 } from "lucide-react";
 
-import { GIT } from "@/lib/site";
+import { billing } from "./blocks/block-copy";
 import { HomePalette } from "./home-palette";
 import { InvoicePoster } from "./invoice-poster";
 import { InvoiceShowcase } from "./invoice-showcase";
@@ -84,7 +84,7 @@ const copy = {
     browse: "浏览组件",
     appearance: "外观",
     palette: "选择预览使用的强调色。",
-    billing: "账单仪表板",
+    billing: "账单仪表盘",
     included: "主要组件",
     install: "安装此区块",
     demo: {
@@ -149,7 +149,7 @@ export function Home({ lang }: { lang: string }) {
                     <FileStack className="size-[18px]" aria-hidden />
                   </span>
                   <a
-                    href={`https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/blocks/billing-dashboard/block.json`}
+                    href={`${billing.source}/block.json`}
                     className="inline-flex min-h-6 items-center gap-1 rounded text-xs text-fd-muted-foreground hover:text-fd-foreground hover:underline"
                   >
                     <code>block.json</code>
@@ -180,7 +180,7 @@ export function Home({ lang }: { lang: string }) {
                   ))}
                 </ul>
                 <Link
-                  href={blocksGuide}
+                  href={`/${lang}/blocks/${billing.name}`}
                   className="flex min-h-8 items-center justify-center gap-1.5 rounded-full bg-fd-secondary px-2 py-1 text-center text-xs font-medium hover:bg-fd-accent sm:min-h-9 sm:text-sm"
                 >
                   {t.install}

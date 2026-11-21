@@ -59,6 +59,13 @@ export function DocsShell({
       />
       {mobileOpen && (
         <div className="fixed inset-x-0 top-14 bottom-0 z-30 overflow-y-auto bg-fd-background px-4 py-6 lg:hidden">
+          <Link
+            href={`/${lang}/blocks`}
+            className="mb-4 flex h-9 items-center justify-between rounded-md px-2 text-sm font-medium hover:bg-fd-accent md:hidden"
+          >
+            {t.blocks}
+            <ArrowRight className="size-4" aria-hidden />
+          </Link>
           <SidebarNav tree={tree} label={t.docs} onNavigate={() => setMenuOpen(false)} />
         </div>
       )}

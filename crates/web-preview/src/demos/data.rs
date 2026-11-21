@@ -1292,10 +1292,7 @@ fn carousel(theme: Theme, cx: &mut App) -> AnyView {
 
 // Chart
 
-#[path = "../../../base/examples/recipes/chart.rs"]
-#[allow(dead_code)] // This preview shows one of the eight chart kinds available to consumers.
-mod chart_recipe;
-use chart_recipe::{ChartKind, ChartRecipe};
+use crate::recipes::{ChartKind, ChartRecipe};
 
 struct ChartDemo {
     theme: Theme,

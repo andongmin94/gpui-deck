@@ -21,6 +21,7 @@ mod recipe_views;
 
 /// Demo names defined in this module; the other modules list their own.
 const CONTROL_NAMES: &[&str] = &[
+    "billing-dashboard",
     "invoice-workspace",
     "button",
     "toggle",
@@ -45,6 +46,10 @@ pub fn names() -> impl Iterator<Item = &'static str> {
 
 pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
     let control = match name {
+        "billing-dashboard" => Some(
+            cx.new(|cx| crate::billing_dashboard::BillingDashboard::new(window, cx))
+                .into(),
+        ),
         "invoice-workspace" => Some(invoice_workspace::open(theme, window, cx)),
         "button" => Some(controls::button(theme, cx)),
         "toggle" => Some(controls::toggle(theme, cx)),

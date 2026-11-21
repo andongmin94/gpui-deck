@@ -5,6 +5,8 @@ import { metaSchema, pageSchema } from "fumapress/schema";
 import { defineDocs } from "fumadocs-mdx/macro";
 import { findNeighbour } from "fumadocs-core/page-tree";
 
+import { billing } from "@/components/blocks/block-copy";
+import { BlocksPage } from "@/components/blocks/blocks-page";
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
 import { accents, accentStorageKey } from "@/lib/accent";
@@ -64,8 +66,18 @@ export default app.config({
   },
   ui: {
     translations,
-    renderPage(props) {
+    async renderPage(props) {
       if (props.page.slugs.length === 0) return <Home lang={props.lang} />;
+      if (props.page.slugs[0] === "blocks") {
+        const page = props.page.data;
+        if (props.page.slugs.length === 1) {
+          const loader = await this.getLoader();
+          const block = loader.getPage(["blocks", billing.name], props.lang);
+          if (!block) throw new Error(`Missing ${props.lang} block page for ${billing.name}`);
+          return <BlocksPage lang={props.lang} page={page} block={block.data} />;
+        }
+        return <BlocksPage lang={props.lang} page={page} />;
+      }
       const { tree } = props.layoutProps;
       const { previous, next } = findNeighbour(tree, props.page.url);
       return (
