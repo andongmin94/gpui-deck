@@ -179,14 +179,27 @@ Item のメディアにあったフォント依存の記録グリフは、描画
 ソースの再利用を目標の一部としています。ブラウザー固有の API には、追加のエイリアスではなく、明示的なネイティブの
 同等機能が必要です。
 
-セッションのコントロールには
-`cargo run -p gpui-design --example two_styles --locked -- settings` を、
-ナビゲーション、OTP/Drawer/Toast、メディア/チャート、会話/Questionnaire のフローには
-`cargo run -p gpui-design --example catalogue --locked` を使用してください。
+### Windows で実機確認する手順
 
-ネイティブの IME、スクリーンリーダー、視覚、DPI、パフォーマンスの観察は、
-自動チェックとは別に扱います。実施していないプラットフォームの検証は、完了したものとはみなさず、
-測定なしにパフォーマンスの主張はしません。
+リポジトリのルートで PowerShell を開き、確認したいサンプルのコマンドを実行します。次のサンプルを起動する前に、開いているサンプルのウィンドウを閉じてください。
+
+```powershell
+cargo run -p gpui-design --example starter --locked
+cargo run -p gpui-design --example catalogue --locked
+cargo run -p gpui-design --example two_styles --locked -- settings
+```
+
+`catalogue` では Navigation のほか、OTP、Drawer、Toast、メディア、チャート、会話、アンケートのサンプルも確認できます。
+
+| 確認項目 | 操作 | 期待する結果 |
+| --- | --- | --- |
+| ハングルの組み立てとフォント · `starter` | タスクバーで韓国語 IME を `가` モードにします。**Your name** に `한글` と入力し、英数入力に切り替え、半角スペースと `ABC 123` を続けて入力して **Say hello** を押します。 | 子音と母音を組み合わせる途中で文字が消えたり重複したりせず、結果に `Hello, 한글 ABC 123!` と表示されます。入力欄と結果の両方で文字が欠けず、四角い代替記号も出ません。 |
+| IME の変換候補 · `starter` | 入力欄を空にし、`가` モードで `한` と入力して漢字変換キーを押します。Esc で一度キャンセルし、候補を開き直して一つ選びます。キーボード配列によっては右 Ctrl が漢字変換キーです。 | 入力カーソルの近くに候補が表示されます。キャンセルすると `한` が残り、候補を選ぶと選択した一文字に置き換わります。候補を選んだ時点では **Say hello** は実行されません。[Microsoft の韓国語 IME ガイド](https://learn.microsoft.com/globalization/input/korean-ime) |
+| スクリーンリーダーとキーボード · `catalogue` | **Navigation** タブで **Project sections** ボタンが現れるまでウィンドウ幅を狭めます。Windows のナレーターを起動し、アプリに戻って Tab でボタンに移動します。Enter で開き、Esc で閉じてから再び開きます。Tab で **Members** に移動し、Enter を押します。 | 読み上げだけでボタンと項目を区別できます。Esc で同じボタンにフォーカスが戻ります。Members を選ぶとパネルが閉じ、本文に Members が表示されます。ナレーターの起動と終了には `Win+Ctrl+Enter` を使います。[Microsoft のナレーター ガイド](https://support.microsoft.com/ja-jp/accessibility/windows/narrator/chapter-1-introducing-narrator) |
+| 表示倍率の異なるモニター · `two_styles` | 表示倍率が異なる 2 台のモニター（例：100% と 150%）の間で同じウィンドウを移動します。それぞれのモニターで最初の画面の **Session actions** を開き、**Show cursor** をクリックします。`starter` の漢字変換候補も両方のモニターで開きます。 | メニューはボタンの近くに、変換候補は入力カーソルの近くに表示されます。文字や枠線が欠けず、クリックすると状態が `Cursor visible` と `Cursor hidden` の間で切り替わります。 |
+| タッチ操作 · `two_styles` | タッチスクリーンで **Session actions: right-click or** の文言と Shift・F10 のキー表示がある概要欄を長押しします。指を離し、**Show cursor** をタップします。 | 指を離しても押した位置の近くにメニューが一つ残ります。項目をタップすると状態が一度だけ切り替わり、メニューが閉じます。 |
+
+使用した入力方式、スクリーンリーダー、モニターの表示倍率と、実際に見えた内容や聞こえた内容を記録します。モニターが 1 台しかない場合やタッチスクリーンがない場合は、該当する項目を **未確認** とします。ブラウザーのプレビューと自動チェックの結果は実機での観察と分けて記録し、性能は測定した場合にのみ報告します。
 
 ## 参照上の違い
 

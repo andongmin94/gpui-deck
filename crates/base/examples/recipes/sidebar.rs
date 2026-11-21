@@ -176,8 +176,15 @@ impl Styled for Sidebar {
 
 impl RenderOnce for Sidebar {
     fn render(mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        // GPUI lays out hover tooltips in a separate root.
+        let font_family = self
+            .base
+            .text_style()
+            .font_family
+            .clone()
+            .unwrap_or_else(|| window.text_style().font_family);
         let Some(breakpoint) = self.sheet_breakpoint else {
-            return self.navigation(None, cx).into_any_element();
+            return self.navigation(None, font_family, cx).into_any_element();
         };
         let sheet = window
             .use_keyed_state((self.id.clone(), "responsive"), cx, |_, cx| SidebarSheet {
@@ -203,7 +210,7 @@ impl RenderOnce for Sidebar {
                 sheet.inline.focus(window, cx);
             }
             self.base = self.base.track_focus(&sheet.inline);
-            return self.navigation(None, cx).into_any_element();
+            return self.navigation(None, font_family, cx).into_any_element();
         }
         if sheet.inline.contains_focused(window, cx) {
             sheet.trigger.focus(window, cx);
@@ -247,14 +254,22 @@ impl RenderOnce for Sidebar {
         div()
             .child(trigger)
             .child(panel.when(open, |panel| {
-                panel.child(self.w_full().navigation(Some(sheet.dialog), cx))
+                panel.child(
+                    self.w_full()
+                        .navigation(Some(sheet.dialog), font_family, cx),
+                )
             }))
             .into_any_element()
     }
 }
 
 impl Sidebar {
-    fn navigation(self, dialog: Option<Entity<DialogState>>, cx: &App) -> impl IntoElement {
+    fn navigation(
+        self,
+        dialog: Option<Entity<DialogState>>,
+        font_family: SharedString,
+        cx: &App,
+    ) -> impl IntoElement {
         assert!(
             self.rail.is_none() || self.collapse.is_none(),
             "Use either a Sidebar rail or a whole-sidebar disclosure"
@@ -329,9 +344,13 @@ impl Sidebar {
                 })
                 .when(collapsed, |button| {
                     let tip = label.clone();
+                    let font_family = font_family.clone();
                     button.justify_center().tooltip(move |_, cx| {
-                        let label = tip.clone();
-                        AnyView::from(cx.new(|_| RailTooltip { label, palette }))
+                        AnyView::from(cx.new(|_| RailTooltip {
+                            label: tip.clone(),
+                            palette,
+                            font_family: font_family.clone(),
+                        }))
                     })
                 })
                 .when(!collapsed, |button| {
@@ -464,6 +483,7 @@ impl Sidebar {
 struct RailTooltip {
     label: SharedString,
     palette: Palette,
+    font_family: SharedString,
 }
 
 impl Render for RailTooltip {
@@ -475,6 +495,7 @@ impl Render for RailTooltip {
             .border_1()
             .border_color(self.palette.border)
             .bg(self.palette.surface)
+            .font_family(self.font_family.clone())
             .text_color(self.palette.foreground)
             .text_size(self.palette.font_size)
             .child(self.label.clone())

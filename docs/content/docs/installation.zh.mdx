@@ -29,7 +29,7 @@ cargo run -p gpui-design --example starter --locked
 
 未提供外观参数时，默认使用 `compact`。两条命令运行的是同一个会话设置交互，只是使用应用自有的样式。
 
-建议从 [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) 入手，它是一个小而完整的应用。它只使用公开 API：`init`、`Root`、一个保留的 `InputState`、`Field` 和 `Button`。应用自行保存其观察（observation）和事件订阅，自行决定颜色和布局，并同时处理 Enter 键和按钮激活。在引入更大的组合之前，请先把它的启动代码和视图复制到你的应用中。
+建议从 [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) 入手，它是一个小而完整的应用。它只使用公开 API：`init`、`Root`、一个保留的 `InputState`、`Field` 和 `Button`。应用自行保存其观察（observation）和事件订阅，自行决定颜色和布局，并同时处理 Enter 键和按钮激活。在新应用中，将 `starter.rs` 复制为 `src/main.rs`，并将包含字体文件和许可证的整个 [`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-design/tree/main/crates/base/examples/assets/fonts) 目录复制到 `src/assets/fonts`。示例会在启动时注册 Pretendard。
 
 在现有的 Rust 应用中，依赖已检出的源码和匹配的 GPUI 快照，并将路径替换为你自己的检出位置：
 

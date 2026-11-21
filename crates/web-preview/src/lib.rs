@@ -7,6 +7,10 @@
 pub mod demos;
 pub mod theme;
 
+#[cfg(target_family = "wasm")]
+#[path = "../../base/examples/assets/fonts/mod.rs"]
+mod app_fonts;
+
 // Compile the sources installed by the CLI so preview and consumer use the same recipes.
 #[path = "../../base/examples/presentation.rs"]
 mod presentation;
@@ -17,11 +21,11 @@ mod recipes;
 
 #[cfg(target_family = "wasm")]
 mod web {
-    use gpui::{App, AppContext as _, WindowOptions};
+    use gpui::{App, AppContext as _, Styled as _, WindowOptions};
     use gpui_design::Root;
     use wasm_bindgen::prelude::*;
 
-    use crate::{demos, theme::Theme};
+    use crate::{app_fonts, demos, theme::Theme};
 
     /// Reads `?c=<demo>&theme=light|dark` from the frame's address.
     fn query() -> (String, Theme) {
@@ -45,16 +49,11 @@ mod web {
         gpui_platform::web_init();
         let (name, theme) = query();
         gpui_platform::single_threaded_web().run(move |cx: &mut App| {
-            // Browsers expose no system fonts to GPUI; ship Inter (SIL OFL 1.1).
-            cx.text_system()
-                .add_fonts(vec![std::borrow::Cow::Borrowed(include_bytes!(
-                    "../assets/Inter-Regular.ttf"
-                ))])
-                .ok();
+            app_fonts::register(cx);
             gpui_design::init(cx);
             cx.open_window(WindowOptions::default(), move |window, cx| {
                 let demo = demos::open(&name, theme, window, cx);
-                cx.new(|cx| Root::new(demo, window, cx))
+                cx.new(|cx| Root::new(demo, window, cx).font_family(app_fonts::FAMILY))
             })
             .ok();
         });

@@ -1,6 +1,9 @@
 //! A small native application using only GPUI Design's public API.
 //! Run `cargo run -p gpui-design --example starter --locked`.
 
+#[path = "assets/fonts/mod.rs"]
+mod app_fonts;
+
 use gpui::{
     AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement,
     ParentElement as _, Render, Role, SharedString, StatefulInteractiveElement as _, Styled as _,
@@ -147,6 +150,7 @@ impl Render for Starter {
 
 fn main() {
     gpui_platform::application().run(|cx| {
+        app_fonts::register(cx);
         gpui_design::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
@@ -165,7 +169,7 @@ fn main() {
             },
             |window, cx| {
                 let starter = cx.new(|cx| Starter::new(window, cx));
-                cx.new(|cx| Root::new(starter, window, cx))
+                cx.new(|cx| Root::new(starter, window, cx).font_family(app_fonts::FAMILY))
             },
         )
         .expect("failed to open starter window");

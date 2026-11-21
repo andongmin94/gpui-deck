@@ -82,7 +82,6 @@ pub(crate) fn frame(theme: Theme) -> Div {
         .p(px(24.))
         .bg(theme.background)
         .text_color(theme.foreground)
-        .font_family("Inter")
         .text_size(px(14.))
 }
 

@@ -209,14 +209,27 @@ The [introduction](https://ui.shadcn.com/docs) and
 source reuse part of the target. Browser-specific APIs require an explicit native
 equivalent rather than an extra alias.
 
-Use
-`cargo run -p gpui-design --example two_styles --locked -- settings` for the
-session controls and `cargo run -p gpui-design --example catalogue --locked` for
-navigation, OTP/Drawer/Toast, media/chart, and conversation/questionnaire flows.
+### Hands-on checks on Windows
 
-Native IME, screen-reader, visual, DPI, and performance observations remain
-separate from automated checks. No unperformed platform validation is considered
-complete, and no performance claim is made without measurements.
+Run the example you need from PowerShell at the repository root. Close its window before starting the next example.
+
+```powershell
+cargo run -p gpui-design --example starter --locked
+cargo run -p gpui-design --example catalogue --locked
+cargo run -p gpui-design --example two_styles --locked -- settings
+```
+
+Alongside Navigation, `catalogue` includes OTP, Drawer, Toast, media, charts, conversation and questionnaire examples.
+
+| Check | What to do | What to expect |
+| --- | --- | --- |
+| Hangul composition and font · `starter` | Select the Korean IME’s `가` mode on the taskbar. Type `한글` into **Your name**, switch to English input, append a space and `ABC 123`, then press **Say hello**. | Characters stay visible and appear once as the syllables form. The result reads `Hello, 한글 ABC 123!`. Both the field and the result show complete characters without clipping or missing-glyph boxes. |
+| IME candidates · `starter` | Clear the field, type `한` in `가` mode and press the Hanja key to open the candidates. Cancel with Esc, reopen the list and choose one candidate. On some layouts, right Ctrl serves as the Hanja key. | The candidate window opens near the caret. Canceling leaves `한` in the field. Choosing a candidate replaces it with the selected character and leaves **Say hello** untriggered. [Microsoft’s Korean IME guide](https://learn.microsoft.com/globalization/input/korean-ime) |
+| Screen reader and keyboard · `catalogue` | On the **Navigation** tab, narrow the window until the **Project sections** button appears. Start Windows Narrator, return to the app and Tab to the button. Open it with Enter, close it with Esc, then reopen it. Tab to **Members** and press Enter. | You can identify the button and the item by their spoken names. Esc returns focus to the same button. Selecting Members closes the panel and shows Members in the main content. Use `Win+Ctrl+Enter` to start or stop Narrator. [Microsoft’s Narrator guide](https://support.microsoft.com/en-us/accessibility/windows/narrator/chapter-1-introducing-narrator) |
+| Mixed display scaling · `two_styles` | Move the same window between two monitors with different scales, such as 100% and 150%. On each monitor, open **Session actions** on the first screen and click **Show cursor**. Repeat the Hanja candidate check in `starter` on both monitors. | The menu opens near its button and the candidate window near the caret. Text and borders are fully visible. Clicking the item switches the status between `Cursor visible` and `Cursor hidden`. |
+| Touch · `two_styles` | On a touchscreen, press and hold the summary area labeled **Session actions: right-click or** beside the Shift and F10 keycaps. Lift your finger, then tap **Show cursor**. | One menu stays open near the point you touched after you lift your finger. Tapping the item changes the status once and closes the menu. |
+
+Record the IME, screen reader, display scales and what you saw or heard. Mark a check as **untested** if you lack the second monitor or touchscreen it requires. Record browser previews and automated checks separately from native observations. Report performance only when measured.
 
 ## Reference distinctions
 

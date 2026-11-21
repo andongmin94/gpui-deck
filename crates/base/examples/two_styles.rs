@@ -1,6 +1,10 @@
 //! Shared session controls with compact tabs and a settings sidebar.
 //! Run with `compact` (the default) or `settings`.
 
+#[cfg(not(test))]
+#[path = "assets/fonts/mod.rs"]
+mod app_fonts;
+
 use std::sync::Arc;
 
 use gpui::{
@@ -2422,6 +2426,7 @@ impl Render for Demo {
                                 &self.edit_hint,
                                 "Change the session name, recording preset, and notes.",
                             )
+                            .font_family(window.text_style().font_family)
                             .max_w(rems(20.))
                             .px_3()
                             .py_2()
@@ -2514,6 +2519,7 @@ fn main() {
         }
     };
     gpui_platform::application().run(move |cx| {
+        app_fonts::register(cx);
         gpui_design::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
@@ -2532,7 +2538,7 @@ fn main() {
             },
             move |window, cx| {
                 let demo = cx.new(|cx| Demo::new(appearance, window, cx));
-                cx.new(|cx| Root::new(demo, window, cx))
+                cx.new(|cx| Root::new(demo, window, cx).font_family(app_fonts::FAMILY))
             },
         )
         .expect("failed to open two-styles example");

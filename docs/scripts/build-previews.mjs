@@ -4,7 +4,15 @@
 // without Rust, so a missing toolchain is installed first (Linux only).
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -81,6 +89,10 @@ const hash = createHash("sha256")
   .digest("hex")
   .slice(0, 12);
 renameSync(staging, new URL(`${hash}/`, out));
+copyFileSync(
+  new URL("crates/base/examples/assets/fonts/LICENSE", root),
+  new URL("Pretendard-LICENSE.txt", out),
+);
 writeFileSync(new URL("index.html", out), hostPage(`/preview/${hash}/gpui_design_web_preview.js`));
 
 /**
@@ -95,6 +107,7 @@ function hostPage(module) {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>GPUI Design preview</title>
+    <link rel="license" title="Embedded Pretendard fonts" href="/preview/Pretendard-LICENSE.txt" />
     <link rel="modulepreload" href="${module}" />
     <style>
       html, body { margin: 0; height: 100%; overflow: hidden; }

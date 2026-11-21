@@ -76,7 +76,6 @@ fn panel(theme: Theme) -> Div {
         .border_color(theme.border)
         .bg(theme.background)
         .text_color(theme.foreground)
-        .font_family("Inter")
         .text_size(px(14.))
         .shadow_md()
 }
@@ -146,7 +145,6 @@ fn modal_popup(theme: Theme) -> DialogPopup {
         .border_color(theme.border)
         .bg(theme.background)
         .text_color(theme.foreground)
-        .font_family("Inter")
         .text_size(px(14.))
         .shadow_lg()
 }
@@ -432,18 +430,18 @@ struct TooltipDemo {
 }
 
 impl Render for TooltipDemo {
-    fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
         let theme = self.theme;
         frame(theme)
             .flex_col()
             .child(
                 Tooltip::new("library-hint", &self.state, "Add to library")
+                    .font_family(window.text_style().font_family)
                     .px(px(12.))
                     .py(px(6.))
                     .rounded(px(6.))
                     .bg(theme.primary)
                     .text_color(theme.primary_foreground)
-                    .font_family("Inter")
                     .text_size(px(12.))
                     .trigger(|button| {
                         outline(theme, button)
@@ -1649,7 +1647,6 @@ impl Render for DrawerDemo {
                     .max_w(px(480.))
                     .bg(theme.background)
                     .text_color(theme.foreground)
-                    .font_family("Inter")
                     .text_size(px(14.))
                     .border_1()
                     .border_color(theme.border)

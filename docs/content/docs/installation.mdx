@@ -35,8 +35,9 @@ run the same session-settings interaction with application-owned styling.
 Start with [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) for a small complete
 application. It uses only public APIs: `init`, `Root`, a retained `InputState`,
 `Field`, and `Button`. The application keeps its observation and event subscriptions,
-owns the colors and layout, and handles both Enter and button activation. Copy
-its startup and view into a consumer before adding the larger compositions.
+owns the colors and layout, and handles both Enter and button activation.
+For a new app, copy `starter.rs` to `src/main.rs` and the entire
+[`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-design/tree/main/crates/base/examples/assets/fonts) directory to `src/assets/fonts`, including the font files and their license. The starter registers Pretendard when it launches.
 
 In an existing Rust application, depend on the checked-out source and matching
 GPUI snapshots, replacing the path with your checkout:

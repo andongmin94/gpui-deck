@@ -35,8 +35,9 @@ cargo run -p gpui-design --example starter --locked
 작고 완전한 애플리케이션은 [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs)에서
 시작합니다. 이 예제는 공개 API인 `init`, `Root`, 유지되는 `InputState`,
 `Field`, `Button`만 사용합니다. 애플리케이션은 관찰과 이벤트 구독을 유지하고,
-색상과 레이아웃을 소유하며, Enter와 버튼 활성화를 모두 처리합니다. 더 큰 조합을
-추가하기 전에 이 예제의 시작 코드와 뷰를 소비자 애플리케이션에 복사합니다.
+색상과 레이아웃을 소유하며, Enter와 버튼 활성화를 모두 처리합니다.
+새 앱에는 `starter.rs`를 `src/main.rs`로 복사하고,
+[`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-design/tree/main/crates/base/examples/assets/fonts) 폴더 전체를 글꼴 파일과 라이선스를 포함해 `src/assets/fonts`로 복사합니다. 예제는 실행할 때 프리텐다드를 등록합니다.
 
 기존 Rust 애플리케이션에서는 체크아웃한 소스와 일치하는 GPUI 스냅샷에 의존합니다.
 경로는 자신의 체크아웃 위치로 바꿉니다:

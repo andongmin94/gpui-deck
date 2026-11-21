@@ -374,3 +374,8 @@ Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gp
 Longbridge copyright and license notices are retained. Dependencies keep their
 respective licenses.
 
+The native examples and GPUI web previews share the unmodified Regular, Medium,
+SemiBold and Bold OpenType faces from [Pretendard 1.3.9](https://github.com/orioncactus/pretendard/releases/tag/v1.3.9).
+The fonts are distributed under the [SIL Open Font License 1.1](crates/base/examples/assets/fonts/LICENSE).
+The documentation site loads the variable webfont from the Pretendard npm package.
+

@@ -1,6 +1,10 @@
 //! Native compositions for navigation, notifications, media/data, and conversation.
 //! Run `cargo run -p gpui-design --example catalogue --locked`.
 
+#[cfg(not(test))]
+#[path = "assets/fonts/mod.rs"]
+mod app_fonts;
+
 mod catalogue_conversation;
 mod catalogue_data;
 mod catalogue_forms;
@@ -116,6 +120,7 @@ fn main() {
     use gpui::{TitlebarOptions, WindowBounds, WindowOptions, size};
     use gpui_design::Root;
     gpui_platform::application().run(|cx| {
+        app_fonts::register(cx);
         gpui_design::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
@@ -134,7 +139,7 @@ fn main() {
             },
             |window, cx| {
                 let catalogue = cx.new(|cx| Catalogue::new(window, cx));
-                cx.new(|cx| Root::new(catalogue, window, cx))
+                cx.new(|cx| Root::new(catalogue, window, cx).font_family(app_fonts::FAMILY))
             },
         )
         .expect("failed to open catalogue example");

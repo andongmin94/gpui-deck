@@ -29,7 +29,7 @@ cargo run -p gpui-design --example starter --locked
 
 外観の引数を指定しない場合、デフォルトは `compact` です。どちらのコマンドも、アプリケーションが所有するスタイリングで、同じセッション設定のインタラクションを実行します。
 
-小さく完結したアプリケーションとしては、まず [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) をご覧ください。このサンプルは公開 API のみを使用します。`init`、`Root`、保持される `InputState`、`Field`、`Button` です。アプリケーションは監視とイベントのサブスクリプションを保持し、色とレイアウトを所有し、Enter とボタンの起動の両方を処理します。より大きな構成を追加する前に、その起動処理とビューをコンシューマーにコピーしてください。
+小さく完結したアプリケーションとしては、まず [`starter.rs`](https://github.com/andongmin94/gpui-design/blob/main/crates/base/examples/starter.rs) をご覧ください。このサンプルは公開 API のみを使用します。`init`、`Root`、保持される `InputState`、`Field`、`Button` です。アプリケーションは監視とイベントのサブスクリプションを保持し、色とレイアウトを所有し、Enter とボタンの起動の両方を処理します。新しいアプリには `starter.rs` を `src/main.rs` としてコピーし、フォントとライセンスを含む [`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-design/tree/main/crates/base/examples/assets/fonts) ディレクトリ全体を `src/assets/fonts` にコピーしてください。サンプルは起動時に Pretendard を登録します。
 
 既存の Rust アプリケーションでは、チェックアウトしたソースと対応する GPUI スナップショットに依存します。パスはご自身のチェックアウト先に置き換えてください。
 

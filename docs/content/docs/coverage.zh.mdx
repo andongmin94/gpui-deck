@@ -184,11 +184,7 @@ Component APIs。在 `two_styles` 中，它观察了 Item 的媒体/页眉/页�
 约 96 px 的下限处。该检查把雷达图的辐条标签移到了轮缘之外，并
 把 Item 媒体中依赖字体的记录字形替换成了绘制的圆点。
 
-仍待完成：实际的韩文/CJK IME 组合/候选/提交/取消、屏幕阅读器
-朗读和操作、混合 DPI、触摸硬件，以及其余的桌面视觉审查。自动化
-工具不支持 Hangul 键，因此该原生流程需要手动切换到韩文
-模式。无头的处理函数测试
-不能确立原生 IME 行为。总体目标仍未完成。
+发布前仍需在实机上验证韩文/CJK 输入法、屏幕阅读器的朗读和操作、不同显示器的缩放比例、触摸交互，以及其余桌面界面的视觉效果。
 官方的 [Accordion multiple 示例](https://ui.shadcn.com/docs/components/base/accordion#multiple)、
 [Toggle Group 用法](https://ui.shadcn.com/docs/components/base/toggle-group#usage)、
 [Slider range](https://ui.shadcn.com/docs/components/base/slider#range)、
@@ -206,14 +202,27 @@ Component APIs。在 `two_styles` 中，它观察了 Item 的媒体/页眉/页�
 源码复用纳入了目标。特定于浏览器的 API 需要显式的原生
 等价物，而不是额外的别名。
 
-使用
-`cargo run -p gpui-design --example two_styles --locked -- settings` 查看
-会话控件，使用 `cargo run -p gpui-design --example catalogue --locked` 查看
-导航、OTP/Drawer/Toast、媒体/图表，以及对话/问卷流程。
+### 在 Windows 上手动验证
 
-原生 IME、屏幕阅读器、视觉、DPI 和性能方面的观察仍与自动化检查
-分开。未执行的平台验证一律不视为
-完成，没有测量数据也不做任何性能声明。
+在仓库根目录打开 PowerShell，一次运行一个示例。关闭当前示例窗口后，再运行下一条命令。
+
+```powershell
+cargo run -p gpui-design --example starter --locked
+cargo run -p gpui-design --example catalogue --locked
+cargo run -p gpui-design --example two_styles --locked -- settings
+```
+
+除了 Navigation，`catalogue` 还包含 OTP、Drawer、Toast、媒体、图表、对话和问卷示例。
+
+| 验证项 | 操作 | 通过标准 |
+| --- | --- | --- |
+| 韩文组合输入和字体 · `starter` | 在任务栏将韩语输入法切换到 `가` 模式。在 **Your name** 中用键盘输入 `한글`，切换到英文模式，继续输入 ` ABC 123`，然后按 **Say hello**。 | 组合字母时，字符不会消失或重复。结果显示 `Hello, 한글 ABC 123!`，输入框和结果中的字符都完整可见，没有缺字方框或裁切。 |
+| 输入法候选项 · `starter` | 清空输入框，在 `가` 模式下输入 `한`，然后按韩语键盘的汉字键打开候选窗口。先按 Esc 取消，再次打开并选择一个候选字。某些键盘布局使用右 Ctrl 作为汉字键。 | 候选窗口出现在输入光标附近。取消后保留 `한`，选择后只有一个所选汉字替换它。选择候选字时不会触发 **Say hello**。[Microsoft 韩语输入法指南](https://learn.microsoft.com/globalization/input/korean-ime) |
+| 屏幕阅读器和键盘 · `catalogue` | 打开 **Navigation** 选项卡，缩窄窗口直到出现 **Project sections** 按钮。启动 Windows 讲述人，回到应用，用 Tab 找到按钮。按 Enter 打开，按 Esc 关闭，再次打开后用 Tab 找到 **Members** 并按 Enter。 | 只听语音即可区分导航按钮和条目。按 Esc 后焦点回到原按钮；选择 Members 后面板关闭，正文显示 Members。按 `Win+Ctrl+Enter` 可启动或退出讲述人。[Microsoft 讲述人指南](https://support.microsoft.com/zh-cn/accessibility/windows/narrator/chapter-1-introducing-narrator) |
+| 不同显示器的缩放比例 · `two_styles` | 在缩放比例不同（例如 100% 和 150%）的两台显示器之间移动同一窗口。在两块屏幕上分别打开初始界面的 **Session actions** 菜单并单击 **Show cursor**。用同样的方法检查 `starter` 中汉字候选窗口的位置。 | 菜单靠近按钮，候选窗口靠近输入光标。文字和边框完整可见。单击菜单项后，状态在 `Cursor visible` 和 `Cursor hidden` 之间切换。 |
+| 触摸 · `two_styles` | 在触摸屏上，用手指长按标有 **Session actions: right-click or** 和 Shift、F10 键的摘要区域后松开。轻触 **Show cursor**。 | 松手后，长按位置附近显示一个菜单。轻触该项后状态切换一次，菜单关闭。 |
+
+记录所用输入法、屏幕阅读器、各显示器的缩放比例，以及实际看到或听到的结果。只有一台显示器或没有触摸屏时，将相应项目标为**未验证**。将浏览器预览和自动测试结果与原生实测结果分开记录。性能数据以实际测量为准。
 
 ## 参考对照
 
