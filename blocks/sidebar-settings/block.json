@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "name": "sidebar-settings",
+  "recipes": ["sidebar", "button"],
+  "files": [
+    { "source": "settings.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" }
+  ]
+}
