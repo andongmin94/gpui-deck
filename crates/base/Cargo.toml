@@ -14,14 +14,22 @@ keywords = ["gpui", "gui", "headless", "desktop"]
 [[example]]
 name = "two_styles"
 path = "examples/two_styles.rs"
+required-features = ["components"]
 
 [[example]]
 name = "catalogue"
 path = "examples/catalogue.rs"
+required-features = ["components"]
 
 [[example]]
 name = "starter"
 path = "examples/starter.rs"
+required-features = ["components"]
+
+[[test]]
+name = "element_ext"
+path = "tests/element_ext.rs"
+required-features = ["components"]
 
 [[test]]
 name = "composition"
@@ -29,41 +37,70 @@ path = "tests/composition.rs"
 required-features = ["test-support"]
 
 [features]
-test-support = ["gpui/test-support"]
-inspector = ["gpui_macros/inspector", "gpui/inspector"]
+default = ["components"]
+components = [
+    "dep:aho-corasick",
+    "dep:anyhow",
+    "dep:ashpd",
+    "dep:futures",
+    "dep:gpui",
+    "dep:gpui_macros",
+    "dep:instant",
+    "dep:jiff",
+    "dep:lsp-types",
+    "dep:objc2",
+    "dep:objc2-app-kit",
+    "dep:objc2-foundation",
+    "dep:raw-window-handle",
+    "dep:regex",
+    "dep:ropey",
+    "dep:schemars",
+    "dep:serde",
+    "dep:serde_json",
+    "dep:smallvec",
+    "dep:sum-tree",
+    "dep:tracing",
+    "dep:unicode-linebreak",
+    "dep:unicode-segmentation",
+    "dep:web-time",
+    "dep:windows",
+]
+recipe-sources = []
+test-support = ["components", "gpui/test-support"]
+inspector = ["components", "gpui_macros/inspector", "gpui/inspector"]
 
 [dependencies]
-anyhow.workspace = true
-aho-corasick = "1.1.3"
-futures = "0.3"
-gpui.workspace = true
-gpui_macros.workspace = true
-instant.workspace = true
-lsp-types.workspace = true
-ropey.workspace = true
-regex = "1"
-schemars.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-smallvec.workspace = true
-sum-tree.workspace = true
-tracing.workspace = true
-unicode-linebreak = "0.1.5"
-unicode-segmentation = "1.12.0"
-web-time = "1"
-jiff = { version = "1.0.1", default-features = false, features = ["std"] }
+anyhow = { workspace = true, optional = true }
+aho-corasick = { version = "1.1.3", optional = true }
+futures = { version = "0.3", optional = true }
+gpui = { workspace = true, optional = true }
+gpui_macros = { workspace = true, optional = true }
+instant = { workspace = true, optional = true }
+lsp-types = { workspace = true, optional = true }
+ropey = { workspace = true, optional = true }
+regex = { version = "1", optional = true }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+smallvec = { workspace = true, optional = true }
+sum-tree = { workspace = true, optional = true }
+tracing = { workspace = true, optional = true }
+unicode-linebreak = { version = "0.1.5", optional = true }
+unicode-segmentation = { version = "1.12.0", optional = true }
+web-time = { version = "1", optional = true }
+jiff = { version = "1.0.1", default-features = false, features = ["std"], optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-raw-window-handle.workspace = true
-objc2 = "0.6"
-objc2-app-kit = { version = "0.3", features = ["NSAccessibility", "NSView", "NSWindow", "NSWorkspace"] }
-objc2-foundation = { version = "0.3", features = ["NSGeometry", "NSString"] }
+raw-window-handle = { workspace = true, optional = true }
+objc2 = { version = "0.6", optional = true }
+objc2-app-kit = { version = "0.3", features = ["NSAccessibility", "NSView", "NSWindow", "NSWorkspace"], optional = true }
+objc2-foundation = { version = "0.3", features = ["NSGeometry", "NSString"], optional = true }
 
 [target.'cfg(target_os = "windows")'.dependencies]
-windows = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"], optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-ashpd = { version = "0.13", default-features = false, features = ["async-io", "settings"] }
+ashpd = { version = "0.13", default-features = false, features = ["async-io", "settings"], optional = true }
 
 [dev-dependencies]
 gpui = { workspace = true, features = ["test-support"] }

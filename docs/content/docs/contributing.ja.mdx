@@ -5,7 +5,8 @@ description: "各部分のソースの場所と、変更の検証方法を説明
 
 | 場所 | 責務 |
 | --- | --- |
-| `crates/cli/` | ソースコピー CLI とレシピの依存関係カタログ |
+| `crates/cli/` | ソースコピー CLI |
+| `crates/base/src/recipe_sources.rs` | CLI が使用する組み込みのレシピソース、アセット、依存関係の一覧 |
 | `crates/base/src/` | `gpui-deck` ライブラリと、その動作レベルのテスト |
 | `crates/base/tests/` | 公開 API を使用する統合テスト |
 | `crates/base/examples/starter.rs` | 公開 API のみを使用する、小さく完結したアプリケーション |

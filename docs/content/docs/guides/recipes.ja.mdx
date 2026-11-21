@@ -11,12 +11,12 @@ description: "23 のカタログレシピは、再利用可能なアプリケー
 
 ## アプリケーションへのコピー
 
-ソース CLI は、レシピを、推移的なレシピの依存関係、ライト/ダークの
-トークンソース、モジュール宣言、ライセンス、必要なアセットとともにコピーします。
+アプリのルートで CLI を実行すると、レシピと必要な依存関係、トークン、モジュール宣言、ライセンス、アセットをまとめてコピーできます。
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- list
-cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
+cargo install gpui-deck-cli --version 0.0.1 --locked
+gpui-deck list
+gpui-deck add data-table avatar --to src/ui
 ```
 
 コンシューマーで `mod ui;` を宣言し、`ui::recipes::{DataTable, Avatar}` と
@@ -42,12 +42,12 @@ CLI は書き込む前に停止し、宣言を手動で追加する方法を説�
 衝突する新しいファイルも拒否されます。コピーされたソースは
 アプリケーションのものです。
 
-チェックアウトを更新したら、`diff` でインストール済みのファイルと現在の CLI に含まれるソースを比較できます。
+CLI を更新したら、`diff` でインストール済みのファイルと現在の CLI に含まれるソースを比較できます。
 `PATH` に Git が必要です。インストール済みレシピのマニフェストを読み、管理対象ファイルの変更と欠落を表示します。
 パッチの `-` はアプリの行、`+` は CLI に含まれる行です。アプリのファイルは変更されません。
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- diff --to ../my-app/src/ui
+gpui-deck diff --to src/ui
 ```
 
 手動でコピーするには、次のようにします。

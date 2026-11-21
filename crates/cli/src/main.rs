@@ -1,5 +1,3 @@
-mod catalogue;
-
 use std::{
     collections::{BTreeMap, BTreeSet},
     ffi::OsString,
@@ -10,7 +8,7 @@ use std::{
 };
 
 use anyhow::{Context as _, Result, bail};
-use catalogue::{LICENSE, PRESENTATION, RECIPES, Recipe};
+use gpui_deck::recipe_sources::{LICENSE, PRESENTATION, RECIPES, Recipe};
 
 const USAGE: &str = "GPUI Deck source recipes
 

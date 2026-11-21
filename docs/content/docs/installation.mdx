@@ -18,7 +18,44 @@ sudo apt-get install --no-install-recommends -y \
   libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
 ```
 
-Then clone and run from a native desktop session:
+## Install in a Rust application
+
+Add GPUI Deck and the matching GPUI crates to your application's `Cargo.toml`.
+
+```toml
+[dependencies]
+gpui-deck = "0.0.1"
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+
+[features]
+test-support = ["gpui-deck/test-support"]
+```
+
+The feature declaration supports the test guards in copied recipe source;
+enable it when running those GPUI tests. Use the repository's pinned Rust toolchain and native prerequisites above. Copy
+the desired presentation recipes into the application using their
+[dependency and token instructions](/en/docs/guides/recipes/).
+
+The GPUI snapshot family is pinned to **`=0.3.12`**. Update those pins and
+`Cargo.lock` together when changing the rendering dependency.
+
+From your application root, install the CLI from crates.io and copy the recipes into `src/ui`.
+
+```sh
+cargo install gpui-deck-cli --version 0.0.1 --locked
+gpui-deck list
+gpui-deck add data-table avatar --to src/ui
+```
+
+Declare `mod ui;` in the consumer. The tool preserves edits to previously installed
+recipe and palette files; modified generated module declarations or new-file
+conflicts stop before writing. It leaves Cargo dependencies to the consumer.
+See the [source-copy guide](/en/docs/guides/recipes/).
+
+## Run the native examples
+
+Clone the repository and run the examples from a native desktop session.
 
 ```sh
 git clone https://github.com/andongmin94/gpui-deck.git
@@ -39,38 +76,5 @@ owns the colors and layout, and handles both Enter and button activation.
 For a new app, copy `starter.rs` to `src/main.rs` and the entire
 [`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-deck/tree/main/crates/base/examples/assets/fonts) directory to `src/assets/fonts`, including the font files and their license. The starter registers Pretendard when it launches.
 
-In an existing Rust application, depend on the checked-out source and matching
-GPUI snapshots, replacing the path with your checkout:
-
-```toml
-[dependencies]
-gpui-deck = { path = "../gpui-deck/crates/base" }
-gpui = { package = "gpui-pre", version = "=0.3.12" }
-gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
-
-[features]
-test-support = ["gpui-deck/test-support"]
-```
-
-The feature declaration supports the test guards in copied recipe source;
-enable it when running those GPUI tests. Use the repository's pinned Rust toolchain and native prerequisites above. Copy
-the desired presentation recipes into the application using their
-[dependency and token instructions](/en/docs/guides/recipes/).
-
-The GPUI snapshot family is pinned to **`=0.3.12`**. Update those pins and
-`Cargo.lock` together when changing the rendering dependency.
-
-Copy application-owned presentation source with its required recipe modules,
-light/dark tokens and license:
-
-```sh
-cargo run -p gpui-deck-cli --locked -- list
-cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
-```
-
-Declare `mod ui;` in the consumer. The tool preserves edits to previously installed
-recipe and palette files; modified generated module declarations or new-file
-conflicts stop before writing. It leaves Cargo dependencies to the consumer.
-See the [source-copy guide](/en/docs/guides/recipes/).
 The catalogue's Selection section demonstrates range/multiple dates, grouped
 recording targets, removable selected chips and replaceable local option data.

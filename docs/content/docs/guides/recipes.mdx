@@ -11,12 +11,12 @@ consumer's `Palette` or application-supplied `Styled` values.
 
 ## Copy into an application
 
-The source CLI copies a recipe with its transitive recipe dependencies, light/dark
-token source, module declarations, license and required assets:
+From your application root, use the CLI to copy each recipe with its dependencies, tokens, module declarations, license and assets.
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- list
-cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
+cargo install gpui-deck-cli --version 0.0.1 --locked
+gpui-deck list
+gpui-deck add data-table avatar --to src/ui
 ```
 
 Declare `mod ui;` in the consumer and use `ui::recipes::{DataTable, Avatar}` and
@@ -42,14 +42,14 @@ the CLI stops before writing and explains how to add declarations manually.
 Conflicting new files are also rejected. The copied source belongs to the
 application.
 
-Use `diff` after updating your checkout to compare the installation with the
+Use `diff` after updating the CLI to compare the installation with the
 current CLI's bundled sources. Git must be on `PATH`. The command reads the
 installed recipe manifest and reports changes to managed files, including missing
 files. In each patch, `-` lines are from your app and `+` lines are from the CLI.
 It leaves the app unchanged.
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- diff --to ../my-app/src/ui
+gpui-deck diff --to src/ui
 ```
 
 To copy manually:

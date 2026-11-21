@@ -5,7 +5,8 @@ description: "Where each part of the source lives and how to verify a change."
 
 | Location | Responsibility |
 | --- | --- |
-| `crates/cli/` | Source-copy CLI and recipe dependency catalogue |
+| `crates/cli/` | Source-copy CLI |
+| `crates/base/src/recipe_sources.rs` | Bundled recipe sources, assets and dependency catalogue used by the CLI |
 | `crates/base/src/` | The `gpui-deck` library and its behavior-level tests |
 | `crates/base/tests/` | Integration tests using the public API |
 | `crates/base/examples/starter.rs` | Small complete application using only public APIs |

@@ -18,7 +18,45 @@ sudo apt-get install --no-install-recommends -y \
   libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
 ```
 
-그런 다음 네이티브 데스크톱 세션에서 클론하고 실행합니다:
+## Rust 앱에 설치
+
+앱의 `Cargo.toml`에 GPUI Deck과 호환되는 GPUI 크레이트를 추가합니다.
+
+```toml
+[dependencies]
+gpui-deck = "0.0.1"
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+
+[features]
+test-support = ["gpui-deck/test-support"]
+```
+
+이 feature 선언은 복사한 레시피 소스의 테스트 가드를 지원합니다. 해당 GPUI
+테스트를 실행할 때 활성화합니다. 위에서 설명한 저장소의 고정된 Rust 툴체인과
+네이티브 사전 요구 사항을 사용합니다. 원하는 화면 표현 레시피는
+[의존성과 토큰 안내](/ko/docs/guides/recipes/)에
+따라 애플리케이션에 복사합니다.
+
+GPUI 스냅샷 패밀리는 **`=0.3.12`**로 고정되어 있습니다. 렌더링 의존성을 바꿀 때는
+이 고정 버전과 `Cargo.lock`을 함께 업데이트합니다.
+
+앱 루트에서 crates.io의 CLI를 설치하고 레시피를 `src/ui`에 복사합니다.
+
+```sh
+cargo install gpui-deck-cli --version 0.0.1 --locked
+gpui-deck list
+gpui-deck add data-table avatar --to src/ui
+```
+
+소비자 애플리케이션에서 `mod ui;`를 선언합니다. 이 도구는 이전에 설치한 레시피와
+팔레트 파일의 수정 사항을 보존합니다. 생성된 모듈 선언이 수정되었거나 새 파일이
+충돌하면 쓰기 전에 중단합니다. Cargo 의존성은 소비자 애플리케이션에 맡깁니다.
+[소스 복사 가이드](/ko/docs/guides/recipes/)를 참고합니다.
+
+## 네이티브 예제 실행
+
+저장소를 복제한 뒤 네이티브 데스크톱 세션에서 예제를 실행합니다.
 
 ```sh
 git clone https://github.com/andongmin94/gpui-deck.git
@@ -39,39 +77,5 @@ cargo run -p gpui-deck --example starter --locked
 새 앱에는 `starter.rs`를 `src/main.rs`로 복사하고,
 [`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-deck/tree/main/crates/base/examples/assets/fonts) 폴더 전체를 글꼴 파일과 라이선스를 포함해 `src/assets/fonts`로 복사합니다. 예제는 실행할 때 프리텐다드를 등록합니다.
 
-기존 Rust 애플리케이션에서는 체크아웃한 소스와 일치하는 GPUI 스냅샷에 의존합니다.
-경로는 자신의 체크아웃 위치로 바꿉니다:
-
-```toml
-[dependencies]
-gpui-deck = { path = "../gpui-deck/crates/base" }
-gpui = { package = "gpui-pre", version = "=0.3.12" }
-gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
-
-[features]
-test-support = ["gpui-deck/test-support"]
-```
-
-이 feature 선언은 복사한 레시피 소스의 테스트 가드를 지원합니다. 해당 GPUI
-테스트를 실행할 때 활성화합니다. 위에서 설명한 저장소의 고정된 Rust 툴체인과
-네이티브 사전 요구 사항을 사용합니다. 원하는 화면 표현 레시피는
-[의존성과 토큰 안내](/ko/docs/guides/recipes/)에
-따라 애플리케이션에 복사합니다.
-
-GPUI 스냅샷 패밀리는 **`=0.3.12`**로 고정되어 있습니다. 렌더링 의존성을 바꿀 때는
-이 고정 버전과 `Cargo.lock`을 함께 업데이트합니다.
-
-애플리케이션이 소유하는 화면 표현 소스를 필요한 레시피 모듈, 라이트/다크 토큰,
-라이선스와 함께 복사합니다:
-
-```sh
-cargo run -p gpui-deck-cli --locked -- list
-cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
-```
-
-소비자 애플리케이션에서 `mod ui;`를 선언합니다. 이 도구는 이전에 설치한 레시피와
-팔레트 파일의 수정 사항을 보존합니다. 생성된 모듈 선언이 수정되었거나 새 파일이
-충돌하면 쓰기 전에 중단합니다. Cargo 의존성은 소비자 애플리케이션에 맡깁니다.
-[소스 복사 가이드](/ko/docs/guides/recipes/)를 참고합니다.
 카탈로그의 Selection 섹션은 범위/다중 날짜, 그룹으로 묶인 녹화 대상, 제거 가능한
 선택 칩, 교체 가능한 로컬 옵션 데이터를 보여줍니다.

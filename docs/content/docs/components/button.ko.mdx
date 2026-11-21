@@ -9,10 +9,10 @@ description: "포인터와 키보드 활성화, 비활성화 상태, 포커스, 
 Enter/Space 활성화, 포커스, 비활성화 상태, 네이티브 Button 역할을 소유합니다.
 내용, 간격, 모양, 상태별 스타일은 애플리케이션이 맡습니다.
 
-미리보기에 쓰인 라이트·다크 버튼 스타일을 앱에 복사합니다.
+[CLI를 설치](/ko/docs/installation/)한 뒤 앱 루트에서 다음 명령을 실행하면 미리보기의 라이트·다크 버튼 스타일을 복사할 수 있습니다.
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- add button --to ../my-app/src/ui
+gpui-deck add button --to src/ui
 ```
 
 ```rust

@@ -20,6 +20,19 @@ The [completion criteria and current work](https://gpui-deck.andongmin.com/en/do
 track behavior, accessibility, visual defaults, source distribution, and native
 validation. Catalogue coverage alone is not a claim of shadcn/ui-level completeness.
 
+## Install
+
+From your Rust application, add the library and install the recipe CLI from crates.io.
+
+```sh
+cargo add gpui-deck@0.0.1
+cargo install gpui-deck-cli --version 0.0.1 --locked
+gpui-deck add button --to src/ui
+```
+
+Declare `mod ui;` in your app, and use the matching `gpui-pre` and
+`gpui-pre-platform` dependencies in the [installation guide](https://gpui-deck.andongmin.com/en/docs/installation/).
+
 ## Current scope
 
 | Control | Behavior supplied by the library | Application-owned presentation |
@@ -71,7 +84,7 @@ Shared support includes the window root, popup positioning, input infrastructure
 and opt-in test observations. Internal editing machinery retained for Input is
 not a separate editor product. Public APIs are still being developed.
 
-The [crate exports](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/src/lib.rs) define the public control and support
+The [component exports](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/src/components.rs) define the public control and support
 surface. The [input module](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/src/input/mod.rs) intentionally also exposes
 `EditorState`, display mapping, diagnostics and provider types used by its shared
 engine; its standalone `Editor` renderer is available only to inherited tests.

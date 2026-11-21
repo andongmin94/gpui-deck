@@ -9,10 +9,10 @@ description: "ポインターとキーボードによる操作、無効状態、
 ポインターと Enter/Space による操作、フォーカス、無効状態、ネイティブの
 Button ロールを担当し、内容、間隔、形状、状態のスタイルはアプリケーションが管理します。
 
-プレビューで使用しているライト・ダークのボタンスタイルをアプリにコピーできます。
+[CLI をインストール](/ja/docs/installation/)した後、アプリのルートで次のコマンドを実行すると、プレビューのライト・ダークのボタンスタイルをコピーできます。
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- add button --to ../my-app/src/ui
+gpui-deck add button --to src/ui
 ```
 
 ```rust

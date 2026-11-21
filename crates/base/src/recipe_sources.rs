@@ -1,10 +1,13 @@
-pub(crate) struct Recipe {
-    pub(crate) name: &'static str,
-    pub(crate) module: &'static str,
-    pub(crate) exports: &'static [&'static str],
-    pub(crate) dependencies: &'static [&'static str],
-    pub(crate) source: &'static str,
-    pub(crate) assets: &'static [(&'static str, &'static str)],
+//! Copyable Rust sources, dependencies, and assets used by the GPUI Deck CLI.
+
+/// One recipe and the files and modules needed to install it in an application.
+pub struct Recipe {
+    pub name: &'static str,
+    pub module: &'static str,
+    pub exports: &'static [&'static str],
+    pub dependencies: &'static [&'static str],
+    pub source: &'static str,
+    pub assets: &'static [(&'static str, &'static str)],
 }
 
 macro_rules! recipe {
@@ -14,7 +17,7 @@ macro_rules! recipe {
             module: stringify!($module),
             exports: &[$(stringify!($export)),+],
             dependencies: &[$($dependency),*],
-            source: include_str!(concat!("../../base/examples/recipes/", stringify!($module), ".rs")),
+            source: include_str!(concat!("../examples/recipes/", stringify!($module), ".rs")),
             assets: &[$($asset)?],
         }
     };
@@ -22,7 +25,8 @@ macro_rules! recipe {
 
 // Names, exports, source dependencies and assets have one owner. Source itself
 // stays in the examples; rebuilding the CLI embeds those exact current files.
-pub(crate) const RECIPES: &[Recipe] = &[
+/// All copyable recipes in this release.
+pub const RECIPES: &[Recipe] = &[
     recipe!("alert", alert, [Alert], []),
     recipe!("aspect-ratio", aspect_ratio, [AspectRatio], []),
     recipe!("attachment", attachment, [Attachment], []),
@@ -33,7 +37,7 @@ pub(crate) const RECIPES: &[Recipe] = &[
         [],
         (
             "assets/preset-avatar.svg",
-            include_str!("../../base/examples/assets/preset-avatar.svg")
+            include_str!("../examples/assets/preset-avatar.svg")
         )
     ),
     recipe!("badge", badge, [Badge], []),
@@ -75,5 +79,7 @@ pub(crate) const RECIPES: &[Recipe] = &[
     ),
 ];
 
-pub(crate) const PRESENTATION: &str = include_str!("../../base/examples/presentation.rs");
-pub(crate) const LICENSE: &str = include_str!("../../../LICENSE-APACHE");
+/// Application-owned palette and typography copied with every installation.
+pub const PRESENTATION: &str = include_str!("../examples/presentation.rs");
+/// License distributed with the recipe sources.
+pub const LICENSE: &str = include_str!("../LICENSE-APACHE");

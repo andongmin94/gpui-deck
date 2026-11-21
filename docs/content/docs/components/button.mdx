@@ -10,10 +10,10 @@ pointer and Enter/Space activation, focus, the disabled state and the native
 Button role; its content, spacing, shape and state styling belong to the
 application.
 
-Copy the same light and dark button variants used in the preview into your application.
+With the [CLI installed](/en/docs/installation/), run this from your app's root to copy the light and dark button variants used in the preview.
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- add button --to ../my-app/src/ui
+gpui-deck add button --to src/ui
 ```
 
 ```rust

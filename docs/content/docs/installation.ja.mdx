@@ -16,7 +16,40 @@ sudo apt-get install --no-install-recommends -y \
   libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
 ```
 
-その後、ネイティブのデスクトップセッションからクローンして実行します。
+## Rust アプリへのインストール
+
+アプリの `Cargo.toml` に GPUI Deck と対応する GPUI クレートを追加します。
+
+```toml
+[dependencies]
+gpui-deck = "0.0.1"
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
+
+[features]
+test-support = ["gpui-deck/test-support"]
+```
+
+この feature 宣言は、コピーしたレシピソース内のテストガードをサポートします。それらの GPUI テストを実行するときに有効にしてください。リポジトリで固定されている Rust ツールチェーンと、上記のネイティブの前提条件を使用してください。必要なプレゼンテーションレシピは、その
+[依存関係とトークンの手順](/ja/docs/guides/recipes/)に従ってアプリケーションにコピーします。
+
+GPUI スナップショットファミリーは **`=0.3.12`** に固定されています。レンダリングの依存関係を変更するときは、これらの固定と
+`Cargo.lock` を一緒に更新してください。
+
+アプリのルートで crates.io から CLI をインストールし、レシピを `src/ui` にコピーします。
+
+```sh
+cargo install gpui-deck-cli --version 0.0.1 --locked
+gpui-deck list
+gpui-deck add data-table avatar --to src/ui
+```
+
+コンシューマーで `mod ui;` を宣言してください。このツールは、以前にインストールしたレシピとパレットのファイルへの編集を保持します。生成されたモジュール宣言が変更されている場合や、新しいファイルが衝突する場合は、書き込む前に停止します。Cargo の依存関係はコンシューマーに任せます。
+詳しくは[ソースコピーガイド](/ja/docs/guides/recipes/)をご覧ください。
+
+## ネイティブサンプルの実行
+
+リポジトリをクローンし、デスクトップセッションでサンプルを実行します。
 
 ```sh
 git clone https://github.com/andongmin94/gpui-deck.git
@@ -31,31 +64,4 @@ cargo run -p gpui-deck --example starter --locked
 
 小さく完結したアプリケーションとしては、まず [`starter.rs`](https://github.com/andongmin94/gpui-deck/blob/main/crates/base/examples/starter.rs) をご覧ください。このサンプルは公開 API のみを使用します。`init`、`Root`、保持される `InputState`、`Field`、`Button` です。アプリケーションは監視とイベントのサブスクリプションを保持し、色とレイアウトを所有し、Enter とボタンの起動の両方を処理します。新しいアプリには `starter.rs` を `src/main.rs` としてコピーし、フォントとライセンスを含む [`crates/base/examples/assets/fonts`](https://github.com/andongmin94/gpui-deck/tree/main/crates/base/examples/assets/fonts) ディレクトリ全体を `src/assets/fonts` にコピーしてください。サンプルは起動時に Pretendard を登録します。
 
-既存の Rust アプリケーションでは、チェックアウトしたソースと対応する GPUI スナップショットに依存します。パスはご自身のチェックアウト先に置き換えてください。
-
-```toml
-[dependencies]
-gpui-deck = { path = "../gpui-deck/crates/base" }
-gpui = { package = "gpui-pre", version = "=0.3.12" }
-gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
-
-[features]
-test-support = ["gpui-deck/test-support"]
-```
-
-この feature 宣言は、コピーしたレシピソース内のテストガードをサポートします。それらの GPUI テストを実行するときに有効にしてください。リポジトリで固定されている Rust ツールチェーンと、上記のネイティブの前提条件を使用してください。必要なプレゼンテーションレシピは、その
-[依存関係とトークンの手順](/ja/docs/guides/recipes/)に従ってアプリケーションにコピーします。
-
-GPUI スナップショットファミリーは **`=0.3.12`** に固定されています。レンダリングの依存関係を変更するときは、これらの固定と
-`Cargo.lock` を一緒に更新してください。
-
-アプリケーションが所有するプレゼンテーションソースを、必要なレシピモジュール、ライト/ダークのトークン、ライセンスとともにコピーします。
-
-```sh
-cargo run -p gpui-deck-cli --locked -- list
-cargo run -p gpui-deck-cli --locked -- add data-table avatar --to ../my-app/src/ui
-```
-
-コンシューマーで `mod ui;` を宣言してください。このツールは、以前にインストールしたレシピとパレットのファイルへの編集を保持します。生成されたモジュール宣言が変更されている場合や、新しいファイルが衝突する場合は、書き込む前に停止します。Cargo の依存関係はコンシューマーに任せます。
-詳しくは[ソースコピーガイド](/ja/docs/guides/recipes/)をご覧ください。
 カタログの Selection セクションでは、範囲/複数の日付、グループ化された録画ターゲット、削除可能な選択済みチップ、置き換え可能なローカルのオプションデータをデモしています。

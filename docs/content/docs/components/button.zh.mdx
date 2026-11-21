@@ -10,10 +10,10 @@ description: "指针与键盘激活、禁用状态、焦点、无障碍名称与
 Button 角色；其内容、间距、形状和状态样式由
 应用负责。
 
-将预览使用的浅色和深色按钮样式复制到应用中。
+[安装 CLI](/zh/docs/installation/) 后，在应用根目录运行以下命令，即可复制预览中的浅色和深色按钮样式。
 
 ```sh
-cargo run -p gpui-deck-cli --locked -- add button --to ../my-app/src/ui
+gpui-deck add button --to src/ui
 ```
 
 ```rust
