@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu as LanguageMenu } from "@base-ui/react/menu";
+import { Menu as DropdownMenu } from "@base-ui/react/menu";
 import { Link, useRouter } from "fumapress/client";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
 import { Languages, Menu, Moon, Search, Sun, X } from "lucide-react";
@@ -19,6 +19,10 @@ function GitHubIcon() {
 
 const iconButton =
   "inline-flex size-8 items-center justify-center rounded-md text-fd-foreground transition-colors hover:bg-fd-accent";
+const menuPopup =
+  "min-w-36 rounded-lg border bg-fd-popover p-1 text-sm text-fd-popover-foreground shadow-md outline-none";
+const menuItem =
+  "flex items-center rounded-md px-2 outline-none data-[highlighted]:bg-fd-accent aria-[current=true]:font-semibold";
 
 /** shadcn/ui's site header: logo and section links, then search, language, GitHub and theme. */
 export function SiteHeader({
@@ -47,7 +51,7 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-[1400px] items-center gap-2 px-4 md:px-6">
-        {onToggleMenu && (
+        {onToggleMenu ? (
           <button
             type="button"
             aria-label={t.menu}
@@ -57,10 +61,35 @@ export function SiteHeader({
           >
             {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
+        ) : (
+          <DropdownMenu.Root modal={false}>
+            <DropdownMenu.Trigger aria-label={t.menu} className={`${iconButton} md:hidden`}>
+              <Menu className="size-5" />
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Positioner sideOffset={6} align="start" className="z-50 md:hidden">
+                <DropdownMenu.Popup className={menuPopup}>
+                  {links.map((link) => (
+                    <DropdownMenu.LinkItem
+                      key={link.href}
+                      render={<Link href={link.href} />}
+                      closeOnClick
+                      className={`${menuItem} h-11`}
+                    >
+                      {link.label}
+                    </DropdownMenu.LinkItem>
+                  ))}
+                </DropdownMenu.Popup>
+              </DropdownMenu.Positioner>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         )}
-        <Link href={`/${lang}`} className="mr-4 flex items-center gap-2 font-semibold">
-          <span className="size-5 rounded-[5px] bg-fd-foreground" aria-hidden />
-          <span className="hidden sm:inline">{SITE_NAME}</span>
+        <Link
+          href={`/${lang}`}
+          className="flex shrink-0 items-center gap-2 text-sm font-semibold sm:mr-4 sm:text-base"
+        >
+          <span className="hidden size-5 rounded-[5px] bg-fd-foreground sm:block" aria-hidden />
+          {SITE_NAME}
         </Link>
         <nav className="hidden items-center gap-1 text-sm md:flex">
           {links.map((link) => {
@@ -100,28 +129,28 @@ export function SiteHeader({
           >
             <Search className="size-4" />
           </button>
-          <LanguageMenu.Root>
-            <LanguageMenu.Trigger aria-label={t.language} title={t.language} className={iconButton}>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger aria-label={t.language} title={t.language} className={iconButton}>
               <Languages className="size-4" />
-            </LanguageMenu.Trigger>
-            <LanguageMenu.Portal>
-              <LanguageMenu.Positioner sideOffset={6} align="end" className="z-50">
-                <LanguageMenu.Popup className="min-w-36 rounded-lg border bg-fd-popover p-1 text-sm text-fd-popover-foreground shadow-md outline-none">
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Positioner sideOffset={6} align="end" className="z-50">
+                <DropdownMenu.Popup className={menuPopup}>
                   {languages.map((language) => (
-                    <LanguageMenu.LinkItem
+                    <DropdownMenu.LinkItem
                       key={language.code}
                       href={pathIn(language.code)}
                       lang={language.code}
                       aria-current={language.code === lang ? "true" : undefined}
-                      className="flex h-8 items-center rounded-md px-2 outline-none data-[highlighted]:bg-fd-accent aria-[current=true]:font-semibold"
+                      className={`${menuItem} h-8`}
                     >
                       {language.name}
-                    </LanguageMenu.LinkItem>
+                    </DropdownMenu.LinkItem>
                   ))}
-                </LanguageMenu.Popup>
-              </LanguageMenu.Positioner>
-            </LanguageMenu.Portal>
-          </LanguageMenu.Root>
+                </DropdownMenu.Popup>
+              </DropdownMenu.Positioner>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
           <a
             href={`https://github.com/${GIT.user}/${GIT.repo}`}
             target="_blank"

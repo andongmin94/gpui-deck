@@ -4,8 +4,53 @@ test("the root opens the English home page", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveURL(/\/en\/?$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Build your component library for GPUI.",
+    "Build desktop apps with Rust and GPUI.",
   );
+});
+
+test("the invoice workspace loads GPUI only when launched and links to its implementation", async ({
+  page,
+}) => {
+  const previewRequests: string[] = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.startsWith("/preview")) previewRequests.push(request.url());
+  });
+  // This test covers when the app starts. The response stands in for the GPU backend.
+  await page.addInitScript(() => {
+    if (!("gpu" in navigator)) Object.defineProperty(navigator, "gpu", { value: {} });
+  });
+  await page.route("**/preview?c=invoice-workspace", (route) =>
+    route.fulfill({ contentType: "text/html", body: "<title>Invoice workspace</title>" }),
+  );
+  await page.goto("/ko");
+  const workspace = page.getByRole("region", { name: "청구서 관리" });
+  await expect(workspace.getByRole("img")).toBeVisible();
+  await expect(workspace.getByRole("link", { name: "Rust 소스 보기" })).toHaveAttribute(
+    "href",
+    "https://github.com/andongmin94/gpui-design/blob/main/crates/web-preview/src/demos/invoice_workspace.rs",
+  );
+  expect(previewRequests).toEqual([]);
+  await expect(async () => {
+    await workspace.getByRole("button", { name: "직접 실행" }).click();
+    await expect(workspace.locator("iframe")).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  await expect.poll(() => previewRequests.length).toBe(1);
+  await workspace.getByRole("button", { name: "미리보기로 돌아가기" }).click();
+  await expect(workspace.locator("iframe")).toHaveCount(0);
+  await expect(workspace.getByRole("img")).toBeVisible();
+});
+
+test("the invoice preview and source stay available without WebGPU", async ({ page }) => {
+  await page.addInitScript(() => Reflect.deleteProperty(Navigator.prototype, "gpu"));
+  await page.goto("/ko");
+  const workspace = page.getByRole("region", { name: "청구서 관리" });
+  await expect(async () => {
+    await workspace.getByRole("button", { name: "직접 실행" }).click();
+    await expect(workspace.getByRole("status")).toContainText("WebGPU", { timeout: 1000 });
+  }).toPass();
+  await expect(workspace.getByRole("img")).toBeVisible();
+  await expect(workspace.getByRole("link", { name: "Rust 소스 보기" })).toBeVisible();
+  await expect(workspace.locator("iframe")).toHaveCount(0);
 });
 
 test("the Korean home page and catalogue cards lead to the Korean component", async ({ page }) => {

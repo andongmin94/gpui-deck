@@ -13,6 +13,7 @@ use crate::theme::Theme;
 
 mod controls;
 mod data;
+mod invoice_workspace;
 mod overlays;
 mod recipe_controls;
 mod recipe_display;
@@ -20,7 +21,7 @@ mod recipe_views;
 
 /// Demo names defined in this module; the other modules list their own.
 const CONTROL_NAMES: &[&str] = &[
-    "showcase",
+    "invoice-workspace",
     "button",
     "toggle",
     "checkbox",
@@ -44,7 +45,7 @@ pub fn names() -> impl Iterator<Item = &'static str> {
 
 pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
     let control = match name {
-        "showcase" => Some(controls::showcase(theme, window, cx)),
+        "invoice-workspace" => Some(invoice_workspace::open(theme, window, cx)),
         "button" => Some(controls::button(theme, cx)),
         "toggle" => Some(controls::toggle(theme, cx)),
         "checkbox" => Some(controls::checkbox(theme, cx)),

@@ -32,7 +32,7 @@ mod web {
         let search = web_sys::window()
             .and_then(|window| window.location().search().ok())
             .unwrap_or_default();
-        let mut name = String::from("showcase");
+        let mut name = String::from("invoice-workspace");
         let mut theme = Theme::light();
         for pair in search.trim_start_matches('?').split('&') {
             match pair.split_once('=') {

@@ -1,0 +1,20 @@
+.invoice-poster {
+  width: 100%;
+  aspect-ratio: 1160 / 712;
+  background: center / contain no-repeat url("/images/invoice-workspace-desktop-light.webp");
+}
+
+.dark .invoice-poster {
+  background-image: url("/images/invoice-workspace-desktop-dark.webp");
+}
+
+@media (width < 40rem) {
+  .invoice-poster {
+    aspect-ratio: 355 / 990;
+    background-image: url("/images/invoice-workspace-mobile-light.webp");
+  }
+
+  .dark .invoice-poster {
+    background-image: url("/images/invoice-workspace-mobile-dark.webp");
+  }
+}
