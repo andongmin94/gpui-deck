@@ -1,18 +1,29 @@
 import { ArrowUpRight, FileCode2 } from "lucide-react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 
-import { billing, blockCopy } from "./block-copy";
+import { type Block, blockCopy } from "./block-copy";
 
 const sources = import.meta.glob<string>("./**/*.rs", {
-  base: "../../../../blocks/billing-dashboard",
-  eager: true,
+  base: "../../../../blocks",
   import: "default",
   query: "?raw",
 });
 
-export default function BlockSource({ lang }: { lang: string }) {
+// Vite emits each Rust file as its own raw-text chunk. Load the selected file on demand.
+const sourceFiles = Object.fromEntries(
+  Object.entries(sources).map(([path, load]) => [
+    path,
+    lazy(async () => {
+      const source = await load();
+      return { default: () => <code>{source}</code> };
+    }),
+  ]),
+);
+
+export default function BlockSource({ lang, block }: { lang: string; block: Block }) {
   const t = blockCopy(lang);
-  const [selected, setSelected] = useState(billing.files[0]);
+  const [selected, setSelected] = useState(block.files[0]);
+  const SourceFile = sourceFiles[`./${block.name}/${selected.source}`];
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2.5 sm:px-5">
@@ -22,11 +33,11 @@ export default function BlockSource({ lang }: { lang: string }) {
           <select
             value={selected.source}
             onChange={(event) =>
-              setSelected(billing.files.find((file) => file.source === event.target.value)!)
+              setSelected(block.files.find((file) => file.source === event.target.value)!)
             }
             className="max-w-full rounded-md border bg-fd-background px-2 py-1.5 font-mono text-xs"
           >
-            {billing.files.map((file) => (
+            {block.files.map((file) => (
               <option key={file.source} value={file.source}>
                 {file.target}
               </option>
@@ -34,7 +45,7 @@ export default function BlockSource({ lang }: { lang: string }) {
           </select>
         </label>
         <a
-          href={`${billing.source}/${selected.source}`}
+          href={`${block.source}/${selected.source}`}
           className="inline-flex items-center gap-1 rounded text-xs font-medium text-fd-muted-foreground hover:text-fd-foreground"
         >
           {t.github}
@@ -48,7 +59,9 @@ export default function BlockSource({ lang }: { lang: string }) {
         tabIndex={0}
         className="max-h-[70svh] min-h-56 overflow-auto overscroll-contain bg-fd-secondary/40 p-4 font-mono text-xs leading-6 text-fd-foreground sm:p-6 sm:text-[0.8125rem]"
       >
-        <code>{sources[`./${selected.source}`]}</code>
+        <Suspense fallback={<span>{t.loading}</span>}>
+          <SourceFile />
+        </Suspense>
       </pre>
     </div>
   );

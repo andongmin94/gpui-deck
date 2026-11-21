@@ -33,8 +33,11 @@ gpui-deck add button --to src/ui
 Declare `mod ui;` in your app, and use the matching `gpui-pre` and
 `gpui-pre-platform` dependencies in the [installation guide](https://gpui-deck.andongmin.com/en/docs/installation/).
 
-Browse the [block gallery](https://gpui-deck.andongmin.com/en/blocks/) to preview the
-[billing dashboard](https://gpui-deck.andongmin.com/en/blocks/billing-dashboard/), read its Rust source or copy its install command.
+The [block gallery](https://gpui-deck.andongmin.com/en/blocks/) includes a
+[billing dashboard](https://gpui-deck.andongmin.com/en/blocks/billing-dashboard/),
+[login screen](https://gpui-deck.andongmin.com/en/blocks/login/) and
+[settings screen with sidebar navigation](https://gpui-deck.andongmin.com/en/blocks/sidebar-settings/).
+Each page includes a live preview, the installable Rust source and its install command.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json

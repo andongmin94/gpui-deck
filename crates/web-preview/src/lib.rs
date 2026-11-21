@@ -7,9 +7,13 @@
 pub mod demos;
 pub mod theme;
 
-// Render the installable block with the same sibling recipes and palette as a consumer.
+// Render the installable blocks with the same sibling recipes and palette as a consumer.
 #[path = "../../../blocks/billing-dashboard/dashboard.rs"]
 mod billing_dashboard;
+#[path = "../../../blocks/login/login.rs"]
+mod login;
+#[path = "../../../blocks/sidebar-settings/settings.rs"]
+mod sidebar_settings;
 
 #[cfg(target_family = "wasm")]
 #[path = "../../base/examples/assets/fonts/mod.rs"]

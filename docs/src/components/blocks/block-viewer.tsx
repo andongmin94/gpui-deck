@@ -4,14 +4,14 @@ import { Tabs } from "@base-ui/react/tabs";
 import { Code2, Image, Play, Square } from "lucide-react";
 import { lazy, Suspense, useRef, useState } from "react";
 
-import { billing, blockCopy } from "./block-copy";
+import { type Block, blockCopy } from "./block-copy";
 import { BlockPoster } from "./block-poster";
 
 const BlockSource = lazy(() => import("./block-source"));
 const tabStyle =
   "inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-fd-muted-foreground data-active:bg-fd-background data-active:text-fd-foreground data-active:shadow-xs";
 
-export function BlockViewer({ lang, title }: { lang: string; title: string }) {
+export function BlockViewer({ lang, title, block }: { lang: string; title: string; block: Block }) {
   const t = blockCopy(lang);
   const [tab, setTab] = useState("preview");
   const [mode, setMode] = useState<"image" | "checking" | "run" | "unavailable">("image");
@@ -80,17 +80,17 @@ export function BlockViewer({ lang, title }: { lang: string; title: string }) {
           {mode === "run" ? (
             <iframe
               title={title}
-              src={`/preview?c=${billing.name}`}
+              src={`/preview?c=${block.name}`}
               className="block h-[min(78svh,740px)] min-h-96 w-full"
             />
           ) : (
-            <BlockPoster alt={t.image} />
+            <BlockPoster block={block} alt={title} />
           )}
         </div>
       </Tabs.Panel>
       <Tabs.Panel value="source">
         <Suspense fallback={<output className="block p-5 text-sm">{t.loading}</output>}>
-          <BlockSource lang={lang} />
+          <BlockSource lang={lang} block={block} />
         </Suspense>
       </Tabs.Panel>
     </Tabs.Root>

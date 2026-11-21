@@ -22,20 +22,29 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-
 mod ui;
 
 use gpui::AppContext as _;
-use ui::billing_dashboard::BillingDashboard;
+use ui::billing_dashboard::BillingDashboard as Screen;
 
 fn main() {
     gpui_platform::application().run(|cx| {
         gpui_deck::init(cx);
         cx.open_window(Default::default(), |window, cx| {
-            let dashboard = cx.new(|cx| BillingDashboard::new(window, cx));
-            cx.new(|cx| gpui_deck::Root::new(dashboard, window, cx))
+            let screen = cx.new(|cx| Screen::new(window, cx));
+            cx.new(|cx| gpui_deck::Root::new(screen, window, cx))
         })
-        .expect("open billing dashboard");
+        .expect("open block window");
         cx.activate(true);
     });
 }
 ```
+
+## 別のブロックを開く
+
+使いたいブロックのページでインストールコマンドをコピーして実行します。上のコードの `use ... as Screen` を、その画面に対応する行に置き換えてください。
+
+| ブロック | インポート |
+| --- | --- |
+| [ログイン](/ja/blocks/login) | `use ui::login::Login as Screen;` |
+| [サイドバー付き設定](/ja/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
 
 ## チームのブロックを公開する
 

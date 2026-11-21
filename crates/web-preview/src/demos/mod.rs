@@ -22,6 +22,8 @@ mod recipe_views;
 /// Demo names defined in this module; the other modules list their own.
 const CONTROL_NAMES: &[&str] = &[
     "billing-dashboard",
+    "login",
+    "sidebar-settings",
     "invoice-workspace",
     "button",
     "toggle",
@@ -48,6 +50,11 @@ pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyV
     let control = match name {
         "billing-dashboard" => Some(
             cx.new(|cx| crate::billing_dashboard::BillingDashboard::new(window, cx))
+                .into(),
+        ),
+        "login" => Some(cx.new(|cx| crate::login::Login::new(window, cx)).into()),
+        "sidebar-settings" => Some(
+            cx.new(|cx| crate::sidebar_settings::SidebarSettings::new(window, cx))
                 .into(),
         ),
         "invoice-workspace" => Some(invoice_workspace::open(theme, window, cx)),

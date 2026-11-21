@@ -1,61 +1,63 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
-test("browse, inspect and copy the installable billing dashboard", async ({ page, context }) => {
-  const command =
-    "gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json";
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  // Exercise the launch control independently of the host GPU. The frame uses its own backend.
-  await page.addInitScript(() => {
-    if (window === window.top) {
-      Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => ({}) } });
-    }
-  });
-  const runtimeRequests: string[] = [];
-  page.on("request", (request) => {
-    const url = new URL(request.url());
-    if (url.pathname.startsWith("/preview")) runtimeRequests.push(url.pathname + url.search);
-  });
-  await page.goto("/en/blocks");
-  await page.getByRole("link", { name: "Billing dashboard", exact: true }).click();
-  await expect(page).toHaveURL(/\/en\/blocks\/billing-dashboard\/?$/);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Billing dashboard");
-  await expect(page.locator('img[src="/images/blocks/billing-dashboard.webp"]')).toBeVisible();
-  await expect(page.locator("iframe")).toHaveCount(0);
+for (const [slug, title] of [
+  ["login", "Login"],
+  ["sidebar-settings", "Sidebar settings"],
+  ["billing-dashboard", "Billing dashboard"],
+]) {
+  test(`browse, inspect and copy the installable ${slug} block`, async ({ page, context }) => {
+    const command = `gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/${slug}/block.json`;
+    await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+    // Exercise the launch control independently of the host GPU. The frame uses its own backend.
+    await page.addInitScript(() => {
+      if (window === window.top) {
+        Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => ({}) } });
+      }
+    });
+    const runtimeRequests: string[] = [];
+    page.on("request", (request) => {
+      const url = new URL(request.url());
+      if (url.pathname.startsWith("/preview")) runtimeRequests.push(url.pathname + url.search);
+    });
+    await page.goto("/en/blocks");
+    await page.getByRole("link", { name: title, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/en/blocks/${slug}/?$`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+    await expect(page.locator(`img[src="/images/blocks/${slug}.webp"]`)).toBeVisible();
+    await expect(page.locator("iframe")).toHaveCount(0);
 
-  const picker = page.getByRole("combobox", { name: "Source file" });
-  await expect(async () => {
-    await page.getByRole("tab", { name: "Rust source" }).click();
-    await expect(picker).toBeVisible({ timeout: 1000 });
-  }).toPass();
-  for (const [installed, source] of [
-    ["mod.rs", "dashboard.rs"],
-    ["palette.rs", "palette.rs"],
-    ["components/panel.rs", "components/panel.rs"],
-  ]) {
-    await picker.selectOption({ label: installed });
-    const original = await readFile(
-      new URL(`../../blocks/billing-dashboard/${source}`, import.meta.url),
-      "utf8",
+    const picker = page.getByRole("combobox", { name: "Source file" });
+    await expect(async () => {
+      await page.getByRole("tab", { name: "Rust source" }).click();
+      await expect(picker).toBeVisible({ timeout: 1000 });
+    }).toPass();
+    const directory = new URL(`../../blocks/${slug}/`, import.meta.url);
+    const manifest: { files: { target: string; source: string }[] } = JSON.parse(
+      await readFile(new URL("block.json", directory), "utf8"),
     );
-    await expect(page.getByRole("tabpanel").locator("pre")).toHaveText(original);
-  }
+    for (const { target, source } of manifest.files.filter((file) => file.target.endsWith(".rs"))) {
+      await picker.selectOption({ label: target });
+      const original = await readFile(new URL(source, directory), "utf8");
+      await expect(page.getByRole("tabpanel").locator("pre")).toHaveText(original);
+    }
 
-  await page.getByRole("tab", { name: "Preview", exact: true }).click();
-  await page.getByRole("button", { name: "Copy install command" }).click();
-  await expect
-    .poll(() =>
-      page.evaluate(
-        async (expected) => (await navigator.clipboard.readText()) === expected,
-        command,
-      ),
-    )
-    .toBe(true);
-  expect(runtimeRequests).toEqual([]);
-  await page.getByRole("button", { name: "Run preview" }).click();
-  await expect(page.locator("iframe")).toHaveAttribute("src", "/preview?c=billing-dashboard");
-  await expect.poll(() => runtimeRequests).toContain("/preview?c=billing-dashboard");
-});
+    await page.getByRole("tab", { name: "Preview", exact: true }).click();
+    await page.getByRole("button", { name: "Copy install command" }).click();
+    await expect
+      .poll(() =>
+        page.evaluate(
+          async (expected) => (await navigator.clipboard.readText()) === expected,
+          command,
+        ),
+      )
+      .toBe(true);
+    expect(runtimeRequests).toEqual([]);
+    await page.getByRole("button", { name: "Run preview" }).click();
+    await expect(page.locator("iframe")).toHaveAttribute("src", `/preview?c=${slug}`);
+    await expect.poll(() => runtimeRequests).toContain(`/preview?c=${slug}`);
+  });
+}
 
 test("the block image and Rust source stay available when no adapter is found", async ({
   page,

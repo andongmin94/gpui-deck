@@ -3,9 +3,17 @@
 import { Check, Copy, Terminal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-import { blockCopy, installCommand } from "./block-copy";
+import { blockCopy } from "./block-copy";
 
-export function InstallCommand({ lang, compact = false }: { lang: string; compact?: boolean }) {
+export function InstallCommand({
+  lang,
+  command,
+  compact = false,
+}: {
+  lang: string;
+  command: string;
+  compact?: boolean;
+}) {
   const t = blockCopy(lang);
   const [status, setStatus] = useState<"idle" | "copied" | "manual">("idle");
   const field = useRef<HTMLInputElement>(null);
@@ -18,7 +26,7 @@ export function InstallCommand({ lang, compact = false }: { lang: string; compac
 
   async function copyCommand() {
     try {
-      await navigator.clipboard.writeText(installCommand);
+      await navigator.clipboard.writeText(command);
       setStatus("copied");
     } catch {
       setStatus("manual");
@@ -40,7 +48,7 @@ export function InstallCommand({ lang, compact = false }: { lang: string; compac
             <input
               ref={field}
               aria-label={t.command}
-              value={installCommand}
+              value={command}
               readOnly
               onFocus={(event) => event.currentTarget.select()}
               className="min-w-12 flex-1 rounded bg-transparent py-1.5 font-mono text-xs"

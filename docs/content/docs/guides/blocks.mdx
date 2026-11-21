@@ -22,20 +22,29 @@ Put this in `src/main.rs`, then run `cargo build` or `cargo run`.
 mod ui;
 
 use gpui::AppContext as _;
-use ui::billing_dashboard::BillingDashboard;
+use ui::billing_dashboard::BillingDashboard as Screen;
 
 fn main() {
     gpui_platform::application().run(|cx| {
         gpui_deck::init(cx);
         cx.open_window(Default::default(), |window, cx| {
-            let dashboard = cx.new(|cx| BillingDashboard::new(window, cx));
-            cx.new(|cx| gpui_deck::Root::new(dashboard, window, cx))
+            let screen = cx.new(|cx| Screen::new(window, cx));
+            cx.new(|cx| gpui_deck::Root::new(screen, window, cx))
         })
-        .expect("open billing dashboard");
+        .expect("open block window");
         cx.activate(true);
     });
 }
 ```
+
+## Open a different block
+
+Copy the install command from the block's page. In the app above, replace the `use ... as Screen` line with the import for that screen.
+
+| Block | Import |
+| --- | --- |
+| [Login](/en/blocks/login) | `use ui::login::Login as Screen;` |
+| [Sidebar settings](/en/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
 
 ## Publish your team's block
 

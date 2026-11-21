@@ -1,16 +1,16 @@
-import { billing } from "./block-copy";
+import type { Block } from "./block-copy";
 
-export function BlockPoster({ alt }: { alt: string }) {
+export function BlockPoster({ block, alt }: { block: Block; alt: string }) {
   return (
     <picture>
       <source
         media="(max-width: 640px)"
-        srcSet={`${billing.poster}-mobile.webp`}
+        srcSet={`${block.poster}-mobile.webp`}
         width={390}
-        height={1360}
+        height={block.mobileHeight}
       />
       <img
-        src={`${billing.poster}.webp`}
+        src={`${block.poster}.webp`}
         alt={alt}
         width={1440}
         height={820}

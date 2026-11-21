@@ -5,8 +5,8 @@ import { metaSchema, pageSchema } from "fumapress/schema";
 import { defineDocs } from "fumadocs-mdx/macro";
 import { findNeighbour } from "fumadocs-core/page-tree";
 
-import { billing } from "@/components/blocks/block-copy";
-import { BlocksPage } from "@/components/blocks/blocks-page";
+import { blocks } from "@/components/blocks/block-copy";
+import { BlockDetail, BlocksGallery } from "@/components/blocks/blocks-page";
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
 import { accents, accentStorageKey } from "@/lib/accent";
@@ -72,11 +72,16 @@ export default app.config({
         const page = props.page.data;
         if (props.page.slugs.length === 1) {
           const loader = await this.getLoader();
-          const block = loader.getPage(["blocks", billing.name], props.lang);
-          if (!block) throw new Error(`Missing ${props.lang} block page for ${billing.name}`);
-          return <BlocksPage lang={props.lang} page={page} block={block.data} />;
+          const entries = blocks.map((block) => {
+            const detail = loader.getPage(["blocks", block.name], props.lang);
+            if (!detail) throw new Error(`Missing ${props.lang} block page for ${block.name}`);
+            return { block, title: detail.data.title, description: detail.data.description };
+          });
+          return <BlocksGallery lang={props.lang} page={page} entries={entries} />;
         }
-        return <BlocksPage lang={props.lang} page={page} />;
+        const block = blocks.find((item) => item.name === props.page.slugs[1]);
+        if (!block) throw new Error(`Unknown block ${props.page.slugs[1]}`);
+        return <BlockDetail key={block.name} lang={props.lang} page={page} block={block} />;
       }
       const { tree } = props.layoutProps;
       const { previous, next } = findNeighbour(tree, props.page.url);

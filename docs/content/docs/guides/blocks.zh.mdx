@@ -22,20 +22,29 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-
 mod ui;
 
 use gpui::AppContext as _;
-use ui::billing_dashboard::BillingDashboard;
+use ui::billing_dashboard::BillingDashboard as Screen;
 
 fn main() {
     gpui_platform::application().run(|cx| {
         gpui_deck::init(cx);
         cx.open_window(Default::default(), |window, cx| {
-            let dashboard = cx.new(|cx| BillingDashboard::new(window, cx));
-            cx.new(|cx| gpui_deck::Root::new(dashboard, window, cx))
+            let screen = cx.new(|cx| Screen::new(window, cx));
+            cx.new(|cx| gpui_deck::Root::new(screen, window, cx))
         })
-        .expect("open billing dashboard");
+        .expect("open block window");
         cx.activate(true);
     });
 }
 ```
+
+## 打开其他区块
+
+从区块页面复制并运行安装命令，再将上例中的 `use ... as Screen` 替换为对应的导入语句。
+
+| 区块 | 导入语句 |
+| --- | --- |
+| [登录](/zh/blocks/login) | `use ui::login::Login as Screen;` |
+| [侧边栏设置](/zh/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
 
 ## 发布团队区块
 
