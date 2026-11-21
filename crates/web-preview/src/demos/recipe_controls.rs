@@ -2,7 +2,8 @@
 
 use gpui::{
     AnyView, App, AppContext as _, Context, Entity, FocusHandle, Focusable as _, IntoElement,
-    ParentElement as _, Render, ScrollHandle, Styled as _, Subscription, Window, div, px,
+    ParentElement as _, Render, ScrollHandle, SharedString, Styled as _, Subscription, Window, div,
+    px,
 };
 use gpui_design::{
     Button, CollapsibleState, DialogClose, DialogState, Input, InputState, TabItem, TabsState,
@@ -89,6 +90,9 @@ pub(super) fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) 
         "code-block" => cx
             .new(|cx| CodeBlockDemo {
                 theme,
+                source: include_str!("../../../base/examples/starter.rs")
+                    .replace("\r\n", "\n")
+                    .into(),
                 scroll: ScrollHandle::new(),
                 focus: cx.focus_handle().tab_stop(true),
             })
@@ -234,6 +238,7 @@ impl Render for InputGroupDemo {
 
 struct CodeBlockDemo {
     theme: Theme,
+    source: SharedString,
     scroll: ScrollHandle,
     focus: FocusHandle,
 }
@@ -244,7 +249,7 @@ impl Render for CodeBlockDemo {
         frame(theme).child(
             CodeBlock::new(
                 "starter-source",
-                include_str!("../../../base/examples/starter.rs"),
+                self.source.clone(),
                 "starter.rs",
                 &self.scroll,
                 &self.focus,
