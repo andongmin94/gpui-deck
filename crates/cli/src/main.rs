@@ -149,6 +149,14 @@ fn read(path: &Path) -> Result<Option<Vec<u8>>> {
     }
 }
 
+// A consumer's Git checkout can change text line endings. Keep the on-disk
+// bytes when the file still has the same contents.
+fn matches_text(contents: &[u8], expected: &str) -> bool {
+    contents == expected.as_bytes()
+        || std::str::from_utf8(contents)
+            .is_ok_and(|text| text.replace("\r\n", "\n") == expected.replace("\r\n", "\n"))
+}
+
 fn installed_recipes(to: &Path) -> Result<Option<BTreeSet<String>>> {
     let path = to.join(MANIFEST);
     let Some(contents) = read(&path)? else {
@@ -159,7 +167,7 @@ fn installed_recipes(to: &Path) -> Result<Option<BTreeSet<String>>> {
         .lines()
         .map(str::to_owned)
         .collect();
-    if contents != manifest_source(&names).as_bytes() {
+    if !matches_text(&contents, &manifest_source(&names)) {
         bail!(
             "{} was modified; keep its recipe names in generated order",
             path.display()
@@ -225,8 +233,8 @@ fn add(names: Vec<String>, to: &Path) -> Result<Installed> {
     let old = generated_files(&previous)?;
     for (path, new) in generated_files(&selected)? {
         match read(&to.join(&path))? {
-            Some(contents) if contents == new.as_bytes() => result.kept.push(path),
-            Some(contents) if contents == old[&path].as_bytes() => {
+            Some(contents) if matches_text(&contents, &new) => result.kept.push(path),
+            Some(contents) if matches_text(&contents, &old[&path]) => {
                 pending.insert(path, new);
             }
             Some(_) => bail!(
@@ -262,7 +270,10 @@ fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
     let mut different = false;
     for (path, bundled) in files {
         let local = read(&to.join(&path))?;
-        if local.as_deref() == Some(bundled.as_bytes()) {
+        if local
+            .as_deref()
+            .is_some_and(|contents| matches_text(contents, &bundled))
+        {
             continue;
         }
         // Git accepts '-' as stdin in --no-index mode, so the bundled version
@@ -463,6 +474,48 @@ mod tests {
             fs::read_to_string(directory.0.join(MANIFEST)).unwrap(),
             "card\nmessage\ntypography\n"
         );
+    }
+
+    #[test]
+    fn checked_out_crlf_files_can_be_compared_and_extended() {
+        let directory = Directory::new();
+        let to = &directory.0;
+        add(vec!["card".into()], to).unwrap();
+        let paths = [
+            MANIFEST,
+            "mod.rs",
+            "recipes/mod.rs",
+            "LICENSE-APACHE",
+            "presentation.rs",
+            "recipes/card.rs",
+        ];
+        let mut checkout = BTreeMap::new();
+        for path in paths {
+            let text = fs::read_to_string(to.join(path))
+                .unwrap()
+                .replace("\r\n", "\n")
+                .replace('\n', "\r\n");
+            fs::write(to.join(path), &text).unwrap();
+            checkout.insert(path, text);
+        }
+        let mut output = Vec::new();
+        diff(to, &mut output).unwrap();
+        assert_eq!(output, b"Installed files match the bundled sources.\n");
+        assert!(add(vec!["card".into()], to).unwrap().written.is_empty());
+        for path in paths {
+            assert_eq!(fs::read_to_string(to.join(path)).unwrap(), checkout[path]);
+        }
+        add(vec!["badge".into()], to).unwrap();
+        for path in [
+            "mod.rs",
+            "LICENSE-APACHE",
+            "presentation.rs",
+            "recipes/card.rs",
+        ] {
+            assert_eq!(fs::read_to_string(to.join(path)).unwrap(), checkout[path]);
+        }
+        fs::write(to.join(MANIFEST), "badge\r\ncard\r\n\r\n").unwrap();
+        assert!(diff(to, &mut output).is_err());
     }
 
     #[test]
