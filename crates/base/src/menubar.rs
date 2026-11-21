@@ -365,7 +365,7 @@ impl Styled for MenubarMenu {
 }
 
 impl RenderOnce for MenubarMenu {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let state = self.state.read(cx);
         let item = state
             .items
@@ -449,6 +449,7 @@ impl RenderOnce for MenubarMenu {
                 Some(label),
                 self.content,
                 direction,
+                window,
                 cx,
             ));
         Popover::new(ElementId::from(("menubar-menu", index)), &popover)

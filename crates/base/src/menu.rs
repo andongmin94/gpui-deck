@@ -3,16 +3,18 @@
 use gpui::{
     Anchor, AnyElement, App, AppContext as _, Context, Entity, EventEmitter, FocusHandle,
     InteractiveElement as _, IntoElement, KeyBinding, KeyDownEvent, ParentElement, Pixels, Point,
-    RenderOnce, Role, SharedString, StatefulInteractiveElement as _, StyleRefinement, Styled,
-    Subscription, Toggled, WeakEntity, Window, div, prelude::FluentBuilder as _, px,
+    RenderOnce, Role, ScrollHandle, SharedString, StatefulInteractiveElement as _, StyleRefinement,
+    Styled, Subscription, Toggled, WeakEntity, Window, div, prelude::FluentBuilder as _, px,
 };
 
 use crate::{
-    CheckboxState, Direction, Popover, PopoverState, StyledExt as _, TestSupportExt as _,
+    CheckboxState, Direction, ElementExt as _, Popover, PopoverState, Popup, ScrollbarAxis,
+    StyledExt as _, TestSupportExt as _,
     a11y_disabled::A11yDisabledExt as _,
     actions::{
         Cancel, Confirm, SelectDown, SelectFirst, SelectLast, SelectLeft, SelectRight, SelectUp,
     },
+    scroll_area::RevealViewport,
 };
 
 const CONTEXT: &str = "Menu";
@@ -101,6 +103,8 @@ pub enum MenuEvent {
 pub struct MenuState {
     items: Vec<MenuItem>,
     highlighted: Option<usize>,
+    scroll: ScrollHandle,
+    reveal_highlight: bool,
     pub(crate) popover: Entity<PopoverState>,
     position: Option<Point<Pixels>>,
     focus: FocusHandle,
@@ -130,9 +134,11 @@ impl MenuState {
                 // cursor already chosen by ArrowUp/Down on the trigger.
                 if state.highlighted.is_none() {
                     state.highlighted = state.items.iter().position(|item| !item.disabled);
+                    state.reveal_highlight = true;
                 }
             } else {
                 state.highlighted = None;
+                state.reveal_highlight = false;
                 state.position = None;
             }
             cx.notify();
@@ -159,6 +165,8 @@ impl MenuState {
         Self {
             items,
             highlighted: None,
+            scroll: ScrollHandle::new(),
+            reveal_highlight: false,
             popover,
             position: None,
             focus,
@@ -216,7 +224,7 @@ impl MenuState {
                             .as_ref()
                             .is_some_and(|submenu| submenu.read(cx).focus.is_focused(window))
                         {
-                            state.highlight(index, window, cx);
+                            state.highlight(index, true, window, cx);
                         }
                     });
                 }))
@@ -366,6 +374,7 @@ impl MenuState {
         }
         self.position = None;
         self.highlighted = self.edge(last);
+        self.reveal_highlight = true;
         self.popover.update(cx, |state, cx| state.open(window, cx));
         cx.notify();
     }
@@ -387,6 +396,7 @@ impl MenuState {
         self.close_descendants(None, window, cx);
         self.position = Some(position);
         self.highlighted = self.edge(false);
+        self.reveal_highlight = true;
         self.popover.update(cx, |state, cx| state.open(window, cx));
         self.content_focus.focus(window, cx);
         cx.notify();
@@ -416,7 +426,7 @@ impl MenuState {
                 (start + count - distance) % count
             };
             if !self.items[index].disabled {
-                self.highlight(index, window, cx);
+                self.highlight(index, true, window, cx);
                 break;
             }
         }
@@ -424,19 +434,26 @@ impl MenuState {
 
     fn move_to_edge(&mut self, last: bool, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(index) = self.edge(last) {
-            self.highlight(index, window, cx);
+            self.highlight(index, true, window, cx);
         }
     }
 
-    fn highlight(&mut self, index: usize, window: &mut Window, cx: &mut Context<Self>) {
+    fn highlight(
+        &mut self,
+        index: usize,
+        reveal: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         if !self.is_open(cx)
             || self.is_disabled(cx)
             || self.items.get(index).is_none_or(|item| item.disabled)
-            || self.highlighted == Some(index)
+            || (self.highlighted == Some(index) && !reveal)
         {
             return;
         }
         self.highlighted = Some(index);
+        self.reveal_highlight = reveal;
         if self.close_descendants(Some(index), window, cx) {
             self.content_focus.focus(window, cx);
         }
@@ -474,7 +491,7 @@ impl MenuState {
             let index = (start + distance) % count;
             let item = &self.items[index];
             if !item.disabled && item.label.to_lowercase().starts_with(&prefix) {
-                self.highlight(index, window, cx);
+                self.highlight(index, true, window, cx);
                 cx.stop_propagation();
                 break;
             }
@@ -521,9 +538,10 @@ pub(crate) fn menu_content(
     menu: &Entity<MenuState>,
     label: Option<SharedString>,
     children: Option<AnyElement>,
+    window: &Window,
     cx: &mut App,
 ) -> impl IntoElement + use<> {
-    menu_content_with_direction(menu, label, children, Direction::current(cx), cx)
+    menu_content_with_direction(menu, label, children, Direction::current(cx), window, cx)
 }
 
 pub(crate) fn menu_content_with_direction(
@@ -531,11 +549,13 @@ pub(crate) fn menu_content_with_direction(
     label: Option<SharedString>,
     children: Option<AnyElement>,
     direction: Direction,
+    window: &Window,
     cx: &mut App,
 ) -> impl IntoElement + use<> {
     menu.update(cx, |state, _| state.direction = direction);
     let state = menu.read(cx);
     let focus = state.content_focus.clone();
+    let scroll = state.scroll.clone();
     let up = menu.clone();
     let down = menu.clone();
     let first = menu.clone();
@@ -592,7 +612,16 @@ pub(crate) fn menu_content_with_direction(
         .on_key_down(move |event, window, cx| {
             typeahead.update(cx, |state, cx| state.typeahead(event, window, cx));
         })
-        .children(children)
+        .child(RevealViewport::new(
+            div()
+                .id("menu-viewport")
+                .max_h(Popup::available_height(window))
+                .overflow_y_scroll()
+                .track_scroll(&scroll)
+                .children(children),
+            scroll,
+            ScrollbarAxis::Vertical,
+        ))
 }
 
 /// One command's application-styled surface, with library-owned interaction.
@@ -684,6 +713,7 @@ impl RenderOnce for MenuOption {
             .expect("MenuOption index is out of bounds");
         let disabled = state.is_disabled(cx) || item.disabled;
         let highlighted = state.is_open(cx) && state.highlighted == Some(self.index);
+        let reveal = highlighted && state.reveal_highlight;
         let label = item.label.clone();
         let submenu = item.submenu.clone();
         let submenu_focus = submenu
@@ -692,6 +722,7 @@ impl RenderOnce for MenuOption {
         let expanded = submenu.as_ref().map(|submenu| submenu.read(cx).is_open(cx));
         let index = self.index;
         let hover = self.state.clone();
+        let reveal_state = self.state.clone();
         let activate = self.state.clone();
         div()
             .id(("menu-option", index))
@@ -709,11 +740,17 @@ impl RenderOnce for MenuOption {
             .when_some(submenu_focus, |this, focus| this.track_focus(&focus))
             .when_some(expanded, |this, expanded| this.aria_expanded(expanded))
             .when(highlighted, |this| this.aria_active_descendant())
+            .when(reveal, |this| {
+                this.on_prepaint(move |bounds, window, cx| {
+                    reveal_state.update(cx, |state, _| state.reveal_highlight = false);
+                    window.request_autoscroll(bounds);
+                })
+            })
             .when(!disabled, |this| {
                 this.on_hover(move |hovered, window, cx| {
                     if *hovered {
                         hover.update(cx, |state, cx| {
-                            state.highlight(index, window, cx);
+                            state.highlight(index, false, window, cx);
                             state.open_submenu(index, window, cx);
                         });
                     }
@@ -821,6 +858,7 @@ impl RenderOnce for MenuSubmenu {
                 Some(label),
                 self.content,
                 direction,
+                window,
                 cx,
             ))
             .refine_style(&self.style)

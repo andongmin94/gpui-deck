@@ -5,6 +5,8 @@ description: "일반, checked/mixed/radio, 중첩 하위 메뉴의 시맨틱, �
 
 <ComponentPreview name="dropdown-menu" height={360} />
 
+긴 메뉴는 창 높이에 맞게 스크롤됩니다. 방향키·Home·End·문자 검색으로 이동하면 활성 명령이 보입니다. ContextMenu, Menubar의 메뉴와 하위 메뉴에도 같은 동작이 적용됩니다.
+
 DropdownMenu와 ContextMenu는 `MenuState`, `MenuItem`, `MenuEvent`,
 `MenuOption`을 공유합니다. 공유 명령 동작은 열기/닫기 상태, 닫기, 순회, 포커스
 복원에 Popover를 재사용합니다. 고정된 순서의 `MenuItem::new(value, label)` 항목으로

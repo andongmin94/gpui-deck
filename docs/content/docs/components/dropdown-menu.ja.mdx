@@ -5,6 +5,8 @@ description: "通常、チェック/混在/ラジオ、ネストしたサブメ�
 
 <ComponentPreview name="dropdown-menu" height={360} />
 
+長いメニューはウィンドウの高さに収まります。矢印キー、Home、End、文字検索で移動すると、選ばれたコマンドまでスクロールします。ContextMenu、Menubar 内のメニュー、サブメニューも同様です。
+
 DropdownMenu と ContextMenu は `MenuState`、`MenuItem`、`MenuEvent`、
 `MenuOption` を共有します。共有されるコマンドの動作は、開閉状態、
 閉じる動作、フォーカス移動、フォーカスの復元に Popover を再利用します。固定された順序付きの

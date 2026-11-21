@@ -5,6 +5,8 @@ description: "普通、选中/混合/单选以及嵌套子菜单的语义、导�
 
 <ComponentPreview name="dropdown-menu" height={360} />
 
+长菜单的高度受窗口限制。使用方向键、Home、End 或输入字符搜索时，当前命令会滚动到可见区域。ContextMenu、Menubar 的菜单和子菜单也采用相同的行为。
+
 DropdownMenu 和 ContextMenu 共享 `MenuState`、`MenuItem`、`MenuEvent` 和
 `MenuOption`。它们共享的命令行为复用 Popover 来处理打开/关闭状态、
 关闭处理、遍历和焦点恢复。使用固定且有序的

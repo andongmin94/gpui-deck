@@ -86,12 +86,12 @@ impl Styled for DropdownMenu {
 }
 
 impl RenderOnce for DropdownMenu {
-    fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let state = self.state.read(cx);
         let popover = state.popover.clone();
         let trigger_down = self.state.clone();
         let trigger_up = self.state.clone();
-        let content = crate::menu::menu_content(&self.state, self.label, self.content, cx);
+        let content = crate::menu::menu_content(&self.state, self.label, self.content, window, cx);
 
         Popover::new(self.id, &popover)
             .content_role(None)
@@ -358,6 +358,46 @@ mod tests {
             assert!(!view.menu.read(cx).is_open(cx));
             assert!(view.menu.read(cx).focus_handle().is_focused(window));
             assert!(view.dialog.read(cx).is_open());
+        });
+    }
+
+    #[gpui::test]
+    fn long_menu_reveals_keyboard_commands_inside_a_short_window(cx: &mut TestAppContext) {
+        let commands = ('A'..='Z')
+            .map(|letter| MenuItem::new(letter.to_string(), letter.to_string()))
+            .collect();
+        let (cx, view) = harness(cx, commands);
+        cx.simulate_resize(gpui::size(px(400.), px(220.)));
+        open(cx, &view, "up");
+        for (key, index, selector) in [
+            ("end", 25, "command-25"),
+            ("t", 19, "command-19"),
+            ("home", 0, "command-0"),
+        ] {
+            press(cx, key);
+            assert_highlight(cx, &view, index);
+            let row = cx.debug_bounds(selector).unwrap();
+            let window_height = cx.update(|window, _| window.viewport_size().height);
+            assert!(
+                row.top() >= px(0.) && row.bottom() <= window_height,
+                "{key}: {row:?}"
+            );
+        }
+        let first = cx.debug_bounds("command-0").unwrap();
+        cx.simulate_event(gpui::ScrollEvent {
+            position: first.center(),
+            delta: gpui::ScrollDelta::Pixels(gpui::point(px(0.), px(-130.))),
+            ..Default::default()
+        });
+        settle(cx);
+        assert!(cx.debug_bounds("command-0").unwrap().bottom() < px(0.));
+        press(cx, "home");
+        assert!(cx.debug_bounds("command-0").unwrap().top() >= px(0.));
+        press(cx, "enter");
+        cx.update(|window, cx| {
+            let view = view.read(cx);
+            assert_eq!(view.commands, vec![SharedString::from("A")]);
+            assert!(view.menu.read(cx).focus_handle().is_focused(window));
         });
     }
 

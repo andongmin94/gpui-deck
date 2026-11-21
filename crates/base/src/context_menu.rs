@@ -111,7 +111,7 @@ impl RenderOnce for ContextMenu {
         let keyboard = self.state.clone();
         let accessible = self.state.clone();
         let touch = self.state.clone();
-        let content = crate::menu::menu_content(&self.state, self.label, self.content, cx);
+        let content = crate::menu::menu_content(&self.state, self.label, self.content, window, cx);
         let target = self
             .base
             .role(Role::Region)
