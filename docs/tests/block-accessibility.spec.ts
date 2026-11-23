@@ -105,14 +105,27 @@ test("Neobrutal tooltip paints its hint on hover and dismisses it with Escape", 
   const canvas = page.locator("canvas");
   await expect(canvas).toBeVisible();
 
-  // Compare the area below the centered trigger with an empty patch of canvas.
-  // The trigger's hover styling stays outside both patches.
+  // The WebGPU canvas exists before GPUI paints or hit-tests its first frame.
   const patch = (x: number, y: number) =>
-    page.screenshot({ clip: { x, y, width: 190, height: 38 } });
-  const hintPainted = async () => !(await patch(275, 231)).equals(await patch(20, 20));
+    page.screenshot({ clip: { x, y, width: 50, height: 20 } });
+  await expect
+    .poll(async () => !(await patch(295, 190)).equals(await patch(15, 15)), { timeout: 15_000 })
+    .toBe(true);
+  await page.bringToFront();
+  await canvas.click({ position: { x: 15, y: 15 } });
+
+  // Mask the button's own hover feedback only while taking screenshots. The
+  // tooltip can appear anywhere on the remaining canvas.
+  const scene = () =>
+    page.screenshot({
+      style:
+        "body::after { content: ''; position: fixed; inset: 50% auto auto 50%; transform: translate(-50%, -50%); width: 140px; height: 54px; background: black; pointer-events: none; z-index: 9999; }",
+    });
+  const closed = await scene();
+  const hintPainted = async () => !(await scene()).equals(closed);
   await canvas.hover();
-  await expect.poll(hintPainted).toBe(true);
+  await expect.poll(hintPainted, { timeout: 15_000 }).toBe(true);
   await page.keyboard.press("Escape");
-  await expect.poll(hintPainted).toBe(false);
+  await expect.poll(hintPainted, { timeout: 10_000 }).toBe(false);
   expect(errors).toEqual([]);
 });
