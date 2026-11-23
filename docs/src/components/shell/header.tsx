@@ -1,15 +1,16 @@
 "use client";
 
-import { Menu as DropdownMenu } from "@base-ui/react/menu";
+import { Dialog } from "@base-ui/react/dialog";
+import type * as PageTree from "fumadocs-core/page-tree";
 import { Link, useRouter } from "fumapress/client";
 import { useSearchContext } from "fumadocs-ui/contexts/search";
-import { Check, Languages, Menu, Moon, Palette, Search, Sun, X } from "lucide-react";
-import { useTheme } from "next-themes";
+import { ArrowUpRight, BookOpen, Menu, Plus, Search, Terminal, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
-import { accents } from "@/lib/accent";
 import { GIT, SITE_NAME } from "@/lib/site";
-import { selectAccent, useAccent } from "../use-accent";
-import { copyFor, languages } from "./copy";
+import { copyFor } from "./copy";
+import { SitePreferences } from "./preferences";
+import { SidebarNav } from "./sidebar";
 
 function GitHubIcon() {
   return (
@@ -20,198 +21,200 @@ function GitHubIcon() {
 }
 
 const iconButton =
-  "inline-flex size-8 items-center justify-center rounded-md text-fd-foreground transition-colors hover:bg-fd-accent";
-const menuPopup =
-  "min-w-36 rounded-lg border bg-fd-popover p-1 text-sm text-fd-popover-foreground shadow-md outline-none";
-const menuItem =
-  "flex items-center rounded-md px-2 outline-none data-[highlighted]:bg-fd-accent aria-[current=true]:font-semibold";
+  "inline-flex size-9 shrink-0 items-center justify-center rounded-md hover:bg-fd-accent";
+const github = `https://github.com/${GIT.user}/${GIT.repo}`;
 
-/** shadcn/ui's site header: logo and section links, then search, language, GitHub and theme. */
-export function SiteHeader({
+type Destination = { href: string; label: string };
+
+function SectionLinks({
+  links,
+  current,
+  onNavigate,
+}: {
+  links: Destination[];
+  current: string;
+  onNavigate?: () => void;
+}) {
+  // A deeper section (e.g. Components) takes precedence over Docs.
+  const active = [...links]
+    .reverse()
+    .find(({ href }) => current === href || current.startsWith(href + "/"));
+  return links.map((link) => (
+    <Link
+      key={link.href}
+      href={link.href}
+      aria-current={link === active ? (current === link.href ? "page" : "location") : undefined}
+      onClick={onNavigate}
+      className={
+        onNavigate
+          ? "flex min-h-12 items-center rounded-md text-2xl font-medium tracking-tight hover:underline aria-[current]:underline underline-offset-4"
+          : "inline-flex h-9 items-center rounded-md px-2.5 text-sm font-medium hover:bg-fd-accent aria-[current]:bg-fd-secondary"
+      }
+    >
+      {link.label}
+    </Link>
+  ));
+}
+
+function MobileNavigation({
   lang,
-  menuOpen,
-  onToggleMenu,
+  links,
+  current,
+  tree,
 }: {
   lang: string;
-  menuOpen?: boolean;
-  onToggleMenu?: () => void;
+  links: Destination[];
+  current: string;
+  tree?: PageTree.Root;
 }) {
+  const t = copyFor(lang);
+  const [open, setOpen] = useState(false);
+  const panel = useRef<HTMLDivElement>(null);
+  const close = () => setOpen(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const desktop = window.matchMedia("(min-width: 64rem)");
+    const onResize = () => {
+      if (desktop.matches) setOpen(false);
+    };
+    desktop.addEventListener("change", onResize);
+    return () => desktop.removeEventListener("change", onResize);
+  }, [open]);
+
+  const resources = [
+    { href: `/${lang}/docs/installation`, label: t.installation, Icon: Terminal },
+    { href: `/${lang}/docs/guides`, label: t.guides, Icon: BookOpen },
+    { href: `/${lang}/docs/guides/blocks#publish`, label: t.publish, Icon: Plus },
+  ];
+
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger aria-label={t.menu} className={`${iconButton} lg:hidden`}>
+        <Menu className="size-5" aria-hidden />
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Popup
+          ref={panel}
+          className="fixed inset-0 z-50 flex h-dvh flex-col bg-fd-background text-fd-foreground outline-none"
+        >
+          <div className="flex h-14 shrink-0 items-center justify-between border-b px-5">
+            <Dialog.Title className="text-base font-semibold tracking-tight">
+              {t.navigation}
+            </Dialog.Title>
+            <Dialog.Close aria-label={t.menu} className={iconButton}>
+              <X className="size-5" aria-hidden />
+            </Dialog.Close>
+          </div>
+          <div className="flex-1 overflow-y-auto overscroll-contain">
+            <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-6 pt-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+              <nav aria-label={t.navigation} className="flex flex-col items-start">
+                <SectionLinks links={links} current={current} onNavigate={close} />
+              </nav>
+              <nav aria-label={t.resources} className="border-t pt-5">
+                <h2 className="mb-2 text-sm font-medium text-fd-muted-foreground">{t.resources}</h2>
+                <div className="grid grid-cols-2 gap-x-3">
+                  {resources.map(({ href, label, Icon }) => (
+                    <Link
+                      key={href}
+                      href={href}
+                      onClick={close}
+                      className="inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:underline"
+                    >
+                      <Icon aria-hidden className="size-4 shrink-0" />
+                      {label}
+                    </Link>
+                  ))}
+                  <a
+                    href={github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex min-h-11 items-center gap-2 text-sm font-medium hover:underline"
+                  >
+                    <GitHubIcon /> GitHub{" "}
+                    <ArrowUpRight aria-hidden className="size-3 text-fd-muted-foreground" />
+                  </a>
+                </div>
+              </nav>
+              <section aria-label={t.preferences} className="border-t pt-5">
+                <h2 className="mb-3 text-sm font-medium text-fd-muted-foreground">
+                  {t.preferences}
+                </h2>
+                <div className="flex flex-wrap gap-2">
+                  <SitePreferences lang={lang} path={current} panel={panel} />
+                </div>
+              </section>
+              {tree && (
+                <div className="border-t pt-5">
+                  <h2 className="mb-4 text-lg font-semibold tracking-tight">{t.docs}</h2>
+                  <SidebarNav tree={tree} label={t.docs} onNavigate={close} />
+                </div>
+              )}
+            </div>
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root }) {
   const t = copyFor(lang);
   const { path } = useRouter();
   const { setOpenSearch } = useSearchContext();
-  const { resolvedTheme, setTheme } = useTheme();
-  const accent = useAccent();
-  const accentLabel = `${t.accent} · ${t.colors[accent]}`;
   const current = path.replace(/\/$/, "");
   const links = [
-    { href: `/${lang}/docs`, label: t.docs, exact: true },
+    { href: `/${lang}/docs`, label: t.docs },
     { href: `/${lang}/docs/components`, label: t.components },
-    { href: `/${lang}/docs/recipes`, label: t.recipes },
     { href: `/${lang}/blocks`, label: t.blocks },
-    { href: `/${lang}/docs/guides/forms`, label: t.guides, prefix: `/${lang}/docs/guides` },
+    { href: `/${lang}/docs/recipes`, label: t.recipes },
   ];
-  const activeLink =
-    links.find((link) => current === link.href) ??
-    links.find((link) => !link.exact && current.startsWith(link.prefix ?? link.href));
-  const pathIn = (code: string) =>
-    current.replace(new RegExp(`^/${lang}(?=/|$)`), `/${code}`) || `/${code}`;
-
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-4 md:px-6">
-        {onToggleMenu ? (
-          <button
-            type="button"
-            aria-label={t.menu}
-            aria-expanded={menuOpen}
-            onClick={onToggleMenu}
-            className={`${iconButton} lg:hidden`}
-          >
-            {menuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
-          </button>
-        ) : (
-          <DropdownMenu.Root modal={false}>
-            <DropdownMenu.Trigger aria-label={t.menu} className={`${iconButton} md:hidden`}>
-              <Menu className="size-5" />
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Positioner sideOffset={6} align="start" className="z-50 md:hidden">
-                <DropdownMenu.Popup className={menuPopup}>
-                  {links.map((link) => (
-                    <DropdownMenu.LinkItem
-                      key={link.href}
-                      render={<Link href={link.href} />}
-                      aria-current={link === activeLink ? "page" : undefined}
-                      closeOnClick
-                      className={`${menuItem} h-11`}
-                    >
-                      {link.label}
-                    </DropdownMenu.LinkItem>
-                  ))}
-                </DropdownMenu.Popup>
-              </DropdownMenu.Positioner>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-        )}
+      <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-3 sm:px-6 lg:h-16">
+        <MobileNavigation key={current} lang={lang} links={links} current={current} tree={tree} />
         <Link
           href={`/${lang}`}
-          className="flex shrink-0 items-center gap-1.5 text-sm font-semibold tracking-tight lg:mr-3 sm:text-base"
+          className="inline-flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight lg:mr-3"
         >
-          <img src="/deck.svg" alt="" width="23" height="23" className="hidden sm:block" />
+          <img src="/deck.svg" alt="" width={23} height={23} className="hidden min-[360px]:block" />
           {SITE_NAME}
         </Link>
-        <nav className="hidden items-center gap-1 text-sm md:flex">
-          {links.map((link) => {
-            const active = link === activeLink;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={active ? "page" : undefined}
-                className={`rounded-md px-2.5 py-1.5 font-medium transition-colors hover:text-fd-foreground ${
-                  active ? "bg-fd-secondary text-fd-primary" : "text-fd-foreground/85"
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+        <nav aria-label={t.navigation} className="hidden items-center lg:flex">
+          <SectionLinks links={links} current={current} />
         </nav>
-        <div className="ml-auto flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => setOpenSearch(true)}
-            className="hidden h-8 w-48 items-center gap-2 rounded-full bg-fd-secondary px-3 text-sm text-fd-muted-foreground transition-colors hover:bg-fd-accent lg:flex xl:w-64"
-          >
-            <span className="flex-1 text-left">{t.search}</span>
-            <kbd className="rounded border bg-fd-background px-1.5 font-mono text-[10px] font-medium">
-              Ctrl K
-            </kbd>
-          </button>
+        <div className="ml-auto flex items-center gap-1.5">
           <button
             type="button"
             aria-label={t.search}
             onClick={() => setOpenSearch(true)}
-            className={`${iconButton} lg:hidden`}
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-2.5 text-fd-muted-foreground hover:bg-fd-accent lg:h-8 lg:w-44 lg:justify-between lg:bg-fd-secondary lg:text-xs xl:w-56"
           >
-            <Search className="size-4" />
+            <Search aria-hidden className="size-4 lg:hidden" />
+            <span className="hidden truncate lg:block">{t.search}</span>
+            <kbd className="hidden shrink-0 rounded border bg-fd-background px-1 font-mono text-[10px] lg:block">
+              Ctrl K
+            </kbd>
           </button>
-          <DropdownMenu.Root>
-            <DropdownMenu.Trigger aria-label={t.language} title={t.language} className={iconButton}>
-              <Languages className="size-4" />
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Positioner sideOffset={6} align="end" className="z-50">
-                <DropdownMenu.Popup className={menuPopup}>
-                  {languages.map((language) => (
-                    <DropdownMenu.LinkItem
-                      key={language.code}
-                      href={pathIn(language.code)}
-                      lang={language.code}
-                      aria-current={language.code === lang ? "true" : undefined}
-                      className={`${menuItem} h-8`}
-                    >
-                      {language.name}
-                    </DropdownMenu.LinkItem>
-                  ))}
-                </DropdownMenu.Popup>
-              </DropdownMenu.Positioner>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-          <a
-            href={`https://github.com/${GIT.user}/${GIT.repo}`}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="GitHub"
-            className={iconButton}
-          >
-            <GitHubIcon />
-          </a>
-          <DropdownMenu.Root modal={false}>
-            <DropdownMenu.Trigger
-              aria-label={accentLabel}
-              title={accentLabel}
-              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-2 text-fd-primary hover:bg-fd-accent"
+          <div className="hidden items-center gap-0.5 border-s ps-2 lg:flex">
+            <a
+              href={github}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="GitHub"
+              className={iconButton}
             >
-              <Palette className="size-4" aria-hidden />
-              <span className="hidden text-xs font-medium lg:inline">{t.colors[accent]}</span>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Positioner sideOffset={6} align="end" className="z-50">
-                <DropdownMenu.Popup aria-label={t.accent} className={menuPopup}>
-                  <DropdownMenu.RadioGroup value={accent} onValueChange={selectAccent}>
-                    {accents.map((color) => (
-                      <DropdownMenu.RadioItem
-                        key={color}
-                        value={color}
-                        closeOnClick
-                        className={`${menuItem} h-9 gap-2`}
-                      >
-                        <span
-                          aria-hidden
-                          data-swatch={color}
-                          className="accent-swatch size-3 rounded-full"
-                        />
-                        {t.colors[color]}
-                        <DropdownMenu.RadioItemIndicator className="ml-auto">
-                          <Check aria-hidden className="size-3.5" />
-                        </DropdownMenu.RadioItemIndicator>
-                      </DropdownMenu.RadioItem>
-                    ))}
-                  </DropdownMenu.RadioGroup>
-                </DropdownMenu.Popup>
-              </DropdownMenu.Positioner>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
-          <button
-            type="button"
-            aria-label={t.theme}
-            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
-            className={iconButton}
+              <GitHubIcon />
+            </a>
+            <SitePreferences lang={lang} path={current} />
+          </div>
+          <Link
+            href={`/${lang}/docs/guides/blocks#publish`}
+            className="inline-flex min-h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-fd-primary px-3 text-xs font-medium text-fd-primary-foreground hover:opacity-85"
           >
-            <Sun className="size-4 dark:hidden" />
-            <Moon className="hidden size-4 dark:block" />
-          </button>
+            <Plus aria-hidden className="size-3.5" />
+            {t.publish}
+          </Link>
         </div>
       </div>
     </header>

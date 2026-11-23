@@ -6,14 +6,17 @@ test("the root opens the English home page", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Build your design system with GPUI.",
   );
-  await expect(page.getByRole("link", { name: "Install this block" })).toHaveAttribute(
-    "href",
-    "/en/blocks/billing-dashboard",
-  );
-  await expect(page.getByRole("link", { name: "block.json" })).toHaveAttribute(
-    "href",
-    "https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json",
-  );
+  const main = page.getByRole("main");
+  for (const [title, slug] of [
+    ["Billing dashboard", "billing-dashboard"],
+    ["Login", "login"],
+    ["Sidebar settings", "sidebar-settings"],
+  ]) {
+    await expect(main.getByRole("link", { name: title, exact: true })).toHaveAttribute(
+      "href",
+      `/en/blocks/${slug}`,
+    );
+  }
 });
 
 test("the invoice workspace loads GPUI only when launched and links to its implementation", async ({
@@ -66,32 +69,32 @@ test("the invoice accent follows the picker and survives a reload before the dem
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
-  const picker = page.getByRole("button", { name: /^강조색/ });
-  await expect(picker).toHaveAccessibleName("강조색 · 뉴트럴");
-  await expect(async () => {
-    await picker.press("ArrowDown");
-    await expect(page.getByRole("menuitemradio", { name: "뉴트럴" })).toBeChecked({
-      timeout: 1000,
-    });
-  }).toPass();
-  await page.getByRole("menuitemradio", { name: "바이올렛" }).click();
   const poster = page.getByRole("img", { name: /청구 현황/ });
+  await expect(poster).toBeInViewport({ ratio: 0.75 });
+  const trigger = page.getByRole("button", { name: "탐색 열기/닫기" });
+  const menu = page.getByRole("dialog", { name: "메뉴" });
+  await expect(async () => {
+    await trigger.click();
+    await expect(menu).toBeVisible({ timeout: 1000 });
+  }).toPass();
+  const picker = menu.getByRole("button", { name: /^강조색/ });
+  await expect(picker).toHaveAccessibleName("강조색 · 뉴트럴");
+  await picker.press("ArrowDown");
+  await expect(page.getByRole("menuitemradio", { name: "뉴트럴" })).toBeChecked();
+  await page.getByRole("menuitemradio", { name: "바이올렛" }).click();
+  await expect(picker).toHaveAccessibleName("강조색 · 바이올렛");
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
   await expect(poster).toHaveCSS("background-image", /\/violet\/mobile-light\.webp/);
-  await expect(page.getByRole("radio", { name: "바이올렛" })).toBeChecked();
 
   const resources: string[] = [];
   page.on("request", (request) => resources.push(new URL(request.url()).pathname));
   await page.reload();
-  await expect(picker).toHaveAccessibleName("강조색 · 바이올렛");
   await expect(poster).toHaveCSS("background-image", /\/violet\/mobile-light\.webp/);
   expect(resources.filter((path) => path.startsWith("/images/invoices/"))).toEqual([
     "/images/invoices/violet/mobile-light.webp",
   ]);
   expect(resources.some((path) => path.startsWith("/preview"))).toBe(false);
-  await page.getByRole("radio", { name: "바이올렛" }).press("ArrowRight");
-  await expect(page.getByRole("radio", { name: "로즈" })).toBeChecked();
-  await expect(picker).toHaveAccessibleName("강조색 · 로즈");
-  await expect(poster).toHaveCSS("background-image", /\/rose\/mobile-light\.webp/);
 });
 
 test("the Korean home page and catalogue cards lead to the Korean component", async ({ page }) => {

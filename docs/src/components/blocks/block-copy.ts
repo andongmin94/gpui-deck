@@ -20,7 +20,7 @@ function block(manifest: Manifest, view: string, mobileHeight: number, component
   };
 }
 
-export const billing = block(billingManifest, "BillingDashboard", 1360, [
+const billing = block(billingManifest, "BillingDashboard", 1360, [
   { label: "Chart", path: "components/chart" },
   { label: "DataTable", path: "recipes/data-table" },
 ]);
@@ -40,7 +40,6 @@ export type Block = (typeof blocks)[number];
 const copy = {
   en: {
     all: "All blocks",
-    share: "Publish a block",
     preview: "Preview",
     source: "Rust source",
     file: "Source file",
@@ -59,7 +58,6 @@ const copy = {
   },
   ko: {
     all: "모든 블록",
-    share: "블록 공유하기",
     preview: "미리보기",
     source: "Rust 소스",
     file: "소스 파일",
@@ -78,7 +76,6 @@ const copy = {
   },
   ja: {
     all: "すべてのブロック",
-    share: "ブロックを公開",
     preview: "プレビュー",
     source: "Rust ソース",
     file: "ソースファイル",
@@ -97,7 +94,6 @@ const copy = {
   },
   zh: {
     all: "所有区块",
-    share: "发布区块",
     preview: "预览",
     source: "Rust 源码",
     file: "源文件",

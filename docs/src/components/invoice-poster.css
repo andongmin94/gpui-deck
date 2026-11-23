@@ -40,9 +40,20 @@
   background-image: var(--desktop-dark);
 }
 
+@media (64rem <= width < 80rem) {
+  .invoice-poster {
+    aspect-ratio: 1.4;
+    background-size: 165% auto;
+    background-position: 3% 90%;
+  }
+}
+
 @media (width < 40rem) {
   .invoice-poster {
-    aspect-ratio: 355 / 990;
+    /* Frame Collections and the first invoice rows together on narrow screens. */
+    aspect-ratio: 355 / 520;
+    background-size: 100% auto;
+    background-position: center 30%;
     background-image: var(--mobile-light);
   }
 

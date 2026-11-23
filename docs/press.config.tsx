@@ -67,16 +67,17 @@ export default app.config({
   ui: {
     translations,
     async renderPage(props) {
-      if (props.page.slugs.length === 0) return <Home lang={props.lang} />;
-      if (props.page.slugs[0] === "blocks") {
+      const home = props.page.slugs.length === 0;
+      if (home || props.page.slugs[0] === "blocks") {
         const page = props.page.data;
-        if (props.page.slugs.length === 1) {
+        if (home || props.page.slugs.length === 1) {
           const loader = await this.getLoader();
           const entries = blocks.map((block) => {
             const detail = loader.getPage(["blocks", block.name], props.lang);
             if (!detail) throw new Error(`Missing ${props.lang} block page for ${block.name}`);
             return { block, title: detail.data.title, description: detail.data.description };
           });
+          if (home) return <Home lang={props.lang} entries={entries} />;
           return <BlocksGallery lang={props.lang} page={page} entries={entries} />;
         }
         const block = blocks.find((item) => item.name === props.page.slugs[1]);

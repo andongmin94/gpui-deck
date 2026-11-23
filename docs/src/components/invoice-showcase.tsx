@@ -33,9 +33,26 @@ export function InvoiceShowcase({ labels, children }: { labels: Labels; children
   return (
     <section
       aria-labelledby="invoice-title"
-      className="min-w-0 overflow-hidden rounded-2xl border bg-fd-background shadow-xs sm:rounded-3xl lg:col-start-2 lg:row-start-1"
+      className="min-w-0 overflow-hidden rounded-2xl border bg-fd-background sm:rounded-3xl"
     >
-      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-b px-5 py-4 sm:px-6">
+      <div id="invoice-preview">
+        {live ? (
+          <iframe
+            title={labels.title}
+            data-accent={accent}
+            src="/preview?c=invoice-workspace"
+            className="block h-[min(78svh,700px)] min-h-96 w-full"
+          />
+        ) : (
+          children
+        )}
+      </div>
+      {mode === "unavailable" && (
+        <output className="block border-t px-5 py-3 text-sm text-fd-muted-foreground">
+          {labels.unavailable}
+        </output>
+      )}
+      <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t px-4 py-4 sm:px-6">
         <div className="min-w-0 flex-[1_1_18rem]">
           <h2 id="invoice-title" className="text-lg leading-6 font-semibold tracking-tight">
             {labels.title}
@@ -66,23 +83,6 @@ export function InvoiceShowcase({ labels, children }: { labels: Labels; children
             {labels.source}
           </a>
         </div>
-      </div>
-      {mode === "unavailable" && (
-        <output className="block border-b px-5 py-3 text-sm text-fd-muted-foreground">
-          {labels.unavailable}
-        </output>
-      )}
-      <div id="invoice-preview">
-        {live ? (
-          <iframe
-            title={labels.title}
-            data-accent={accent}
-            src="/preview?c=invoice-workspace"
-            className="block h-[min(78svh,700px)] min-h-96 w-full"
-          />
-        ) : (
-          children
-        )}
       </div>
     </section>
   );

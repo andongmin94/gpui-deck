@@ -1,5 +1,5 @@
 import { Link } from "fumapress/client";
-import { ArrowLeft, ArrowRight, FileStack } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { SiteFooter } from "../shell/footer";
@@ -35,7 +35,6 @@ export function BlocksGallery({
   page: PageInfo;
   entries: GalleryEntry[];
 }) {
-  const t = blockCopy(lang);
   return (
     <BlocksLayout lang={lang}>
       <div className="mx-auto flex max-w-2xl flex-col items-center py-10 text-center sm:py-16">
@@ -43,13 +42,6 @@ export function BlocksGallery({
         <p className="mt-4 max-w-xl text-base leading-relaxed text-balance text-fd-muted-foreground sm:text-lg">
           {page.description}
         </p>
-        <Link
-          href={`/${lang}/docs/guides/blocks`}
-          className="mt-5 inline-flex min-h-9 items-center gap-2 rounded-full bg-fd-secondary px-4 text-sm font-medium hover:bg-fd-accent"
-        >
-          <FileStack aria-hidden className="size-4" />
-          {t.share}
-        </Link>
       </div>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {entries.map(({ block, title, description }) => (

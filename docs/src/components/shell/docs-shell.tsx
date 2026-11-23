@@ -2,9 +2,9 @@
 
 import type * as PageTree from "fumadocs-core/page-tree";
 import type { TOCItemType } from "fumadocs-core/toc";
-import { Link, useRouter } from "fumapress/client";
+import { Link } from "fumapress/client";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 
 import { copyFor } from "./copy";
 import { SiteFooter } from "./footer";
@@ -41,36 +41,11 @@ export function DocsShell({
   children: ReactNode;
 }) {
   const t = copyFor(lang);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [openedAt, setOpenedAt] = useState<string>();
-  const { path } = useRouter();
-  // A navigation closes the mobile menu.
-  const mobileOpen = menuOpen && openedAt === path;
-
   return (
     <div className="flex min-h-svh flex-col">
-      <SiteHeader
-        lang={lang}
-        menuOpen={mobileOpen}
-        onToggleMenu={() => {
-          setOpenedAt(path);
-          setMenuOpen(!mobileOpen);
-        }}
-      />
-      {mobileOpen && (
-        <div className="fixed inset-x-0 top-14 bottom-0 z-30 overflow-y-auto bg-fd-background px-4 py-6 lg:hidden">
-          <Link
-            href={`/${lang}/blocks`}
-            className="mb-4 flex h-9 items-center justify-between rounded-md px-2 text-sm font-medium hover:bg-fd-accent md:hidden"
-          >
-            {t.blocks}
-            <ArrowRight className="size-4" aria-hidden />
-          </Link>
-          <SidebarNav tree={tree} label={t.docs} onNavigate={() => setMenuOpen(false)} />
-        </div>
-      )}
+      <SiteHeader lang={lang} tree={tree} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 px-4 md:px-6">
-        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-60 shrink-0 no-scrollbar overflow-y-auto overscroll-contain py-8 pr-4 lg:block">
+        <aside className="sticky top-16 hidden h-[calc(100svh-4rem)] w-60 shrink-0 no-scrollbar overflow-y-auto overscroll-contain py-8 pr-4 lg:block">
           <SidebarNav tree={tree} label={t.docs} />
         </aside>
         <main id="main-content" className="flex min-w-0 flex-1 justify-center py-8 lg:px-8">
@@ -126,7 +101,7 @@ export function DocsShell({
             </div>
           </div>
         </main>
-        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] no-scrollbar w-56 shrink-0 overflow-y-auto py-8 xl:block">
+        <aside className="sticky top-16 hidden h-[calc(100svh-4rem)] no-scrollbar w-56 shrink-0 overflow-y-auto py-8 xl:block">
           <TableOfContents toc={toc} title={t.onThisPage} />
         </aside>
       </div>
