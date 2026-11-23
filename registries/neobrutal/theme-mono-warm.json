@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "neobrutal-theme-mono-warm",
+  "files": [
+    {
+      "source": "items/theme-mono-warm.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/swatch.rs",
+      "target": "swatch.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

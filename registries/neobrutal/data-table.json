@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "neobrutal-data-table",
+  "recipes": [
+    "data-table"
+  ],
+  "files": [
+    { "source": "items/data-table.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "items/display_style.rs", "target": "style.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

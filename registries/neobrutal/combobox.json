@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "neobrutal-combobox",
+  "files": [
+    { "source": "items/combobox.rs", "target": "mod.rs" },
+    { "source": "control_style.rs", "target": "control_style.rs" },
+    { "source": "editor_style.rs", "target": "editor_style.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

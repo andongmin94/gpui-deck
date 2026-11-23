@@ -13,6 +13,7 @@ mod billing_dashboard;
 #[path = "../../../blocks/login/login.rs"]
 mod login;
 #[path = "../../../registries/neobrutal/login.rs"]
+#[allow(dead_code)] // Installed palette tokens and themed constructors are also native app APIs.
 mod neobrutal;
 #[path = "../../../blocks/sidebar-settings/settings.rs"]
 mod sidebar_settings;

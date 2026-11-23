@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "neobrutal-popover",
+  "files": [
+    { "source": "items/popover.rs", "target": "mod.rs" },
+    { "source": "control_style.rs", "target": "control_style.rs" },
+    { "source": "button.rs", "target": "button.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

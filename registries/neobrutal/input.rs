@@ -1,13 +1,12 @@
 use gpui::{
     App, Context, Entity, Focusable as _, FontWeight, InteractiveElement as _, MouseButton,
-    ParentElement as _, Role, Styled as _, Window, div, prelude::FluentBuilder as _, px, rgb,
-    white,
+    ParentElement as _, Role, Styled as _, Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_deck::{
     Field, Input, InputAccessibility, InputEditorStyle, InputState, box_shadow, input::InputMode,
 };
 
-use super::palette::{ACCENT, INK, PAPER, RADIUS};
+use super::{super::Palette, palette::yellow};
 
 /// Create this state once per field. Passwords stay masked and are omitted from accessibility values.
 pub(crate) fn editor(
@@ -16,16 +15,26 @@ pub(crate) fn editor(
     placeholder: &'static str,
     role: Role,
 ) -> InputState {
+    editor_with_palette(window, cx, placeholder, role, yellow())
+}
+
+pub(crate) fn editor_with_palette(
+    window: &mut Window,
+    cx: &mut Context<InputState>,
+    placeholder: &'static str,
+    role: Role,
+    palette: Palette,
+) -> InputState {
     let secret = role == Role::PasswordInput;
     let mut state = InputState::new(window, cx)
         .placeholder(placeholder)
         .masked(secret);
     state.set_accessibility(InputAccessibility::new(Some(role)).with_value_exposed(!secret));
     state.set_editor_style(InputEditorStyle {
-        foreground: rgb(INK).into(),
-        muted_foreground: rgb(0x605f54).into(),
-        selection: rgb(ACCENT).into(),
-        caret: rgb(INK).into(),
+        foreground: palette.foreground,
+        muted_foreground: palette.muted,
+        selection: palette.accent,
+        caret: palette.foreground,
         ..Default::default()
     });
     state
@@ -40,8 +49,24 @@ pub(crate) fn field(
     window: &Window,
     cx: &App,
 ) -> Field<InputMode> {
-    let invalid = rgb(0x9f2021);
-    let stroke = if error.is_some() { invalid } else { rgb(INK) };
+    field_with_palette(id, label, state, error, window, cx, yellow())
+}
+
+pub(crate) fn field_with_palette(
+    id: &'static str,
+    label: &'static str,
+    state: &Entity<InputState>,
+    error: Option<&'static str>,
+    window: &Window,
+    cx: &App,
+    palette: Palette,
+) -> Field<InputMode> {
+    let invalid = palette.error;
+    let stroke = if error.is_some() {
+        invalid
+    } else {
+        palette.border
+    };
     let focus = state.focus_handle(cx);
     let disabled = state.read(cx).presentation().is_disabled();
     let frame = div()
@@ -51,18 +76,18 @@ pub(crate) fn field(
         .flex()
         .items_center()
         .px_3()
-        .rounded(px(RADIUS))
+        .rounded(palette.radius)
         .border_2()
         .border_color(stroke)
-        .bg(white())
+        .bg(palette.field)
         .text_size(px(15.))
         .when(focus.is_focused(window), |s| {
             s.shadow(vec![
-                box_shadow(0., 0., 0., 4., stroke.into()),
-                box_shadow(0., 0., 0., 2., white()),
+                box_shadow(0., 0., 0., 4., stroke),
+                box_shadow(0., 0., 0., 2., palette.field),
             ])
         })
-        .when(disabled, |s| s.bg(rgb(PAPER)).opacity(0.5))
+        .when(disabled, |s| s.bg(palette.canvas).opacity(0.5))
         .when(!disabled, |s| {
             s.on_mouse_down(MouseButton::Left, move |_, window, cx| {
                 focus.focus(window, cx)
@@ -78,6 +103,6 @@ pub(crate) fn field(
         .flex()
         .flex_col()
         .gap(px(8.))
-        .text_color(rgb(INK))
+        .text_color(palette.foreground)
         .child(frame)
 }

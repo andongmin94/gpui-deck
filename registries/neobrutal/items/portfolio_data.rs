@@ -1,0 +1,42 @@
+pub(super) struct Case {
+    pub title: &'static str,
+    pub discipline: &'static str,
+    pub year: &'static str,
+    pub summary: &'static str,
+    pub challenge: &'static str,
+    pub approach: &'static str,
+    pub deliverables: &'static str,
+    pub outcome: &'static str,
+}
+pub(super) const CASES: &[Case] = &[
+    Case {
+        title: "Wayline",
+        discipline: "Product design and front-end",
+        year: "2026",
+        summary: "A dispatch planning workspace that turns route changes into clear next actions.",
+        challenge: "Dispatchers needed to distinguish urgent route changes from routine updates.",
+        approach: "Mapped the handoff between planning and dispatch, then prototyped one shared queue.",
+        deliverables: "Workflow map, interaction prototype, accessible React workspace.",
+        outcome: "A single view of ownership, exceptions, and the next action for each route.",
+    },
+    Case {
+        title: "Ledgerline",
+        discipline: "Product design",
+        year: "2025",
+        summary: "A calm reporting system for finance teams reviewing a busy monthly close.",
+        challenge: "Monthly reporting scattered assumptions across tables, slides, and messages.",
+        approach: "Designed a common review structure with comparable periods and visible definitions.",
+        deliverables: "Reporting model, chart language, reusable review components.",
+        outcome: "Reviewers can trace each summary back to its source and see unresolved questions.",
+    },
+    Case {
+        title: "Open Index",
+        discipline: "Web design and development",
+        year: "2025",
+        summary: "An accessible public directory for shared tools, datasets, and practical guides.",
+        challenge: "A growing collection of public resources was difficult to browse and maintain.",
+        approach: "Organized resources around user tasks and tested search, filters, and empty states.",
+        deliverables: "Information architecture, responsive directory, keyboard interaction checks.",
+        outcome: "A searchable directory with clear categories and maintainable contribution rules.",
+    },
+];

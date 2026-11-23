@@ -14,6 +14,10 @@ use crate::theme::Theme;
 mod controls;
 mod data;
 mod invoice_workspace;
+#[allow(dead_code, unused_imports)] // The installed public APIs also serve native consumer apps.
+mod installed {
+    include!(concat!(env!("OUT_DIR"), "/registry.rs"));
+}
 pub(crate) mod neobrutal;
 mod overlays;
 mod recipe_controls;
@@ -40,6 +44,7 @@ pub fn names() -> impl Iterator<Item = &'static str> {
     CONTROL_NAMES
         .iter()
         .chain(neobrutal::NAMES)
+        .chain(installed::NAMES)
         .chain(overlays::NAMES)
         .chain(data::NAMES)
         .chain(["card", "data-table"].iter())
@@ -73,6 +78,7 @@ pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyV
     };
     if let Some(view) = control
         .or_else(|| neobrutal::open(name, window, cx))
+        .or_else(|| installed::open(name, window, cx))
         .or_else(|| overlays::open(name, theme, window, cx))
         .or_else(|| data::open(name, theme, window, cx))
         .or_else(|| recipe_controls::open(name, theme, window, cx))

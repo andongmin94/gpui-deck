@@ -2119,6 +2119,8 @@ dependencies = [
  "gpui-deck",
  "gpui-pre",
  "gpui-pre-platform",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
  "web-sys",
 ]

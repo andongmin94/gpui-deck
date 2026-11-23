@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "neobrutal-alert",
+  "recipes": [
+    "alert"
+  ],
+  "files": [
+    { "source": "items/alert.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "items/display_style.rs", "target": "style.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "neobrutal-menubar",
+  "files": [
+    { "source": "items/menubar.rs", "target": "mod.rs" },
+    { "source": "control_style.rs", "target": "control_style.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "menu_surface.rs", "target": "menu_surface.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

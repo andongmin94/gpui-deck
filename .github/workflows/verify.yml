@@ -40,7 +40,9 @@ jobs:
 
       - name: Check formatting
         if: runner.os == 'Linux'
-        run: cargo fmt --all -- --check
+        run: |
+          cargo fmt --all -- --check
+          find registries -name '*.rs' -print0 | xargs -0 rustfmt --edition 2024 --config skip_children=true --check
 
       - name: Install Linux native dependencies
         if: runner.os == 'Linux'

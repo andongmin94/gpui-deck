@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "neobrutal-slider",
+  "files": [
+    { "source": "items/slider.rs", "target": "mod.rs" },
+    { "source": "control_style.rs", "target": "control_style.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

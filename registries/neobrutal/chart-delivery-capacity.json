@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "name": "neobrutal-chart-delivery-capacity",
+  "recipes": [
+    "chart"
+  ],
+  "files": [
+    { "source": "items/chart-delivery-capacity.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "items/chart_colors.rs", "target": "colors.rs" },
+    { "source": "items/display_style.rs", "target": "style.rs" },
+    { "source": "items/chart_report.rs", "target": "report.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

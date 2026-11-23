@@ -8,27 +8,48 @@ pub(crate) use button::press_button;
 pub(crate) use input::{editor, field};
 pub(crate) use palette::PAPER;
 
+use super::Palette;
+use button::press_button_with_palette;
 use gpui::{
     App, AppContext as _, Context, Entity, Focusable as _, FontWeight, InteractiveElement as _,
     IntoElement, ParentElement as _, Render, Role, StatefulInteractiveElement as _, Styled as _,
-    Subscription, Window, div, prelude::FluentBuilder as _, px, rgb, white,
+    Subscription, Window, div, prelude::FluentBuilder as _, px,
 };
 use gpui_deck::{InputState, box_shadow, input::InputEvent};
-use palette::{ACCENT, INK, RADIUS};
+use input::{editor_with_palette, field_with_palette};
+use palette::yellow;
 
 pub(crate) struct Login {
     pub(crate) email: Entity<InputState>,
     pub(crate) password: Entity<InputState>,
     pub(crate) validated: bool,
+    palette: Palette,
     attempted: bool,
     _subscriptions: [Subscription; 2],
 }
 
 impl Login {
     pub(crate) fn new(window: &mut Window, cx: &mut Context<Self>) -> Self {
-        let email = cx.new(|cx| editor(window, cx, "you@example.com", Role::EmailInput));
-        let password =
-            cx.new(|cx| editor(window, cx, "Enter a sample password", Role::PasswordInput));
+        Self::with_palette(window, cx, yellow())
+    }
+
+    pub(crate) fn with_palette(
+        window: &mut Window,
+        cx: &mut Context<Self>,
+        palette: Palette,
+    ) -> Self {
+        let email = cx.new(|cx| {
+            editor_with_palette(window, cx, "you@example.com", Role::EmailInput, palette)
+        });
+        let password = cx.new(|cx| {
+            editor_with_palette(
+                window,
+                cx,
+                "Enter a sample password",
+                Role::PasswordInput,
+                palette,
+            )
+        });
         let subscriptions = [&email, &password].map(|input| {
             cx.subscribe_in(
                 input,
@@ -51,6 +72,7 @@ impl Login {
             email,
             password,
             validated: false,
+            palette,
             attempted: false,
             _subscriptions: subscriptions,
         }
@@ -103,7 +125,8 @@ fn valid_email(address: &str) -> bool {
 
 impl Render for Login {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let ink = rgb(INK);
+        let palette = self.palette;
+        let ink = palette.border;
         let [email_error, password_error] = self.visible_errors(cx);
         let heading = div()
             .flex()
@@ -111,10 +134,11 @@ impl Render for Login {
             .gap_1()
             .px_6()
             .py_5()
-            .rounded_t(px(RADIUS - 2.))
+            .rounded_t(palette.radius - px(2.))
             .border_b_2()
             .border_color(ink)
-            .bg(rgb(ACCENT))
+            .bg(palette.accent)
+            .text_color(palette.accent_foreground)
             .child(
                 div()
                     .id("neo-login-title")
@@ -136,29 +160,31 @@ impl Render for Login {
             .gap_5()
             .p_6()
             .child(
-                field(
+                field_with_palette(
                     "neo-email",
                     "Email address",
                     &self.email,
                     email_error,
                     window,
                     cx,
+                    palette,
                 )
                 .required(true),
             )
             .child(
-                field(
+                field_with_palette(
                     "neo-password",
                     "Password",
                     &self.password,
                     password_error,
                     window,
                     cx,
+                    palette,
                 )
                 .required(true),
             )
             .child(
-                press_button("neo-login-submit", "Sign in")
+                press_button_with_palette("neo-login-submit", "Sign in", palette)
                     .w_full()
                     .on_click(cx.listener(|this, _, window, cx| this.submit(window, cx))),
             )
@@ -176,19 +202,19 @@ impl Render for Login {
         let card = div()
             .w_full()
             .max_w(px(414.))
-            .rounded(px(RADIUS))
+            .rounded(palette.radius)
             .border_2()
             .border_color(ink)
-            .bg(white())
-            .shadow(vec![box_shadow(4., 4., 0., 0., ink.into())])
+            .bg(palette.surface)
+            .shadow(vec![box_shadow(4., 4., 0., 0., ink)])
             .child(heading)
             .child(body);
         div()
             .id("neo-login-screen")
             .size_full()
             .overflow_y_scroll()
-            .bg(rgb(PAPER))
-            .text_color(ink)
+            .bg(palette.canvas)
+            .text_color(palette.foreground)
             .child(
                 div()
                     .w_full()

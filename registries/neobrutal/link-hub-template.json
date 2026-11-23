@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "neobrutal-link-hub-template",
+  "files": [
+    {
+      "source": "items/link-hub-template.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "items/link_hub_data.rs",
+      "target": "data.rs"
+    },
+    {
+      "source": "items/template_layout.rs",
+      "target": "layout.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

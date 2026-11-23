@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "neobrutal-theme-cyan",
+  "files": [
+    {
+      "source": "items/theme-cyan.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/swatch.rs",
+      "target": "swatch.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

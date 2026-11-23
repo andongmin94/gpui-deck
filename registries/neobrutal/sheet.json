@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "name": "neobrutal-sheet",
+  "recipes": ["sheet"],
+  "files": [
+    { "source": "items/sheet.rs", "target": "mod.rs" },
+    { "source": "control_style.rs", "target": "control_style.rs" },
+    { "source": "button.rs", "target": "button.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "modal_parts.rs", "target": "modal_parts.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

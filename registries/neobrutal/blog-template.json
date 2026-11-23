@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "name": "neobrutal-blog-template",
+  "files": [
+    {
+      "source": "items/blog-template.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "items/blog_posts.rs",
+      "target": "data.rs"
+    },
+    {
+      "source": "items/template_layout.rs",
+      "target": "layout.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "input.rs",
+      "target": "input.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "neobrutal-theme-orange",
+  "files": [
+    {
+      "source": "items/theme-orange.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/swatch.rs",
+      "target": "swatch.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}
