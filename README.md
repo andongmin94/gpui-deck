@@ -51,17 +51,22 @@ The [registry directory](https://gpui-deck.andongmin.com/en/directory) lists
 collections with their own visual style. Its first collection,
 [Neobrutal](https://gpui-deck.andongmin.com/en/directory/neobrutal), brings
 the raised controls and hard shadows of [neobrutal-ui](https://github.com/andongmin94/neobrutal-ui)
-to Rust using GPUI Deck's headless controls. Install the button or input on its
-own, or install both with the palette as part of the login screen:
+to Rust using GPUI Deck's headless controls. Browse 46 UI components, a data table,
+eight chart examples, six page templates, the base style and 19 light/dark palettes.
+The directory also includes the composed combobox, date picker and login screen.
+Install only the items you want in your app:
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/login.json
 ```
 
-The [collection source](registries/neobrutal) includes the catalog and three
-installable manifests. Each manifest maps Rust sources to editable files in
-the app. The login manifest uses the same component sources as the two
-standalone items.
+Each of the 84 entries in the [collection source](registries/neobrutal) has
+its own installable manifest. Templates provide native example views with local
+sample data. Components and themes share the app's `Palette` type. For example,
+install `theme-blue.json` alongside the button and pass
+`ui::neobrutal_theme_blue::palette(false)` to
+`ui::neobrutal_button::press_button_with_palette`; pass `true` for its dark palette.
+The login manifest includes the same button, input and palette source as the standalone items.
 
 ## Current scope
 

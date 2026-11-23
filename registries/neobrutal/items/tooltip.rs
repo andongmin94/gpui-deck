@@ -16,9 +16,11 @@ pub(crate) fn tooltip(
     label: impl Into<SharedString>,
     hint: impl Into<SharedString>,
     p: Palette,
+    window: &Window,
 ) -> Tooltip {
     let label = label.into();
     Tooltip::new(id, state, hint)
+        .font_family(window.text_style().font_family)
         .border_2()
         .border_color(p.border)
         .rounded(p.radius)
@@ -35,7 +37,14 @@ pub(crate) fn tooltip(
 pub(crate) fn preview(w: &mut Window, cx: &mut App) -> AnyView {
     let focus = cx.focus_handle().tab_stop(true);
     let s = cx.new(|cx| TooltipState::new(&focus, w, cx));
-    control_style::sample(s, cx, |p, s, _, _| {
-        tooltip("shortcut", s, "Shortcut", "Save this file with Ctrl+S", p)
+    control_style::sample(s, cx, |p, s, window, _| {
+        tooltip(
+            "shortcut",
+            s,
+            "Shortcut",
+            "Save this file with Ctrl+S",
+            p,
+            window,
+        )
     })
 }

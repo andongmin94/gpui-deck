@@ -79,3 +79,50 @@ fn main() {
 ボタンだけを追加した場合は、`ui::neobrutal_button::press_button("save", "保存")` に `.on_click(...)` を付けて描画します。入力欄では `cx.new(...)` の中で `ui::neobrutal_input::editor` を使って状態を一度生成し、描画のたびに `ui::neobrutal_input::field` に渡します。
 
 `registry.json` に各項目のマニフェストを列挙してコレクションを紹介できます。`gpui-deck add` にはインストールしたい**項目のマニフェスト**の GitHub URL を渡します。[レジストリ一覧](/ja/directory)で実例を確認できます。
+
+## 導入したレジストリ項目を実行する [#registry]
+
+[Cargo の依存関係](/ja/docs/installation)を追加し、一覧から項目を選びます。Select を使う場合は以下のコマンドで追加します。上のウィンドウ例から `Screen` のインポートを削除し、`screen` を生成する行を以下の Rust コードに置き換えます。`cargo run` でサイトと同じ例をネイティブウィンドウで実行できます。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
+```
+
+```rust
+let screen = ui::neobrutal_select::preview(window, cx);
+```
+
+独自のデータや動作を渡すには、同じモジュールのコンポーネント関数をビューから直接呼び出します。
+
+## レジストリのテーマを使う
+
+ボタンとテーマを同じ UI ディレクトリに追加して、描画時にパレットを渡します。ダーク配色には `palette(true)` を使います。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/button.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/theme-blue.json
+```
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(false);
+let save = ui::neobrutal_button::press_button_with_palette("save", "保存", palette);
+```
+
+同じアプリでプロジェクトダッシュボードにもブルーテーマを適用するには、テンプレートを追加します。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
+```
+
+上のウィンドウの例で、`use … as Screen;` の行を次のインポートに置き換えます。
+
+```rust
+use ui::neobrutal_dashboard_template::Dashboard as Screen;
+```
+
+`open_window` 内で `screen` を作成する行を次の 2 行に置き換え、`cargo run` で起動します。
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(true);
+let screen = cx.new(|cx| Screen::new(palette, window, cx));
+```

@@ -94,3 +94,25 @@ test("Neobrutal login validates the credentials entered through browser controls
   await password.press("Enter");
   await expect(page.getByRole("status")).toHaveText("Sample credentials validated locally.");
 });
+
+test("Neobrutal tooltip paints its hint on hover and dismisses it with Escape", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 640, height: 400 });
+  const errors: Error[] = [];
+  page.on("pageerror", (error) => errors.push(error));
+  await page.goto("/preview?c=neobrutal-tooltip");
+  const canvas = page.locator("canvas");
+  await expect(canvas).toBeVisible();
+
+  // Compare the area below the centered trigger with an empty patch of canvas.
+  // The trigger's hover styling stays outside both patches.
+  const patch = (x: number, y: number) =>
+    page.screenshot({ clip: { x, y, width: 190, height: 38 } });
+  const hintPainted = async () => !(await patch(275, 231)).equals(await patch(20, 20));
+  await canvas.hover();
+  await expect.poll(hintPainted).toBe(true);
+  await page.keyboard.press("Escape");
+  await expect.poll(hintPainted).toBe(false);
+  expect(errors).toEqual([]);
+});

@@ -50,7 +50,7 @@ pub(crate) fn preview(_: &mut Window, cx: &mut App) -> AnyView {
     let s = cx.new(|cx| {
         NavigationMenuState::new(
             [
-                NavigationMenuItem::new("guides", "Guides ▾")
+                NavigationMenuItem::new("guides", "Guides ▼")
                     .with_popup()
                     .initial_focus(&first),
                 NavigationMenuItem::new("about", "About"),

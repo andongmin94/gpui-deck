@@ -79,3 +79,50 @@ The [Neobrutal registry](https://github.com/andongmin94/gpui-deck/tree/main/regi
 After a standalone install, render a button with `ui::neobrutal_button::press_button("save", "Save")` and attach your handler with `.on_click(...)`. For a field, create the input state once with `ui::neobrutal_input::editor` inside `cx.new(...)`, then pass that state to `ui::neobrutal_input::field` on each render.
 
 List your item manifests in a `registry.json` catalog so readers can browse the collection. Share the GitHub URL of an **item manifest** for `gpui-deck add`. To browse a working collection, open the [registry directory](/en/directory).
+
+## Run an installed registry item [#registry]
+
+After adding the [Cargo dependencies](/en/docs/installation), install an item from the directory. For example, install Select with the command below. In the window example above, remove the `Screen` import and replace the line that constructs `screen` with the Rust line below. Run `cargo run` to open the same interactive example as the website.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
+```
+
+```rust
+let screen = ui::neobrutal_select::preview(window, cx);
+```
+
+Use the component's function directly in your own view when you are ready to supply your own state and content.
+
+## Use a registry theme
+
+Install both items in the same UI directory. Pass the theme palette to a component when you render it. Use `palette(true)` for the dark palette.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/button.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/theme-blue.json
+```
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(false);
+let save = ui::neobrutal_button::press_button_with_palette("save", "Save", palette);
+```
+
+To run the project dashboard with the same theme, install its template into the same app.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
+```
+
+In the window example above, replace the `use … as Screen;` import with the following one.
+
+```rust
+use ui::neobrutal_dashboard_template::Dashboard as Screen;
+```
+
+Inside `open_window`, replace the line that creates `screen` with these two lines, then run `cargo run`.
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(true);
+let screen = cx.new(|cx| Screen::new(palette, window, cx));
+```

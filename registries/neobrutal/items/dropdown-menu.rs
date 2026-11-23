@@ -47,7 +47,7 @@ pub(crate) fn preview(_: &mut Window, cx: &mut App) -> AnyView {
             .flex_col()
             .items_center()
             .gap_3()
-            .child(dropdown_menu("actions", "Actions ▾", s, p, cx))
+            .child(dropdown_menu("actions", "Actions ▼", s, p, cx))
             .child(selected.read(cx).clone())
     })
 }

@@ -17,18 +17,30 @@ pub(crate) fn image_card(
     let id = id.into();
     style::surface(p)
         .p_0()
+        .flex()
+        .flex_col()
         .overflow_hidden()
         .child(
-            img(source)
-                .id((id.clone(), "image"))
-                .role(gpui::Role::Image)
-                .aria_label(alt)
+            div()
+                .relative()
+                .flex_none()
                 .w_full()
                 .h(px(150.))
-                .object_fit(ObjectFit::Cover),
+                .overflow_hidden()
+                .child(
+                    img(source)
+                        .id((id.clone(), "image"))
+                        .role(gpui::Role::Image)
+                        .aria_label(alt)
+                        .absolute()
+                        .inset_0()
+                        .size_full()
+                        .object_fit(ObjectFit::Cover),
+                ),
         )
         .child(
             div()
+                .flex_none()
                 .p_4()
                 .border_t_2()
                 .border_color(p.border)

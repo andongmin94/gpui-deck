@@ -9,29 +9,49 @@ const manifests = import.meta.glob<Manifest>(["./*.json", "!./registry.json"], {
 });
 const sourcePath = "registries/neobrutal";
 const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/${sourcePath}`;
+export const kinds = [
+  "component",
+  "recipe",
+  "chart",
+  "template",
+  "theme",
+  "base",
+  "block",
+] as const;
+export type Kind = (typeof kinds)[number];
+
+function posterSize(slug: string, kind: string) {
+  if (slug === "login") return { posterWidth: 760, posterHeight: 520, mobileHeight: 520 };
+  if (slug === "button" || slug === "input")
+    return { posterWidth: 760, posterHeight: 400, mobileHeight: 560 };
+  if (kind === "chart" || slug === "chart" || slug === "data-table")
+    return { posterWidth: 960, posterHeight: 1000, mobileHeight: 1100 };
+  if (kind === "template") return { posterWidth: 960, posterHeight: 800, mobileHeight: 960 };
+  if (slug === "date-picker") return { posterWidth: 960, posterHeight: 720, mobileHeight: 720 };
+  return { posterWidth: 960, posterHeight: 600, mobileHeight: 560 };
+}
 
 export const neobrutal = {
   ...catalog,
   items: catalog.items.map(({ manifest: filename, kind }) => {
     const manifest = manifests[`./${filename}`];
-    if (!manifest) throw new Error(`Missing registry item ${filename}`);
-    const slug = filename.replace(/\.json$/, "") as ItemSlug;
-    const login = slug === "login";
+    if (!manifest || !kinds.includes(kind as Kind))
+      throw new Error(`Invalid registry entry ${filename}`);
+    const slug = filename.replace(/\.json$/, "");
     return {
       name: manifest.name,
       files: manifest.files.filter((file) => file.target.endsWith(".rs")),
       slug,
-      kind,
+      kind: kind as Kind,
       sourcePath,
       source,
       command: `gpui-deck add ${source}/${filename}`,
       poster: `/images/registries/neobrutal/${slug}`,
-      posterWidth: 760,
-      posterHeight: login ? 520 : 400,
-      mobileHeight: login ? 520 : undefined,
+      ...posterSize(slug, kind),
     };
   }),
 };
+export type RegistryItem = (typeof neobrutal.items)[number];
 
 const copy = {
   en: {
@@ -39,15 +59,19 @@ const copy = {
     open: "Explore registry",
     original: "Original design system",
     guide: "Installation guide",
-    items: "In this registry",
-    block: "Block",
-    component: "Component",
-    titles: { login: "Login", button: "Button", input: "Input" },
-    descriptions: {
-      login:
-        "An email and password form with local validation. Includes the button, input, and palette.",
-      button: "A raised action with a solid shadow and distinct focus and pressed states.",
-      input: "A labeled text field with a bold outline and a visible focus ring.",
+    items: "Browse the registry",
+    search: "Find an item…",
+    choose: "Choose an item",
+    empty: "No matching items.",
+    count: "items",
+    kinds: {
+      component: "Components",
+      recipe: "Recipes",
+      chart: "Charts",
+      template: "Page templates",
+      theme: "Themes",
+      base: "Foundation",
+      block: "Blocks",
     },
   },
   ko: {
@@ -56,14 +80,18 @@ const copy = {
     original: "원본 디자인 시스템",
     guide: "설치 가이드",
     items: "수록 항목",
-    block: "블록",
-    component: "컴포넌트",
-    titles: { login: "로그인", button: "버튼", input: "입력 필드" },
-    descriptions: {
-      login:
-        "이메일과 비밀번호를 검사하는 로그인 폼입니다. 버튼과 입력 필드, 팔레트가 함께 설치됩니다.",
-      button: "그림자 위에 떠 있는 버튼입니다. 키보드로 포커스하거나 누르면 모양이 달라집니다.",
-      input: "레이블과 굵은 테두리가 있는 입력 필드입니다. 편집할 때 포커스 링이 표시됩니다.",
+    search: "항목 검색…",
+    choose: "항목 선택",
+    empty: "검색 결과가 없습니다.",
+    count: "개 항목",
+    kinds: {
+      component: "컴포넌트",
+      recipe: "레시피",
+      chart: "차트",
+      template: "페이지 템플릿",
+      theme: "테마",
+      base: "기본 스타일",
+      block: "블록",
     },
   },
   ja: {
@@ -72,14 +100,18 @@ const copy = {
     original: "元のデザインシステム",
     guide: "インストールガイド",
     items: "収録アイテム",
-    block: "ブロック",
-    component: "コンポーネント",
-    titles: { login: "ログイン", button: "ボタン", input: "入力フィールド" },
-    descriptions: {
-      login:
-        "メールアドレスとパスワードを検証するフォーム。ボタンと入力欄、パレットも一緒に追加されます。",
-      button: "影に浮かぶボタン。フォーカス時と押下時に見た目が変わります。",
-      input: "ラベルと太い縁取りのある入力欄。フォーカスするとリングが表示されます。",
+    search: "項目を検索…",
+    choose: "項目を選択",
+    empty: "一致する項目がありません。",
+    count: "項目",
+    kinds: {
+      component: "コンポーネント",
+      recipe: "レシピ",
+      chart: "チャート",
+      template: "ページテンプレート",
+      theme: "テーマ",
+      base: "基本スタイル",
+      block: "ブロック",
     },
   },
   zh: {
@@ -88,19 +120,123 @@ const copy = {
     original: "原始设计系统",
     guide: "安装指南",
     items: "收录项目",
-    block: "区块",
-    component: "组件",
-    titles: { login: "登录", button: "按钮", input: "输入框" },
-    descriptions: {
-      login: "在本地校验邮箱和密码的登录表单，同时安装按钮、输入框和配色。",
-      button: "带有实心阴影的按钮，键盘聚焦和按下时各有不同的外观。",
-      input: "带标签和粗描边的文本输入框，聚焦时显示清晰的焦点环。",
+    search: "搜索项目…",
+    choose: "选择项目",
+    empty: "没有匹配的项目。",
+    count: "个项目",
+    kinds: {
+      component: "组件",
+      recipe: "配方",
+      chart: "图表",
+      template: "页面模板",
+      theme: "主题",
+      base: "基础样式",
+      block: "区块",
     },
   },
 };
-
-type ItemSlug = keyof typeof copy.en.titles;
-
 export function registryCopy(lang: string) {
   return copy[lang as keyof typeof copy] ?? copy.en;
+}
+
+// Keep the upstream names searchable in every language; localization only changes the label.
+const translations: Record<string, string[]> = {
+  "theme-mono": ["모노", "モノ", "单色"],
+  "theme-mono-warm": ["웜 모노", "ウォームモノ", "暖单色"],
+  "theme-red": ["레드", "レッド", "红色"],
+  "theme-orange": ["오렌지", "オレンジ", "橙色"],
+  "theme-amber": ["앰버", "アンバー", "琥珀色"],
+  "theme-yellow": ["옐로", "イエロー", "黄色"],
+  "theme-lime": ["라임", "ライム", "青柠"],
+  "theme-green": ["그린", "グリーン", "绿色"],
+  "theme-emerald": ["에메랄드", "エメラルド", "翡翠色"],
+  "theme-teal": ["틸", "ティール", "蓝绿色"],
+  "theme-cyan": ["시안", "シアン", "青色"],
+  "theme-sky": ["스카이", "スカイ", "天蓝色"],
+  "theme-blue": ["블루", "ブルー", "蓝色"],
+  "theme-indigo": ["인디고", "インディゴ", "靛蓝"],
+  "theme-violet": ["바이올렛", "バイオレット", "紫罗兰"],
+  "theme-purple": ["퍼플", "パープル", "紫色"],
+  "theme-fuchsia": ["푸크시아", "フューシャ", "品红"],
+  "theme-pink": ["핑크", "ピンク", "粉色"],
+  "theme-rose": ["로즈", "ローズ", "玫瑰色"],
+  accordion: ["아코디언", "アコーディオン", "手风琴"],
+  alert: ["알림", "アラート", "提示"],
+  "alert-dialog": ["경고 대화상자", "警告ダイアログ", "警告对话框"],
+  avatar: ["아바타", "アバター", "头像"],
+  badge: ["배지", "バッジ", "徽章"],
+  breadcrumb: ["이동 경로", "パンくず", "面包屑"],
+  button: ["버튼", "ボタン", "按钮"],
+  calendar: ["달력", "カレンダー", "日历"],
+  card: ["카드", "カード", "卡片"],
+  carousel: ["캐러셀", "カルーセル", "轮播"],
+  chart: ["차트", "チャート", "图表"],
+  checkbox: ["체크박스", "チェックボックス", "复选框"],
+  collapsible: ["접이식 패널", "折りたたみ", "折叠面板"],
+  combobox: ["콤보박스", "コンボボックス", "组合框"],
+  command: ["명령 팔레트", "コマンドパレット", "命令面板"],
+  "context-menu": ["컨텍스트 메뉴", "コンテキストメニュー", "上下文菜单"],
+  "data-table": ["데이터 테이블", "データテーブル", "数据表格"],
+  "date-picker": ["날짜 선택기", "日付ピッカー", "日期选择器"],
+  dialog: ["대화상자", "ダイアログ", "对话框"],
+  drawer: ["드로어", "ドロワー", "抽屉"],
+  "dropdown-menu": ["드롭다운 메뉴", "ドロップダウンメニュー", "下拉菜单"],
+  form: ["폼", "フォーム", "表单"],
+  "hover-card": ["호버 카드", "ホバーカード", "悬停卡片"],
+  "image-card": ["이미지 카드", "画像カード", "图片卡片"],
+  input: ["입력 필드", "入力フィールド", "输入框"],
+  "input-group": ["입력 그룹", "入力グループ", "输入组"],
+  "input-otp": ["인증 코드 입력", "認証コード入力", "验证码输入"],
+  label: ["레이블", "ラベル", "标签"],
+  login: ["로그인", "ログイン", "登录"],
+  marquee: ["흐르는 배너", "マーキー", "滚动横幅"],
+  menubar: ["메뉴 바", "メニューバー", "菜单栏"],
+  "navigation-menu": ["내비게이션 메뉴", "ナビゲーションメニュー", "导航菜单"],
+  pagination: ["페이지 이동", "ページ切り替え", "分页"],
+  popover: ["팝오버", "ポップオーバー", "弹出面板"],
+  progress: ["진행률", "進捗", "进度"],
+  "radio-group": ["라디오 그룹", "ラジオグループ", "单选组"],
+  resizable: ["크기 조절 패널", "可変パネル", "可调面板"],
+  "scroll-area": ["스크롤 영역", "スクロール領域", "滚动区域"],
+  select: ["선택 상자", "セレクト", "选择框"],
+  separator: ["구분선", "区切り線", "分隔线"],
+  sheet: ["시트", "シート", "侧面板"],
+  sidebar: ["사이드바", "サイドバー", "侧边栏"],
+  skeleton: ["스켈레톤", "スケルトン", "骨架屏"],
+  slider: ["슬라이더", "スライダー", "滑块"],
+  sonner: ["토스트 알림", "トースト通知", "消息通知"],
+  switch: ["스위치", "スイッチ", "开关"],
+  table: ["표", "テーブル", "表格"],
+  tabs: ["탭", "タブ", "标签页"],
+  textarea: ["여러 줄 입력", "テキストエリア", "多行输入"],
+  tooltip: ["툴팁", "ツールチップ", "工具提示"],
+  "neobrutal-ui": ["기본 팔레트", "基本パレット", "基础配色"],
+  "blog-template": ["블로그", "ブログ", "博客"],
+  "portfolio-template": ["포트폴리오", "ポートフォリオ", "作品集"],
+  "cms-template": ["콘텐츠 관리", "コンテンツ管理", "内容管理"],
+  "link-hub-template": ["링크 모음", "リンク集", "链接导航"],
+  "dashboard-template": ["대시보드", "ダッシュボード", "仪表盘"],
+  "landing-template": ["랜딩 페이지", "ランディングページ", "着陆页"],
+  "chart-revenue-target": ["매출 목표", "売上目標", "营收目标"],
+  "chart-signup-conversion": ["가입 전환율", "登録転換率", "注册转化"],
+  "chart-service-latency": ["서비스 지연 시간", "サービス遅延", "服务延迟"],
+  "chart-release-activity": ["릴리스 활동", "リリース状況", "发布活动"],
+  "chart-delivery-capacity": ["팀 처리 용량", "チームの処理能力", "交付能力"],
+  "chart-build-duration": ["빌드 시간", "ビルド時間", "构建耗时"],
+  "chart-work-allocation": ["작업 배분", "業務配分", "工作分配"],
+  "chart-install-diagnostics": ["설치 진단", "インストール診断", "安装诊断"],
+};
+export function itemTitle(slug: string, lang: string) {
+  const localized = translations[slug]?.[["ko", "ja", "zh"].indexOf(lang)];
+  if (localized) return localized;
+  const words =
+    slug === "neobrutal-ui"
+      ? "Base palette"
+      : slug
+          .replace(/^(theme|chart)-/, "")
+          .replace(/-template$/, "")
+          .replaceAll("-", " ");
+  return words
+    .replace(/\b\w/g, (letter) => letter.toUpperCase())
+    .replace(/\b(Cms|Otp)\b/g, (word) => word.toUpperCase());
 }

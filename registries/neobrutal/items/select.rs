@@ -52,7 +52,7 @@ pub(crate) fn select(
                 .items_center()
                 .justify_between()
                 .child(text)
-                .child("▾"),
+                .child("▼"),
         )
         .content(control_style::panel(p).w(px(208.)).p_1().children(options))
 }

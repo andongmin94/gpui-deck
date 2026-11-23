@@ -33,7 +33,7 @@ pub(crate) fn date_picker(
             button::raised(p, b)
                 .accessibility_label(format!("{label}, {text}"))
                 .child(text)
-                .child(" ▾")
+                .child(" ▼")
         })
         .content(calendar_grid::calendar(
             (id, "grid"),

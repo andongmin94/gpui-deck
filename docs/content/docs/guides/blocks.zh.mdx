@@ -79,3 +79,50 @@ fn main() {
 单独安装按钮后，使用 `ui::neobrutal_button::press_button("save", "保存")` 渲染按钮，并通过 `.on_click(...)` 绑定操作。对于输入框，在 `cx.new(...)` 中通过 `ui::neobrutal_input::editor` 创建一次状态，然后在每次渲染时将该状态传给 `ui::neobrutal_input::field`。
 
 在 `registry.json` 中列出各个项目的清单，供读者浏览。运行 `gpui-deck add` 时，传入要安装的**项目清单**的 GitHub 文件链接。[注册表目录](/zh/directory)中有可用的示例。
+
+## 运行安装的注册表项目 [#registry]
+
+添加 [Cargo 依赖](/zh/docs/installation) 后，从目录选择项目。例如，使用下面的命令安装 Select。删除上方窗口示例中的 `Screen` 导入，将创建 `screen` 的一行替换为下面的 Rust 代码。运行 `cargo run` 即可在原生窗口中使用与网站相同的交互示例。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
+```
+
+```rust
+let screen = ui::neobrutal_select::preview(window, cx);
+```
+
+要接入自己的数据和行为，可以在视图中直接调用同一模块的组件函数。
+
+## 使用注册表主题
+
+将按钮和主题安装到同一个 UI 目录，渲染组件时传入主题调色板。深色模式使用 `palette(true)`。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/button.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/theme-blue.json
+```
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(false);
+let save = ui::neobrutal_button::press_button_with_palette("save", "保存", palette);
+```
+
+要在同一应用中给项目仪表盘使用蓝色主题，先安装仪表盘模板。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
+```
+
+将上面窗口示例中的 `use … as Screen;` 替换为下面的导入语句。
+
+```rust
+use ui::neobrutal_dashboard_template::Dashboard as Screen;
+```
+
+在 `open_window` 中，用下面两行替换创建 `screen` 的语句，然后运行 `cargo run`。
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(true);
+let screen = cx.new(|cx| Screen::new(palette, window, cx));
+```

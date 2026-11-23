@@ -79,3 +79,50 @@ fn main() {
 버튼만 설치했다면 `ui::neobrutal_button::press_button("save", "저장")`을 렌더링하고 `.on_click(...)`에 동작을 연결하세요. 입력창은 `cx.new(...)` 안에서 `ui::neobrutal_input::editor`로 상태를 한 번 만든 뒤, 렌더링할 때마다 `ui::neobrutal_input::field`에 전달합니다.
 
 `registry.json`에 항목별 매니페스트를 나열하면 어떤 컴포넌트와 블록이 있는지 알 수 있습니다. 설치 명령은 `gpui-deck add` 뒤에 원하는 **항목의 매니페스트** GitHub URL을 붙이면 됩니다. [레지스트리 목록](/ko/directory)에서 실제 예시를 살펴보세요.
+
+## 설치한 레지스트리 항목 실행 [#registry]
+
+[Cargo 의존성](/ko/docs/installation)을 추가하고 디렉터리에서 원하는 항목을 설치하세요. 선택 상자를 예로 들면 다음과 같습니다. 위 창 실행 예제의 `Screen` 가져오기를 지우고 `screen`을 만드는 한 줄을 아래 Rust 코드로 바꾼 뒤 `cargo run`을 실행하세요. 사이트와 같은 예제가 네이티브 창에서 열립니다.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
+```
+
+```rust
+let screen = ui::neobrutal_select::preview(window, cx);
+```
+
+내 앱의 데이터와 동작을 연결할 때는 같은 모듈의 컴포넌트 함수를 뷰에서 직접 호출하세요.
+
+## 레지스트리 테마 적용
+
+버튼과 테마를 같은 UI 디렉터리에 설치하세요. 렌더링할 때 테마의 팔레트를 넘기면 됩니다. 다크 모드는 `palette(true)`를 사용하세요.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/button.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/theme-blue.json
+```
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(false);
+let save = ui::neobrutal_button::press_button_with_palette("save", "저장", palette);
+```
+
+같은 앱에서 프로젝트 대시보드에도 블루 테마를 적용하려면 템플릿을 추가하세요.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
+```
+
+위 창 실행 예제의 `use … as Screen;` 줄을 아래 코드로 바꾸세요.
+
+```rust
+use ui::neobrutal_dashboard_template::Dashboard as Screen;
+```
+
+`open_window` 안에서 `screen`을 만드는 한 줄을 아래 두 줄로 바꾼 뒤 `cargo run`으로 창을 여세요.
+
+```rust
+let palette = ui::neobrutal_theme_blue::palette(true);
+let screen = cx.new(|cx| Screen::new(palette, window, cx));
+```

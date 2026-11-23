@@ -1,9 +1,8 @@
 import { Link } from "fumapress/client";
-import { ArrowLeft, ArrowRight, ArrowUpRight, Box, LayoutTemplate } from "lucide-react";
-import { BlockViewer } from "../blocks/block-viewer";
-import { InstallCommand } from "../blocks/install-command";
+import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { RegistryBrowser } from "./registry-browser";
 import { CatalogLayout } from "../catalog-layout";
-import { neobrutal, registryCopy } from "./neobrutal";
+import { itemTitle, neobrutal, registryCopy } from "./neobrutal";
 
 type PageInfo = { title: string; description?: string };
 
@@ -53,19 +52,21 @@ export function RegistryDirectory({
           </picture>
         </Link>
         <div className="flex flex-col items-start justify-center gap-4 p-6 sm:p-10">
-          <span className="text-sm text-fd-muted-foreground">@{neobrutal.author}</span>
+          <span className="text-sm text-fd-muted-foreground">
+            @{neobrutal.author} · {neobrutal.items.length} {t.count}
+          </span>
           <h2 className="text-3xl font-semibold tracking-tight">{neobrutal.name}</h2>
           <p className="max-w-md leading-relaxed text-fd-muted-foreground">
             {registry.description}
           </p>
           <ul className="flex flex-wrap gap-1.5">
-            {neobrutal.items.map(({ slug }) => (
+            {["login", "button", "input", "dashboard-template"].map((slug) => (
               <li key={slug}>
                 <Link
                   href={`${href}#${slug}`}
                   className="inline-flex rounded-full border px-3 py-1 text-xs font-medium hover:bg-fd-secondary"
                 >
-                  {t.titles[slug]}
+                  {itemTitle(slug, lang)}
                 </Link>
               </li>
             ))}
@@ -102,59 +103,13 @@ export function RegistryDetail({ lang, page }: { lang: string; page: PageInfo })
             {t.original}
             <ArrowUpRight aria-hidden className="size-3.5" />
           </a>
-          <Link className={quietLink} href={`/${lang}/docs/installation`}>
+          <Link className={quietLink} href={`/${lang}/docs/guides/blocks#registry`}>
             {t.guide}
             <ArrowRight aria-hidden className="size-3.5" />
           </Link>
         </div>
       </header>
-      <div className="grid gap-8 pt-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-12 lg:pt-9">
-        <nav aria-label={t.items} className="self-start lg:sticky lg:top-24">
-          <p className="mb-2 text-sm font-semibold">{t.items}</p>
-          <ul className="flex flex-wrap gap-1 lg:flex-col lg:items-start">
-            {neobrutal.items.map(({ slug, kind }) => {
-              const Icon = kind === "block" ? LayoutTemplate : Box;
-              return (
-                <li key={slug}>
-                  <a
-                    href={`#${slug}`}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-lg px-2 text-sm text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground"
-                  >
-                    <Icon aria-hidden className="size-4" />
-                    {t.titles[slug]}
-                  </a>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
-        <div className="grid min-w-0 max-w-[58rem] gap-12 sm:gap-16">
-          {neobrutal.items.map((item) => (
-            <section
-              key={item.slug}
-              id={item.slug}
-              aria-labelledby={`title-${item.slug}`}
-              className="min-w-0 scroll-mt-20"
-            >
-              <div className="flex items-baseline gap-3">
-                <h2 id={`title-${item.slug}`} className="text-2xl font-semibold tracking-tight">
-                  {t.titles[item.slug]}
-                </h2>
-                <span className="text-xs text-fd-muted-foreground">
-                  {item.kind === "block" ? t.block : t.component}
-                </span>
-              </div>
-              <p className="mt-2 mb-4 text-sm leading-relaxed text-fd-muted-foreground">
-                {t.descriptions[item.slug]}
-              </p>
-              <BlockViewer lang={lang} title={t.titles[item.slug]} block={item} />
-              <div className="mt-3">
-                <InstallCommand lang={lang} command={item.command} />
-              </div>
-            </section>
-          ))}
-        </div>
-      </div>
+      <RegistryBrowser lang={lang} />
     </CatalogLayout>
   );
 }
