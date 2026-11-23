@@ -45,6 +45,7 @@ Copy the install command from the block's page. In the app above, replace the `u
 | --- | --- |
 | [Login](/en/blocks/login) | `use ui::login::Login as Screen;` |
 | [Sidebar settings](/en/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
+| [Neobrutal login](/en/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
 
 ## Publish your team's block [#publish]
 
@@ -70,3 +71,11 @@ Use a lowercase, hyphen-separated name. Keep relative file paths portable with l
 Share the GitHub file URL for the manifest, or its `raw.githubusercontent.com` URL. Link to a commit to share an exact revision. Users can edit the installed Rust files in their app. Repeating the same URL keeps their edits. Review the author's source before building.
 
 `gpui-deck diff --to src/ui` compares the bundled recipes and their generated scaffolding. Use your project's Git diff for the team's block files.
+
+## Share a collection
+
+The [Neobrutal registry](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal) shows how to share a visual style across items. Put one manifest per installable item next to the Rust source in your team's public GitHub repository. The login manifest lists the same button, input and palette files used by the individual components. One login install therefore includes all three.
+
+After a standalone install, render a button with `ui::neobrutal_button::press_button("save", "Save")` and attach your handler with `.on_click(...)`. For a field, create the input state once with `ui::neobrutal_input::editor` inside `cx.new(...)`, then pass that state to `ui::neobrutal_input::field` on each render.
+
+List your item manifests in a `registry.json` catalog so readers can browse the collection. Share the GitHub URL of an **item manifest** for `gpui-deck add`. To browse a working collection, open the [registry directory](/en/directory).

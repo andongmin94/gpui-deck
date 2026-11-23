@@ -12,6 +12,8 @@ pub mod theme;
 mod billing_dashboard;
 #[path = "../../../blocks/login/login.rs"]
 mod login;
+#[path = "../../../registries/neobrutal/login.rs"]
+mod neobrutal;
 #[path = "../../../blocks/sidebar-settings/settings.rs"]
 mod sidebar_settings;
 

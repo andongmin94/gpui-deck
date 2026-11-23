@@ -2,20 +2,29 @@
 
 import { Tabs } from "@base-ui/react/tabs";
 import { Code2, Image, Play, Square } from "lucide-react";
-import { lazy, Suspense, useRef, useState } from "react";
+import { lazy, Suspense, useId, useRef, useState } from "react";
 
-import { type Block, blockCopy } from "./block-copy";
+import { type PreviewItem, blockCopy } from "./block-copy";
 import { BlockPoster } from "./block-poster";
 
 const BlockSource = lazy(() => import("./block-source"));
 const tabStyle =
   "inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-fd-muted-foreground data-active:bg-fd-background data-active:text-fd-foreground data-active:shadow-xs";
 
-export function BlockViewer({ lang, title, block }: { lang: string; title: string; block: Block }) {
+export function BlockViewer({
+  lang,
+  title,
+  block,
+}: {
+  lang: string;
+  title: string;
+  block: PreviewItem;
+}) {
   const t = blockCopy(lang);
   const [tab, setTab] = useState("preview");
   const [mode, setMode] = useState<"image" | "checking" | "run" | "unavailable">("image");
   const request = useRef(0);
+  const previewId = useId();
 
   async function togglePreview() {
     if (mode === "run") {
@@ -55,7 +64,7 @@ export function BlockViewer({ lang, title, block }: { lang: string; title: strin
         {tab === "preview" && (
           <button
             type="button"
-            aria-controls="block-preview"
+            aria-controls={previewId}
             onClick={togglePreview}
             disabled={mode === "checking"}
             aria-busy={mode === "checking"}
@@ -76,7 +85,7 @@ export function BlockViewer({ lang, title, block }: { lang: string; title: strin
             {t.unavailable}
           </output>
         )}
-        <div id="block-preview">
+        <div id={previewId}>
           {mode === "run" ? (
             <iframe
               title={title}

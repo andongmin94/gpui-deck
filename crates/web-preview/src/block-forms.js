@@ -2,7 +2,7 @@
 // focus, editing, and accessibility actions; Rust owns every block value.
 let form;
 
-const login = `
+const login = (reveal) => `
   <h1>Sign in</h1>
   <p>Try the form with a sample email and password.</p>
   <form id="login" novalidate autocomplete="off">
@@ -12,7 +12,7 @@ const login = `
     <label for="password">Password</label>
     <div class="password-row">
       <input id="password" type="password" required aria-describedby="password-error">
-      <button id="reveal" type="button">Show password</button>
+      ${reveal ? '<button id="reveal" type="button">Show password</button>' : ""}
     </div>
     <small id="password-error"></small>
     <button type="submit">Sign in</button>
@@ -47,6 +47,20 @@ const settings = `
       <button id="apply" type="submit">Apply changes</button></div>
   </form>`;
 
+const previews = {
+  login: ["Sign-in preview", login(true)],
+  settings: ["Settings preview", settings],
+  "neobrutal-login": ["Neobrutal sign-in preview", login(false)],
+  "neobrutal-button": [
+    "Neobrutal button preview",
+    '<button id="press" type="button">Press me</button>',
+  ],
+  "neobrutal-input": [
+    "Neobrutal input preview",
+    '<label for="email">Email address</label> <input id="email" type="email" placeholder="you@example.com">',
+  ],
+};
+
 const styles = `
   #block-controls { color: #18181b; font: 14px/1.45 system-ui, sans-serif; }
   #block-controls [hidden] { display: none; }
@@ -78,12 +92,12 @@ const styles = `
 
 const field = (id) => form.querySelector("#" + id);
 
-function setText(id, text) {
+export function setText(id, text) {
   const el = field(id);
   if (el.textContent !== text) el.textContent = text;
 }
 
-function setValue(id, value) {
+export function setValue(id, value) {
   const input = field(id);
   // Reassigning while typing moves the native selection and disrupts IME.
   if (input.value !== value) input.value = value;
@@ -95,11 +109,12 @@ function setError(id, error) {
 }
 
 export function mountForm(kind, action) {
+  const [label, controls] = previews[kind];
   const host = document.createElement("div");
   host.id = "block-controls";
   host.innerHTML = `<style>${styles}</style>
     <button type="button" id="form-mode" aria-controls="block-form">Form controls</button>
-    <div id="block-form"><div>${kind === "login" ? login : settings}</div></div>`;
+    <div id="block-form"><div>${controls}</div></div>`;
   document.body.append(host);
   form = host.querySelector("#block-form");
   const mode = host.querySelector("#form-mode");
@@ -111,7 +126,7 @@ export function mountForm(kind, action) {
   ime.setAttribute("aria-label", "Canvas keyboard input");
   ime.inert = true;
   canvas.setAttribute("role", "img");
-  canvas.setAttribute("aria-label", kind === "login" ? "Sign-in preview" : "Settings preview");
+  canvas.setAttribute("aria-label", label);
   canvas.addEventListener(
     "pointerdown",
     () => {
@@ -127,7 +142,7 @@ export function mountForm(kind, action) {
   mode.onclick = () => {
     const open = !host.classList.contains("editing");
     setEditing(open);
-    if (open) form.querySelector("nav button, input").focus();
+    if (open) form.querySelector("button, input").focus();
   };
   form.addEventListener("focusin", () => setEditing(true));
   host.addEventListener("keydown", (event) => {
@@ -155,7 +170,7 @@ export function mountForm(kind, action) {
   });
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    action(kind === "login" ? "submit" : "apply", "");
+    action(kind === "settings" ? "apply" : "submit", "");
     form.querySelector('input[aria-invalid="true"]')?.focus();
   });
 }
@@ -165,7 +180,7 @@ export function updateLogin(email, password, masked, emailError, passwordError, 
   const type = masked ? "password" : "text";
   if (field("password").type !== type) field("password").type = type;
   setValue("password", password);
-  setText("reveal", masked ? "Show password" : "Hide password");
+  if (field("reveal")) setText("reveal", masked ? "Show password" : "Hide password");
   setError("email", emailError);
   setError("password", passwordError);
   setText("status", validated ? "Sample credentials validated locally." : "");

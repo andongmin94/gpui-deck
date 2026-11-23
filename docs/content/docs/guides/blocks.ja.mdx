@@ -45,6 +45,7 @@ fn main() {
 | --- | --- |
 | [ログイン](/ja/blocks/login) | `use ui::login::Login as Screen;` |
 | [サイドバー付き設定](/ja/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
+| [Neobrutal ログイン](/ja/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
 
 ## チームのブロックを公開する [#publish]
 
@@ -70,3 +71,11 @@ fn main() {
 マニフェストの GitHub ファイル URL または `raw.githubusercontent.com` の URL を共有します。バージョンを固定するにはコミットを指すリンクを使います。利用者は Rust ソースを直接編集できます。同じ URL を再度指定しても編集は保持されます。ビルド前に作者のソースを確認してください。
 
 `gpui-deck diff --to src/ui` は同梱レシピと生成されたモジュール宣言を比較します。チームのブロックファイルの変更はアプリ側の Git diff で確認します。
+
+## コレクションを共有する
+
+[Neobrutal レジストリ](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal)のように、チームの公開 GitHub リポジトリに Rust ソースと項目ごとのマニフェストを置きます。ログイン画面のマニフェストは、個別に配布するボタン、入力欄と共通のパレットを参照するので、ログイン画面を追加するとすべて揃います。
+
+ボタンだけを追加した場合は、`ui::neobrutal_button::press_button("save", "保存")` に `.on_click(...)` を付けて描画します。入力欄では `cx.new(...)` の中で `ui::neobrutal_input::editor` を使って状態を一度生成し、描画のたびに `ui::neobrutal_input::field` に渡します。
+
+`registry.json` に各項目のマニフェストを列挙してコレクションを紹介できます。`gpui-deck add` にはインストールしたい**項目のマニフェスト**の GitHub URL を渡します。[レジストリ一覧](/ja/directory)で実例を確認できます。

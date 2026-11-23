@@ -1,10 +1,10 @@
 import { ArrowUpRight, FileCode2 } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
 
-import { type Block, blockCopy } from "./block-copy";
+import { type PreviewItem, blockCopy } from "./block-copy";
 
-const sources = import.meta.glob<string>("./**/*.rs", {
-  base: "../../../../blocks",
+const sources = import.meta.glob<string>("./{blocks,registries}/**/*.rs", {
+  base: "../../../..",
   import: "default",
   query: "?raw",
 });
@@ -20,10 +20,10 @@ const sourceFiles = Object.fromEntries(
   ]),
 );
 
-export default function BlockSource({ lang, block }: { lang: string; block: Block }) {
+export default function BlockSource({ lang, block }: { lang: string; block: PreviewItem }) {
   const t = blockCopy(lang);
   const [selected, setSelected] = useState(block.files[0]);
-  const SourceFile = sourceFiles[`./${block.name}/${selected.source}`];
+  const SourceFile = sourceFiles[`./${block.sourcePath}/${selected.source}`];
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-3 py-2.5 sm:px-5">

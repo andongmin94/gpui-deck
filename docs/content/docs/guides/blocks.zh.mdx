@@ -45,6 +45,7 @@ fn main() {
 | --- | --- |
 | [登录](/zh/blocks/login) | `use ui::login::Login as Screen;` |
 | [侧边栏设置](/zh/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
+| [Neobrutal 登录](/zh/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
 
 ## 发布团队区块 [#publish]
 
@@ -70,3 +71,11 @@ fn main() {
 分享清单文件的 GitHub 网页 URL 或 `raw.githubusercontent.com` URL。要固定版本，请分享指向特定提交的链接。使用者可以直接编辑安装好的 Rust 源码，再次添加同一个 URL 会保留这些修改。构建前请检查作者的源码。
 
 `gpui-deck diff --to src/ui` 可比较内置配方和生成的模块声明。团队区块源文件的修改可以用应用仓库的 Git diff 查看。
+
+## 分享组件集合
+
+可以参考 [Neobrutal 注册表](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal)，将 Rust 源文件和每个可安装项目的清单放在团队的公开 GitHub 仓库中。登录页的清单引用了与独立组件相同的按钮、输入框和调色板文件，安装一次即可获取完整界面。
+
+单独安装按钮后，使用 `ui::neobrutal_button::press_button("save", "保存")` 渲染按钮，并通过 `.on_click(...)` 绑定操作。对于输入框，在 `cx.new(...)` 中通过 `ui::neobrutal_input::editor` 创建一次状态，然后在每次渲染时将该状态传给 `ui::neobrutal_input::field`。
+
+在 `registry.json` 中列出各个项目的清单，供读者浏览。运行 `gpui-deck add` 时，传入要安装的**项目清单**的 GitHub 文件链接。[注册表目录](/zh/directory)中有可用的示例。

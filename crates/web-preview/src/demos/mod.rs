@@ -14,6 +14,7 @@ use crate::theme::Theme;
 mod controls;
 mod data;
 mod invoice_workspace;
+pub(crate) mod neobrutal;
 mod overlays;
 mod recipe_controls;
 mod recipe_display;
@@ -38,6 +39,7 @@ const CONTROL_NAMES: &[&str] = &[
 pub fn names() -> impl Iterator<Item = &'static str> {
     CONTROL_NAMES
         .iter()
+        .chain(neobrutal::NAMES)
         .chain(overlays::NAMES)
         .chain(data::NAMES)
         .chain(["card", "data-table"].iter())
@@ -70,6 +72,7 @@ pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyV
         _ => None,
     };
     if let Some(view) = control
+        .or_else(|| neobrutal::open(name, window, cx))
         .or_else(|| overlays::open(name, theme, window, cx))
         .or_else(|| data::open(name, theme, window, cx))
         .or_else(|| recipe_controls::open(name, theme, window, cx))

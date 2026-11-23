@@ -1,30 +1,13 @@
 import { Link } from "fumapress/client";
 import { ArrowLeft, ArrowRight } from "lucide-react";
-import type { ReactNode } from "react";
 
-import { SiteFooter } from "../shell/footer";
-import { SiteHeader } from "../shell/header";
+import { CatalogLayout } from "../catalog-layout";
 import { type Block, blockCopy } from "./block-copy";
 import { BlockViewer } from "./block-viewer";
 import { InstallCommand } from "./install-command";
 
 type PageInfo = { title: string; description?: string };
 type GalleryEntry = PageInfo & { block: Block };
-
-function BlocksLayout({ lang, children }: { lang: string; children: ReactNode }) {
-  return (
-    <div className="flex min-h-svh flex-col">
-      <SiteHeader lang={lang} />
-      <main
-        id="main-content"
-        className="mx-auto w-full min-w-0 max-w-[1320px] flex-1 px-4 pb-12 sm:px-6 lg:px-8 lg:pb-20 [html:lang(ko)_&]:break-keep"
-      >
-        {children}
-      </main>
-      <SiteFooter lang={lang} />
-    </div>
-  );
-}
 
 export function BlocksGallery({
   lang,
@@ -36,7 +19,7 @@ export function BlocksGallery({
   entries: GalleryEntry[];
 }) {
   return (
-    <BlocksLayout lang={lang}>
+    <CatalogLayout lang={lang}>
       <div className="mx-auto flex max-w-2xl flex-col items-center py-10 text-center sm:py-16">
         <h1 className="text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">{page.title}</h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-balance text-fd-muted-foreground sm:text-lg">
@@ -90,14 +73,14 @@ export function BlocksGallery({
           </article>
         ))}
       </div>
-    </BlocksLayout>
+    </CatalogLayout>
   );
 }
 
 export function BlockDetail({ lang, page, block }: { lang: string; page: PageInfo; block: Block }) {
   const t = blockCopy(lang);
   return (
-    <BlocksLayout lang={lang}>
+    <CatalogLayout lang={lang}>
       <div className="py-7 sm:pt-11 sm:pb-7">
         <Link
           href={`/${lang}/blocks`}
@@ -132,6 +115,6 @@ export function BlockDetail({ lang, page, block }: { lang: string; page: PageInf
         </p>
       </div>
       <BlockViewer key={block.name} lang={lang} title={page.title} block={block} />
-    </BlocksLayout>
+    </CatalogLayout>
   );
 }

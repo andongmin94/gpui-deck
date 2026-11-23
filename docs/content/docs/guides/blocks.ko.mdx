@@ -45,6 +45,7 @@ fn main() {
 | --- | --- |
 | [로그인](/ko/blocks/login) | `use ui::login::Login as Screen;` |
 | [사이드바 설정](/ko/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
+| [네오브루탈 로그인](/ko/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
 
 ## 우리 팀의 블록 공유 [#publish]
 
@@ -70,3 +71,11 @@ fn main() {
 `block.json`을 연 GitHub 파일 URL이나 `raw.githubusercontent.com` URL을 공유하세요. 같은 버전을 재현하려면 특정 커밋을 가리키는 링크를 사용하세요. 설치한 사람은 Rust 파일을 직접 수정할 수 있고, 같은 URL을 다시 추가해도 수정 내용이 유지됩니다. 빌드 전에 작성자의 소스를 확인하세요.
 
 `gpui-deck diff --to src/ui`는 기본 레시피와 생성된 모듈 선언을 비교합니다. 팀이 작성한 블록 파일의 변경 사항은 앱 저장소의 Git diff에서 확인하세요.
+
+## 같은 디자인의 컴포넌트와 블록 공유하기
+
+[네오브루탈 레지스트리](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal)처럼 팀의 공개 GitHub 저장소에 Rust 소스와 항목별 매니페스트를 함께 올리세요. 네오브루탈 로그인 매니페스트는 개별 컴포넌트가 쓰는 버튼, 입력창, 팔레트 파일을 그대로 가리킵니다. 로그인 하나만 설치해도 세 파일이 함께 들어옵니다.
+
+버튼만 설치했다면 `ui::neobrutal_button::press_button("save", "저장")`을 렌더링하고 `.on_click(...)`에 동작을 연결하세요. 입력창은 `cx.new(...)` 안에서 `ui::neobrutal_input::editor`로 상태를 한 번 만든 뒤, 렌더링할 때마다 `ui::neobrutal_input::field`에 전달합니다.
+
+`registry.json`에 항목별 매니페스트를 나열하면 어떤 컴포넌트와 블록이 있는지 알 수 있습니다. 설치 명령은 `gpui-deck add` 뒤에 원하는 **항목의 매니페스트** GitHub URL을 붙이면 됩니다. [레지스트리 목록](/ko/directory)에서 실제 예시를 살펴보세요.

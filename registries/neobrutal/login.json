@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "name": "neobrutal-login",
+  "files": [
+    { "source": "login.rs", "target": "mod.rs" },
+    { "source": "button.rs", "target": "button.rs" },
+    { "source": "input.rs", "target": "input.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

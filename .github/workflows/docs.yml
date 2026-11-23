@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - "blocks/**"
+      - "registries/**"
       - "docs/**"
       - "crates/**"
       - "Cargo.toml"

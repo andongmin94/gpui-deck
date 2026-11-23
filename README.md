@@ -47,6 +47,22 @@ The command copies the team’s palette, dashboard source, chart and table recip
 `src/ui`. [Install and share blocks](https://gpui-deck.andongmin.com/en/docs/guides/blocks/)
 includes a runnable app and the manifest for publishing your own block.
 
+The [registry directory](https://gpui-deck.andongmin.com/en/directory) lists
+collections with their own visual style. Its first collection,
+[Neobrutal](https://gpui-deck.andongmin.com/en/directory/neobrutal), brings
+the raised controls and hard shadows of [neobrutal-ui](https://github.com/andongmin94/neobrutal-ui)
+to Rust using GPUI Deck's headless controls. Install the button or input on its
+own, or install both with the palette as part of the login screen:
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/login.json
+```
+
+The [collection source](registries/neobrutal) includes the catalog and three
+installable manifests. Each manifest maps Rust sources to editable files in
+the app. The login manifest uses the same component sources as the two
+standalone items.
+
 ## Current scope
 
 | Control | Behavior supplied by the library | Application-owned presentation |
@@ -400,6 +416,10 @@ dates to years 1 through 9998.
 Software source is licensed under [Apache-2.0](https://github.com/andongmin94/gpui-deck/blob/main/LICENSE-APACHE). The original
 Longbridge copyright and license notices are retained. Dependencies keep their
 respective licenses.
+
+The Neobrutal collection reimplements the visual conventions of
+[neobrutal-ui](https://github.com/andongmin94/neobrutal-ui) with GPUI Deck's
+native Button, Input and Field. Each install includes the upstream MIT notice.
 
 The native examples and GPUI web previews share the unmodified Regular, Medium,
 SemiBold and Bold OpenType faces from [Pretendard 1.3.9](https://github.com/orioncactus/pretendard/releases/tag/v1.3.9).

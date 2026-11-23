@@ -65,3 +65,32 @@ test("settings exposes switch state and applies or discards edits", async ({ pag
   await expect(compact).toBeChecked();
   await expect(discard).toBeDisabled();
 });
+
+test("Neobrutal button shares activation between the canvas and keyboard controls", async ({
+  page,
+}) => {
+  await page.goto("/preview?c=neobrutal-button");
+  const canvas = page.getByRole("img", { name: "Neobrutal button preview" });
+  await expect(canvas).toBeVisible();
+  await canvas.click();
+  await page.getByRole("button", { name: "Form controls" }).click();
+  const button = page.getByRole("button", { name: "Pressed once" });
+  await expect(button).toBeFocused();
+  await button.press("Space");
+  await expect(page.getByRole("button", { name: "Pressed 2 times" })).toBeFocused();
+});
+
+test("Neobrutal login validates the credentials entered through browser controls", async ({
+  page,
+}) => {
+  await page.goto("/preview?c=neobrutal-login");
+  await page.getByRole("button", { name: "Form controls" }).click();
+  const email = page.getByRole("textbox", { name: "Email address" });
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(email).toHaveAttribute("aria-invalid", "true");
+  await email.fill("designer@example.com");
+  const password = page.getByLabel("Password", { exact: true });
+  await password.fill("sample-password");
+  await password.press("Enter");
+  await expect(page.getByRole("status")).toHaveText("Sample credentials validated locally.");
+});

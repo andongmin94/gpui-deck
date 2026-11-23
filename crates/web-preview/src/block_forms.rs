@@ -1,14 +1,24 @@
 //! The pinned GPUI web platform does not export its AccessKit tree on WASM.
-//! Give the two form previews a native HTML input surface over the same entities.
+//! Give interactive block and registry previews native controls over the same entities.
 use gpui::{AnyView, App, Context, Entity, Window};
+use gpui_deck::InputState;
 use wasm_bindgen::prelude::*;
 
-use crate::{login::Login, sidebar_settings::SidebarSettings};
+use crate::{
+    demos::neobrutal::{ButtonDemo, InputDemo},
+    login::Login,
+    neobrutal,
+    sidebar_settings::SidebarSettings,
+};
 
 #[wasm_bindgen(raw_module = "./block-forms.js")]
 extern "C" {
     #[wasm_bindgen(js_name = mountForm)]
     fn mount_form(kind: &str, action: JsValue);
+    #[wasm_bindgen(js_name = setValue)]
+    fn set_value(id: &str, value: &str);
+    #[wasm_bindgen(js_name = setText)]
+    fn set_text(id: &str, value: &str);
     #[wasm_bindgen(js_name = updateLogin)]
     fn update_login(
         email: &str,
@@ -36,6 +46,54 @@ extern "C" {
 pub(super) fn attach(view: &AnyView, window: &Window, cx: &mut App) {
     if let Ok(login) = view.clone().downcast::<Login>() {
         mount("login", login, window, cx, sync_login, edit_login);
+    } else if let Ok(login) = view.clone().downcast::<neobrutal::Login>() {
+        mount(
+            "neobrutal-login",
+            login,
+            window,
+            cx,
+            |view, cx| {
+                sync_credentials(
+                    &view.email,
+                    &view.password,
+                    view.visible_errors(cx),
+                    view.validated,
+                    cx,
+                )
+            },
+            |view, action, value, window, cx| match action {
+                "email" => replace_input(&view.email, value, window, cx),
+                "password" => replace_input(&view.password, value, window, cx),
+                "submit" => view.submit(window, cx),
+                _ => {}
+            },
+        );
+    } else if let Ok(button) = view.clone().downcast::<ButtonDemo>() {
+        mount(
+            "neobrutal-button",
+            button,
+            window,
+            cx,
+            |view, _| set_text("press", &view.label()),
+            |view, action, _, _, cx| {
+                if action == "press" {
+                    view.press(cx);
+                }
+            },
+        );
+    } else if let Ok(input) = view.clone().downcast::<InputDemo>() {
+        mount(
+            "neobrutal-input",
+            input,
+            window,
+            cx,
+            |view, cx| set_value("email", &view.email.read(cx).value()),
+            |view, action, value, window, cx| {
+                if action == "email" {
+                    replace_input(&view.email, value, window, cx);
+                }
+            },
+        );
     } else if let Ok(settings) = view.clone().downcast::<SidebarSettings>() {
         mount(
             "settings",
@@ -72,15 +130,30 @@ fn mount<T: 'static>(
 }
 
 fn sync_login(view: &Login, cx: &App) {
-    let password = view.password.read(cx);
-    let [email_error, password_error] = view.visible_errors(cx);
+    sync_credentials(
+        &view.email,
+        &view.password,
+        view.visible_errors(cx),
+        view.validated,
+        cx,
+    );
+}
+
+fn sync_credentials(
+    email: &Entity<InputState>,
+    password: &Entity<InputState>,
+    [email_error, password_error]: [Option<&str>; 2],
+    validated: bool,
+    cx: &App,
+) {
+    let password = password.read(cx);
     update_login(
-        &view.email.read(cx).value(),
+        &email.read(cx).value(),
         &password.value(),
         password.presentation().is_masked(),
         email_error.unwrap_or_default(),
         password_error.unwrap_or_default(),
-        view.validated,
+        validated,
     );
 }
 
@@ -92,18 +165,16 @@ fn edit_login(
     cx: &mut Context<Login>,
 ) {
     match action {
-        "email" | "password" => {
-            let field = if action == "email" {
-                &view.email
-            } else {
-                &view.password
-            };
-            field.update(cx, |input, cx| input.replace_all(value, window, cx));
-        }
+        "email" => replace_input(&view.email, value, window, cx),
+        "password" => replace_input(&view.password, value, window, cx),
         "reveal" => view.toggle_password(window, cx),
         "submit" => view.submit(window, cx),
         _ => {}
     }
+}
+
+fn replace_input(input: &Entity<InputState>, value: String, window: &mut Window, cx: &mut App) {
+    input.update(cx, |input, cx| input.replace_all(value, window, cx));
 }
 
 fn sync_settings(view: &SidebarSettings, cx: &App) {

@@ -168,6 +168,7 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
     { href: `/${lang}/docs/components`, label: t.components },
     { href: `/${lang}/blocks`, label: t.blocks },
     { href: `/${lang}/docs/recipes`, label: t.recipes },
+    { href: `/${lang}/directory`, label: t.directory },
   ];
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
@@ -188,11 +189,11 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
             type="button"
             aria-label={t.search}
             onClick={() => setOpenSearch(true)}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-2.5 text-fd-muted-foreground hover:bg-fd-accent lg:h-8 lg:w-44 lg:justify-between lg:bg-fd-secondary lg:text-xs xl:w-56"
+            className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-2.5 text-fd-muted-foreground hover:bg-fd-accent xl:h-8 xl:w-56 xl:justify-between xl:bg-fd-secondary xl:text-xs"
           >
-            <Search aria-hidden className="size-4 lg:hidden" />
-            <span className="hidden truncate lg:block">{t.search}</span>
-            <kbd className="hidden shrink-0 rounded border bg-fd-background px-1 font-mono text-[10px] lg:block">
+            <Search aria-hidden className="size-4 xl:hidden" />
+            <span className="hidden truncate xl:block">{t.search}</span>
+            <kbd className="hidden shrink-0 rounded border bg-fd-background px-1 font-mono text-[10px] xl:block">
               Ctrl K
             </kbd>
           </button>

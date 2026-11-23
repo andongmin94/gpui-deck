@@ -15,7 +15,13 @@ test("the mobile menu keeps the same destinations across the home, docs and bloc
     await trigger.press("Enter");
     await expect(menu).toBeVisible({ timeout: 1000 });
   }).toPass();
-  await expect(nav.getByRole("link")).toHaveText(["문서", "컴포넌트", "블록", "레시피"]);
+  await expect(nav.getByRole("link")).toHaveText([
+    "문서",
+    "컴포넌트",
+    "블록",
+    "레시피",
+    "레지스트리",
+  ]);
   await expect(menu.getByRole("link", { name: "설치", exact: true })).toHaveAttribute(
     "href",
     "/ko/docs/installation",

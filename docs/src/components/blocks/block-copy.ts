@@ -3,17 +3,29 @@ import login from "../../../../blocks/login/block.json";
 import settings from "../../../../blocks/sidebar-settings/block.json";
 import { GIT } from "@/lib/site";
 
-type Manifest = { name: string; files: { source: string; target: string }[] };
+export type Manifest = { name: string; files: { source: string; target: string }[] };
+export type PreviewItem = Manifest & {
+  source: string;
+  sourcePath: string;
+  poster: string;
+  posterWidth: number;
+  posterHeight: number;
+  mobileHeight?: number;
+};
 type DocLink = { label: string; path: string };
 
 function block(manifest: Manifest, view: string, mobileHeight: number, components: DocLink[]) {
-  const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/blocks/${manifest.name}`;
+  const sourcePath = `blocks/${manifest.name}`;
+  const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/${sourcePath}`;
   return {
     name: manifest.name,
     files: manifest.files.filter((file) => file.target.endsWith(".rs")),
     source,
+    sourcePath,
     command: `gpui-deck add ${source}/block.json`,
     poster: `/images/blocks/${manifest.name}`,
+    posterWidth: 1440,
+    posterHeight: 820,
     mobileHeight,
     view: `ui::${manifest.name.replaceAll("-", "_")}::${view}`,
     components,
@@ -46,8 +58,7 @@ const copy = {
     github: "View on GitHub",
     run: "Run preview",
     stop: "Stop preview",
-    unavailable:
-      "The interactive preview requires WebGPU. The image below shows the installed block.",
+    unavailable: "The interactive preview requires WebGPU. The image below shows the installed UI.",
     command: "Install command",
     copy: "Copy install command",
     copied: "Copied",
@@ -65,7 +76,7 @@ const copy = {
     run: "미리보기 실행",
     stop: "실행 중지",
     unavailable:
-      "직접 실행하려면 WebGPU를 지원하는 브라우저가 필요합니다. 아래 이미지는 설치된 블록의 화면입니다.",
+      "직접 실행하려면 WebGPU를 지원하는 브라우저가 필요합니다. 아래 이미지는 설치된 UI의 화면입니다.",
     command: "설치 명령",
     copy: "설치 명령 복사",
     copied: "복사됨",
@@ -100,7 +111,7 @@ const copy = {
     github: "在 GitHub 上查看",
     run: "运行预览",
     stop: "停止预览",
-    unavailable: "交互式预览需要支持 WebGPU 的浏览器。下图展示了安装后的区块。",
+    unavailable: "交互式预览需要支持 WebGPU 的浏览器。下图展示了安装后的界面。",
     command: "安装命令",
     copy: "复制安装命令",
     copied: "已复制",

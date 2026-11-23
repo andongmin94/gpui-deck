@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "neobrutal-input",
+  "files": [
+    { "source": "input.rs", "target": "input.rs" },
+    { "source": "input_entry.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

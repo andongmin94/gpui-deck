@@ -7,6 +7,7 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 
 import { blocks } from "@/components/blocks/block-copy";
 import { BlockDetail, BlocksGallery } from "@/components/blocks/blocks-page";
+import { RegistryDetail, RegistryDirectory } from "@/components/directory/directory-page";
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
 import { accents, accentStorageKey } from "@/lib/accent";
@@ -67,6 +68,17 @@ export default app.config({
   ui: {
     translations,
     async renderPage(props) {
+      if (props.page.slugs[0] === "directory") {
+        if (props.page.slugs.length === 1) {
+          const loader = await this.getLoader();
+          const registry = loader.getPage(["directory", "neobrutal"], props.lang);
+          if (!registry) throw new Error(`Missing ${props.lang} Neobrutal UI registry page`);
+          return (
+            <RegistryDirectory lang={props.lang} page={props.page.data} registry={registry.data} />
+          );
+        }
+        return <RegistryDetail lang={props.lang} page={props.page.data} />;
+      }
       const home = props.page.slugs.length === 0;
       if (home || props.page.slugs[0] === "blocks") {
         const page = props.page.data;

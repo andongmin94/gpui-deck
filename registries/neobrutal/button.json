@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "name": "neobrutal-button",
+  "files": [
+    { "source": "button.rs", "target": "button.rs" },
+    { "source": "button_entry.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

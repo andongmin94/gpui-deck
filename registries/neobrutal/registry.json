@@ -1,0 +1,10 @@
+{
+  "name": "Neobrutal UI",
+  "author": "andongmin94",
+  "homepage": "https://neobrutal-ui.andongmin.com",
+  "items": [
+    { "manifest": "login.json", "kind": "block" },
+    { "manifest": "button.json", "kind": "component" },
+    { "manifest": "input.json", "kind": "component" }
+  ]
+}
