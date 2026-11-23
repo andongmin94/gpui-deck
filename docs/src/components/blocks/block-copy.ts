@@ -31,7 +31,7 @@ export const blocks = [
   ]),
   block(settings, "SidebarSettings", 844, [
     { label: "Sidebar", path: "recipes/sidebar" },
-    { label: "Switch", path: "components/switch" },
+    { label: "Switch", path: "components/checkbox" },
   ]),
   billing,
 ];

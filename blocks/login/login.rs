@@ -19,10 +19,10 @@ use super::{
 use palette::login_palette;
 
 pub(crate) struct Login {
-    email: Entity<InputState>,
-    password: Entity<InputState>,
+    pub(super) email: Entity<InputState>,
+    pub(super) password: Entity<InputState>,
+    pub(super) validated: bool,
     attempted: bool,
-    validated: bool,
     _events: [Subscription; 2],
 }
 
@@ -79,18 +79,27 @@ impl Login {
     }
 
     fn errors(&self, cx: &App) -> [Option<&'static str>; 2] {
-        let value = self.email.read(cx).value();
-        let email = value.trim();
-        let valid_email = email.split_once('@').is_some_and(|(local, host)| {
-            !local.is_empty() && !host.is_empty() && !host.contains('@')
-        }) && !email.contains(char::is_whitespace);
         [
-            (!valid_email).then_some("Enter a valid email address."),
+            (!valid_email(&self.email.read(cx).value())).then_some("Enter a valid email address."),
             (self.password.read(cx).text().len() == 0).then_some("Enter a password."),
         ]
     }
 
-    fn submit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn visible_errors(&self, cx: &App) -> [Option<&'static str>; 2] {
+        if self.attempted {
+            self.errors(cx)
+        } else {
+            [None, None]
+        }
+    }
+
+    pub(super) fn toggle_password(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        self.password
+            .update(cx, |input, cx| input.toggle_masked(window, cx));
+        cx.notify();
+    }
+
+    pub(super) fn submit(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.attempted = true;
         let errors = self.errors(cx);
         self.validated = errors == [None, None];
@@ -106,14 +115,29 @@ impl Login {
     }
 }
 
+// Use the single-address HTML email grammar for this form, including single-label hosts.
+fn valid_email(value: &str) -> bool {
+    let Some((local, domain)) = value.trim().split_once('@') else {
+        return false;
+    };
+    !local.is_empty()
+        && local
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || b".!#$%&'*+/=?^_`{|}~-".contains(&byte))
+        && domain.split('.').all(|label| {
+            (1..=63).contains(&label.len())
+                && !label.starts_with('-')
+                && !label.ends_with('-')
+                && label
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+        })
+}
+
 impl Render for Login {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let palette = login_palette();
-        let errors = if self.attempted {
-            self.errors(cx)
-        } else {
-            [None, None]
-        };
+        let errors = self.visible_errors(cx);
         let masked = self.password.read(cx).presentation().is_masked();
         let reveal_label = if masked {
             "Show password"
@@ -127,11 +151,7 @@ impl Render for Login {
             .text_size(px(13.))
             .accessibility_label(reveal_label)
             .child(if masked { "Show" } else { "Hide" })
-            .on_click(cx.listener(|this, _, window, cx| {
-                this.password
-                    .update(cx, |input, cx| input.toggle_masked(window, cx));
-                cx.notify();
-            }));
+            .on_click(cx.listener(|this, _, window, cx| this.toggle_password(window, cx)));
         let email = InputGroup::new("login-email-input", Input::new(&self.email), palette)
             .h(palette.control_height)
             .focused(self.email.focus_handle(cx).is_focused(window))
@@ -264,4 +284,35 @@ fn lock_mark(palette: Palette) -> impl IntoElement {
                 .rounded(px(3.))
                 .bg(palette.accent),
         )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::valid_email;
+
+    #[test]
+    fn sign_in_checks_the_email_address_syntax() {
+        for valid in [
+            "person@example.com",
+            "  team+demo@sub-domain.example  ",
+            "a@b",
+        ] {
+            assert!(valid_email(valid), "{valid}");
+        }
+        for invalid in [
+            "sample@/",
+            "a@example..com",
+            "a@-example.com",
+            "a@example-.com",
+            "a@@example.com",
+            "a@",
+            "@example.com",
+            "a b@example.com",
+            "person",
+        ] {
+            assert!(!valid_email(invalid), "{invalid}");
+        }
+        assert!(valid_email(&format!("a@{}", "a".repeat(63))));
+        assert!(!valid_email(&format!("a@{}", "a".repeat(64))));
+    }
 }

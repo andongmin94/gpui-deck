@@ -59,6 +59,12 @@ for (const [slug, title] of [
   });
 }
 
+test("the settings card links to the Switch documentation", async ({ page }) => {
+  await page.goto("/en/blocks");
+  await page.getByRole("link", { name: "Switch", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Checkbox and Switch", level: 1 })).toBeVisible();
+});
+
 test("the block image and Rust source stay available when no adapter is found", async ({
   page,
 }) => {

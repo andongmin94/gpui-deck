@@ -16,6 +16,9 @@ mod login;
 mod sidebar_settings;
 
 #[cfg(target_family = "wasm")]
+mod block_forms;
+
+#[cfg(target_family = "wasm")]
 #[path = "../../base/examples/assets/fonts/mod.rs"]
 mod app_fonts;
 
@@ -72,6 +75,7 @@ mod web {
                 let theme = read_theme();
                 cx.set_global(theme);
                 let demo = demos::open(&name, theme, window, cx);
+                crate::block_forms::attach(&demo, window, cx);
                 cx.new(|cx| {
                     if let Some(frame) = frame {
                         let app = cx.to_async();

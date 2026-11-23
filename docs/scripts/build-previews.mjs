@@ -83,7 +83,10 @@ run("wasm-bindgen", [
   fileURLToPath(staging),
   wasm,
 ]);
+const formModule = new URL("block-forms.js", staging);
+copyFileSync(new URL("crates/web-preview/src/block-forms.js", root), formModule);
 const hash = createHash("sha256")
+  .update(readFileSync(formModule))
   .update(readFileSync(new URL("gpui_deck_web_preview_bg.wasm", staging)))
   .update(readFileSync(new URL("gpui_deck_web_preview.js", staging)))
   .digest("hex")

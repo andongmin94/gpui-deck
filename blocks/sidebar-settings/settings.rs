@@ -21,25 +21,25 @@ use palette::{sidebar_palette, workspace_palette};
 const NARROW: f32 = 700.;
 
 #[derive(Clone, Copy, PartialEq)]
-struct Preferences {
-    compact: bool,
-    mentions: bool,
-    digest: bool,
+pub(super) struct Preferences {
+    pub(super) compact: bool,
+    pub(super) mentions: bool,
+    pub(super) digest: bool,
 }
 
 #[derive(PartialEq)]
-struct Workspace {
-    name: SharedString,
-    description: SharedString,
+pub(super) struct Workspace {
+    pub(super) name: SharedString,
+    pub(super) description: SharedString,
     preferences: Preferences,
 }
 
 pub(crate) struct SidebarSettings {
-    sections: Entity<TabsState>,
-    name: Entity<InputState>,
-    description: Entity<InputState>,
-    preferences: Preferences,
-    applied: Workspace,
+    pub(super) sections: Entity<TabsState>,
+    pub(super) name: Entity<InputState>,
+    pub(super) description: Entity<InputState>,
+    pub(super) preferences: Preferences,
+    pub(super) applied: Workspace,
     _observations: [Subscription; 3],
 }
 
@@ -95,7 +95,7 @@ impl SidebarSettings {
         }
     }
 
-    fn draft(&self, cx: &App) -> Workspace {
+    pub(super) fn draft(&self, cx: &App) -> Workspace {
         Workspace {
             name: self.name.read(cx).value(),
             description: self.description.read(cx).value(),
@@ -103,7 +103,25 @@ impl SidebarSettings {
         }
     }
 
-    fn discard(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub(super) fn apply(&mut self, cx: &mut Context<Self>) {
+        let draft = self.draft(cx);
+        if !draft.name.trim().is_empty() {
+            self.applied = draft;
+            cx.notify();
+        }
+    }
+
+    pub(super) fn status(&self, draft: &Workspace) -> &'static str {
+        if draft.name.trim().is_empty() {
+            "General requires a workspace name."
+        } else if *draft != self.applied {
+            "Unapplied changes"
+        } else {
+            "Settings applied to this session"
+        }
+    }
+
+    pub(super) fn discard(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.name.update(cx, |input, cx| {
             input.set_value(self.applied.name.clone(), window, cx)
         });
@@ -331,13 +349,7 @@ impl Render for SidebarSettings {
                 "Manage the name and description of your workspace."
             }
         };
-        let status = if !valid {
-            "General requires a workspace name."
-        } else if dirty {
-            "Unapplied changes"
-        } else {
-            "Settings applied to this session"
-        };
+        let status = self.status(&draft);
         let buttons = div()
             .flex()
             .gap_2()
@@ -355,10 +367,7 @@ impl Render for SidebarSettings {
                     .disabled(!dirty || !valid)
                     .accessibility_label("Apply changes")
                     .child("Apply changes")
-                    .on_click(cx.listener(|this, _, _, cx| {
-                        this.applied = this.draft(cx);
-                        cx.notify();
-                    })),
+                    .on_click(cx.listener(|this, _, _, cx| this.apply(cx))),
             );
         let form = div()
             .min_w_0()
