@@ -2,7 +2,7 @@ import { Link } from "fumapress/client";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
 import { RegistryBrowser } from "./registry-browser";
 import { CatalogLayout } from "../catalog-layout";
-import { itemTitle, neobrutal, registryCopy } from "./neobrutal";
+import { itemTitle, type Registry, registryCopy } from "./registries";
 
 type PageInfo = { title: string; description?: string };
 
@@ -15,76 +15,94 @@ const quietLink =
 export function RegistryDirectory({
   lang,
   page,
-  registry,
+  entries,
 }: {
   lang: string;
   page: PageInfo;
-  registry: PageInfo;
+  entries: { registry: Registry; page: PageInfo }[];
 }) {
   const t = registryCopy(lang);
-  const href = `/${lang}/directory/neobrutal`;
   return (
     <CatalogLayout lang={lang}>
       <header className="py-10 sm:py-16">
         <h1 className={heading}>{page.title}</h1>
         <p className={description}>{page.description}</p>
       </header>
-      <article className="grid overflow-hidden rounded-2xl border md:grid-cols-2">
-        <Link
-          href={href}
-          aria-label={neobrutal.name}
-          className="block overflow-hidden bg-[#fdf7c4] focus-visible:outline-offset-[-4px]"
-        >
-          <picture>
-            <source
-              media="(max-width: 640px)"
-              srcSet="/images/registries/neobrutal/login-mobile.webp"
-              width={390}
-              height={520}
-            />
-            <img
-              src="/images/registries/neobrutal/login.webp"
-              alt=""
-              width={760}
-              height={520}
-              className="block max-h-72 w-full object-contain md:h-full md:max-h-none"
-            />
-          </picture>
-        </Link>
-        <div className="flex flex-col items-start justify-center gap-4 p-6 sm:p-10">
-          <span className="text-sm text-fd-muted-foreground">
-            @{neobrutal.author} · {neobrutal.items.length} {t.count}
-          </span>
-          <h2 className="text-3xl font-semibold tracking-tight">{neobrutal.name}</h2>
-          <p className="max-w-md leading-relaxed text-fd-muted-foreground">
-            {registry.description}
-          </p>
-          <ul className="flex flex-wrap gap-1.5">
-            {["login", "button", "input", "dashboard-template"].map((slug) => (
-              <li key={slug}>
+      <div className="grid gap-5 md:grid-cols-2">
+        {entries.map(({ registry, page: entry }) => {
+          const href = `/${lang}/directory/${registry.slug}`;
+          const cover = registry.items.find((item) => item.slug === registry.featured[0])!;
+          return (
+            <article
+              key={registry.slug}
+              className="flex min-w-0 flex-col overflow-hidden rounded-2xl border"
+            >
+              <Link
+                href={href}
+                aria-label={registry.name}
+                className="block overflow-hidden border-b bg-fd-secondary focus-visible:outline-offset-[-4px]"
+              >
+                <picture>
+                  <source
+                    media="(max-width: 640px)"
+                    srcSet={`${cover.poster}-mobile.webp`}
+                    width={390}
+                    height={cover.mobileHeight}
+                  />
+                  <img
+                    src={`${cover.poster}.webp`}
+                    alt=""
+                    width={cover.posterWidth}
+                    height={cover.posterHeight}
+                    className="block h-64 w-full object-contain"
+                  />
+                </picture>
+              </Link>
+              <div className="flex flex-1 flex-col items-start gap-4 p-6 sm:p-8">
+                <span className="text-sm text-fd-muted-foreground">
+                  @{registry.author} · {registry.items.length} {t.count}
+                </span>
+                <h2 className="text-3xl font-semibold tracking-tight">{registry.name}</h2>
+                <p className="max-w-md leading-relaxed text-fd-muted-foreground">
+                  {entry.description}
+                </p>
+                <ul className="flex flex-wrap gap-1.5">
+                  {registry.featured.map((slug) => (
+                    <li key={slug}>
+                      <Link
+                        href={`${href}#${slug}`}
+                        className="inline-flex rounded-full border px-3 py-1 text-xs font-medium hover:bg-fd-secondary"
+                      >
+                        {itemTitle(slug, lang)}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
                 <Link
-                  href={`${href}#${slug}`}
-                  className="inline-flex rounded-full border px-3 py-1 text-xs font-medium hover:bg-fd-secondary"
+                  href={href}
+                  className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg bg-fd-primary px-4 text-sm font-medium text-fd-primary-foreground hover:opacity-85"
                 >
-                  {itemTitle(slug, lang)}
+                  {t.open}
+                  <ArrowRight aria-hidden className="size-4" />
                 </Link>
-              </li>
-            ))}
-          </ul>
-          <Link
-            href={href}
-            className="mt-2 inline-flex min-h-10 items-center gap-2 rounded-lg bg-fd-primary px-4 text-sm font-medium text-fd-primary-foreground hover:opacity-85"
-          >
-            {t.open}
-            <ArrowRight aria-hidden className="size-4" />
-          </Link>
-        </div>
-      </article>
+              </div>
+            </article>
+          );
+        })}
+      </div>
     </CatalogLayout>
   );
 }
 
-export function RegistryDetail({ lang, page }: { lang: string; page: PageInfo }) {
+export function RegistryDetail({
+  lang,
+  page,
+  registry,
+}: {
+  lang: string;
+  page: PageInfo;
+  registry: Registry;
+}) {
   const t = registryCopy(lang);
   return (
     <CatalogLayout lang={lang}>
@@ -96,10 +114,10 @@ export function RegistryDetail({ lang, page }: { lang: string; page: PageInfo })
         <h1 className={`mt-4 ${heading}`}>{page.title}</h1>
         <p className={description}>{page.description}</p>
         <div className="mt-3 flex flex-wrap items-center gap-x-5">
-          <a className={quietLink} href={`https://github.com/${neobrutal.author}`}>
-            @{neobrutal.author}
+          <a className={quietLink} href={`https://github.com/${registry.author}`}>
+            @{registry.author}
           </a>
-          <a className={quietLink} href={neobrutal.homepage}>
+          <a className={quietLink} href={registry.homepage}>
             {t.original}
             <ArrowUpRight aria-hidden className="size-3.5" />
           </a>
@@ -109,7 +127,7 @@ export function RegistryDetail({ lang, page }: { lang: string; page: PageInfo })
           </Link>
         </div>
       </header>
-      <RegistryBrowser lang={lang} />
+      <RegistryBrowser key={registry.slug} lang={lang} collection={registry.slug} />
     </CatalogLayout>
   );
 }

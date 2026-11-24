@@ -4,30 +4,31 @@ import { Box, Search } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BlockViewer } from "../blocks/block-viewer";
 import { InstallCommand } from "../blocks/install-command";
-import { itemTitle, kinds, neobrutal, registryCopy } from "./neobrutal";
+import { itemTitle, kinds, type Registry, registries, registryCopy } from "./registries";
 
-function fromHash() {
+function fromHash(registry: Registry) {
   const slug = window.location.hash.slice(1);
-  return neobrutal.items.some((item) => item.slug === slug) ? slug : "login";
+  return registry.items.some((item) => item.slug === slug) ? slug : registry.featured[0];
 }
 
-export function RegistryBrowser({ lang }: { lang: string }) {
+export function RegistryBrowser({ lang, collection }: { lang: string; collection: string }) {
+  const registry = registries.find((entry) => entry.slug === collection)!;
   const t = registryCopy(lang);
-  const [selected, setSelected] = useState("login");
+  const [selected, setSelected] = useState(registry.featured[0]);
   const [query, setQuery] = useState("");
   const detail = useRef<HTMLElement>(null);
   useEffect(() => {
-    const sync = () => setSelected(fromHash());
+    const sync = () => setSelected(fromHash(registry));
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
-  }, []);
+  }, [registry]);
   useEffect(() => {
     if (window.location.hash === `#${selected}`) detail.current?.scrollIntoView({ block: "start" });
   }, [selected]);
-  const current = neobrutal.items.find((item) => item.slug === selected)!;
+  const current = registry.items.find((item) => item.slug === selected)!;
   const needle = query.trim().toLocaleLowerCase();
-  const matches = neobrutal.items.filter((item) =>
+  const matches = registry.items.filter((item) =>
     [item.slug, itemTitle(item.slug, lang), t.kinds[item.kind]].some((s) =>
       s.toLocaleLowerCase().includes(needle),
     ),

@@ -1,14 +1,13 @@
-import catalog from "../../../../registries/neobrutal/registry.json";
+import neobrutal from "../../../../registries/neobrutal/registry.json";
+import neumorphism from "../../../../registries/neumorphism/registry.json";
 import { type Manifest } from "../blocks/block-copy";
 import { GIT } from "@/lib/site";
 
-const manifests = import.meta.glob<Manifest>(["./*.json", "!./registry.json"], {
-  base: "../../../../registries/neobrutal",
+const manifests = import.meta.glob<Manifest>(["./*/*.json", "!./*/registry.json"], {
+  base: "../../../../registries",
   eager: true,
   import: "default",
 });
-const sourcePath = "registries/neobrutal";
-const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/${sourcePath}`;
 export const kinds = [
   "component",
   "recipe",
@@ -17,13 +16,21 @@ export const kinds = [
   "theme",
   "base",
   "block",
+  "utility",
 ] as const;
 export type Kind = (typeof kinds)[number];
 
-function posterSize(slug: string, kind: string) {
+function posterSize(collection: string, slug: string, kind: string) {
   if (slug === "login") return { posterWidth: 760, posterHeight: 520, mobileHeight: 520 };
-  if (slug === "button" || slug === "input")
+  if (collection === "neobrutal" && (slug === "button" || slug === "input"))
     return { posterWidth: 760, posterHeight: 400, mobileHeight: 560 };
+  if (
+    collection === "neumorphism" &&
+    (kind === "chart" || slug === "chart" || slug === "data-table")
+  )
+    return { posterWidth: 960, posterHeight: 650, mobileHeight: 770 };
+  if (collection === "neumorphism" && kind === "template")
+    return { posterWidth: 960, posterHeight: 950, mobileHeight: 1120 };
   if (kind === "chart" || slug === "chart" || slug === "data-table")
     return { posterWidth: 960, posterHeight: 1000, mobileHeight: 1100 };
   if (kind === "template") return { posterWidth: 960, posterHeight: 800, mobileHeight: 960 };
@@ -31,27 +38,43 @@ function posterSize(slug: string, kind: string) {
   return { posterWidth: 960, posterHeight: 600, mobileHeight: 560 };
 }
 
-export const neobrutal = {
-  ...catalog,
-  items: catalog.items.map(({ manifest: filename, kind }) => {
-    const manifest = manifests[`./${filename}`];
-    if (!manifest || !kinds.includes(kind as Kind))
-      throw new Error(`Invalid registry entry ${filename}`);
-    const slug = filename.replace(/\.json$/, "");
-    return {
-      name: manifest.name,
-      files: manifest.files.filter((file) => file.target.endsWith(".rs")),
-      slug,
-      kind: kind as Kind,
-      sourcePath,
-      source,
-      command: `gpui-deck add ${source}/${filename}`,
-      poster: `/images/registries/neobrutal/${slug}`,
-      ...posterSize(slug, kind),
-    };
-  }),
-};
-export type RegistryItem = (typeof neobrutal.items)[number];
+function collection(slug: string, catalog: typeof neobrutal, featured: string[]) {
+  const sourcePath = `registries/${slug}`;
+  const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/${sourcePath}`;
+  return {
+    ...catalog,
+    slug,
+    featured,
+    items: catalog.items.map(({ manifest: filename, kind }) => {
+      const manifest = manifests[`./${slug}/${filename}`];
+      if (!manifest || !kinds.includes(kind as Kind))
+        throw new Error(`Invalid registry entry ${filename}`);
+      const item = filename.replace(/\.json$/, "");
+      return {
+        name: manifest.name,
+        files: manifest.files.filter((file) => file.target.endsWith(".rs")),
+        slug: item,
+        kind: kind as Kind,
+        sourcePath,
+        source,
+        command: `gpui-deck add ${source}/${filename}`,
+        poster: `/images/registries/${slug}/${item}`,
+        ...posterSize(slug, item, kind),
+      };
+    }),
+  };
+}
+
+export const registries = [
+  collection("neobrutal", neobrutal, ["login", "button", "input", "dashboard-template"]),
+  collection("neumorphism", neumorphism, [
+    "template-analytics",
+    "number-field",
+    "chart-revenue",
+    "style-sage",
+  ]),
+];
+export type Registry = (typeof registries)[number];
 
 const copy = {
   en: {
@@ -72,6 +95,7 @@ const copy = {
       theme: "Themes",
       base: "Foundation",
       block: "Blocks",
+      utility: "Utilities",
     },
   },
   ko: {
@@ -92,6 +116,7 @@ const copy = {
       theme: "테마",
       base: "기본 스타일",
       block: "블록",
+      utility: "유틸리티",
     },
   },
   ja: {
@@ -112,6 +137,7 @@ const copy = {
       theme: "テーマ",
       base: "基本スタイル",
       block: "ブロック",
+      utility: "ユーティリティ",
     },
   },
   zh: {
@@ -132,6 +158,7 @@ const copy = {
       theme: "主题",
       base: "基础样式",
       block: "区块",
+      utility: "工具",
     },
   },
 };
@@ -141,6 +168,33 @@ export function registryCopy(lang: string) {
 
 // Keep the upstream names searchable in every language; localization only changes the label.
 const translations: Record<string, string[]> = {
+  "neumorphism-ui": ["기본 팔레트", "基本パレット", "基础配色"],
+  utils: ["스타일 합성", "スタイルの合成", "样式组合"],
+  "analytics-model": ["분석 데이터 모델", "分析データモデル", "分析数据模型"],
+  field: ["폼 필드", "フォームフィールド", "表单字段"],
+  fieldset: ["필드 그룹", "フィールドセット", "字段集"],
+  meter: ["측정 게이지", "メーター", "计量表"],
+  "number-field": ["숫자 입력", "数値入力", "数字输入"],
+  toast: ["토스트 알림", "トースト通知", "消息通知"],
+  toggle: ["토글", "トグル", "切换按钮"],
+  "toggle-group": ["토글 그룹", "トグルグループ", "切换按钮组"],
+  toolbar: ["도구 모음", "ツールバー", "工具栏"],
+  "style-air": ["에어", "エア", "空气"],
+  "style-sage": ["세이지", "セージ", "鼠尾草"],
+  "style-graphite": ["그래파이트", "グラファイト", "石墨"],
+  "style-clay": ["클레이", "クレイ", "陶土"],
+  "style-lavender": ["라벤더", "ラベンダー", "薰衣草"],
+  "chart-revenue": ["매출", "売上", "营收"],
+  "chart-channel": ["유입 채널", "流入チャネル", "获客渠道"],
+  "chart-conversion": ["전환율", "コンバージョン率", "转化率"],
+  "template-analytics": ["분석 대시보드", "分析ダッシュボード", "分析仪表板"],
+  "template-settings": ["설정", "設定", "设置"],
+  "template-data-manager": ["데이터 관리", "データ管理", "数据管理"],
+  "template-blog-post": ["블로그 글", "ブログ記事", "博客文章"],
+  "template-link-hub": ["링크 모음", "リンク集", "链接导航"],
+  "template-portfolio": ["포트폴리오", "ポートフォリオ", "作品集"],
+  "template-blog": ["블로그", "ブログ", "博客"],
+  "template-cms": ["콘텐츠 관리", "コンテンツ管理", "内容管理"],
   "theme-mono": ["모노", "モノ", "单色"],
   "theme-mono-warm": ["웜 모노", "ウォームモノ", "暖单色"],
   "theme-red": ["레드", "レッド", "红色"],
@@ -226,16 +280,21 @@ const translations: Record<string, string[]> = {
   "chart-work-allocation": ["작업 배분", "業務配分", "工作分配"],
   "chart-install-diagnostics": ["설치 진단", "インストール診断", "安装诊断"],
 };
+const englishTitles: Record<string, string> = {
+  "neobrutal-ui": "Base Palette",
+  "neumorphism-ui": "Base Palette",
+  "template-analytics": "Analytics Dashboard",
+  utils: "Style Utilities",
+};
+
 export function itemTitle(slug: string, lang: string) {
   const localized = translations[slug]?.[["ko", "ja", "zh"].indexOf(lang)];
   if (localized) return localized;
-  const words =
-    slug === "neobrutal-ui"
-      ? "Base palette"
-      : slug
-          .replace(/^(theme|chart)-/, "")
-          .replace(/-template$/, "")
-          .replaceAll("-", " ");
+  if (englishTitles[slug]) return englishTitles[slug];
+  const words = slug
+    .replace(/^(theme|chart|style|template)-/, "")
+    .replace(/-template$/, "")
+    .replaceAll("-", " ");
   return words
     .replace(/\b\w/g, (letter) => letter.toUpperCase())
     .replace(/\b(Cms|Otp)\b/g, (word) => word.toUpperCase());

@@ -126,3 +126,17 @@ Inside `open_window`, replace the line that creates `screen` with these two line
 let palette = ui::neobrutal_theme_blue::palette(true);
 let screen = cx.new(|cx| Screen::new(palette, window, cx));
 ```
+
+## Use the Neumorphism collection
+
+Open the [Neumorphism registry](/en/directory/neumorphism) for the live example and install command for every item. Install the button and Sage preset in the same application, then pass the palette when rendering the button. Use `palette(true)` for dark mode.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neumorphism/button.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neumorphism/style-sage.json
+```
+
+```rust
+let palette = ui::neumorphism_style_sage::palette(false);
+let save = ui::neumorphism_button::press_button_with_palette("save", "Save", palette);
+```

@@ -54,13 +54,20 @@ the raised controls and hard shadows of [neobrutal-ui](https://github.com/andong
 to Rust using GPUI Deck's headless controls. Browse 46 UI components, a data table,
 eight chart examples, six page templates, the base style and 19 light/dark palettes.
 The directory also includes the composed combobox, date picker and login screen.
-Install only the items you want in your app:
+
+The [Neumorphism collection](https://gpui-deck.andongmin.com/en/directory/neumorphism)
+includes all 80 items from the upstream registry. It offers 56 controls and display
+components, eight chart blocks, eight screen templates, five light/dark presets,
+the Air foundation and two utilities. Each item installs its Rust sources and dependencies.
+
+These commands install a login screen and an analytics dashboard in the same app.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/login.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neumorphism/template-analytics.json
 ```
 
-Each of the 84 entries in the [collection source](registries/neobrutal) has
+Each item in the [Neobrutal](registries/neobrutal) and [Neumorphism](registries/neumorphism) collections has
 its own installable manifest. Templates provide native example views with local
 sample data. Components and themes share the app's `Palette` type. For example,
 install `theme-blue.json` alongside the button and pass
@@ -425,6 +432,11 @@ respective licenses.
 The Neobrutal collection reimplements the visual conventions of
 [neobrutal-ui](https://github.com/andongmin94/neobrutal-ui) with GPUI Deck's
 native Button, Input and Field. Each install includes the upstream MIT notice.
+
+The Neumorphism collection ports the components, analytics examples, page templates
+and preset tokens from [Neumorphism UI at `8df59f3`](https://github.com/andongmin94/neumorphism-ui/tree/8df59f3af43e2f2bbb87bddd090ca153af16223e).
+It uses GPUI views and state, native style refinements, and paired light and dark
+shadows. Installable sources carry the MIT notices for andongmin94 and shadcn.
 
 The native examples and GPUI web previews share the unmodified Regular, Medium,
 SemiBold and Bold OpenType faces from [Pretendard 1.3.9](https://github.com/orioncactus/pretendard/releases/tag/v1.3.9).

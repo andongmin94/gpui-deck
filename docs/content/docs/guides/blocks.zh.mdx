@@ -126,3 +126,17 @@ use ui::neobrutal_dashboard_template::Dashboard as Screen;
 let palette = ui::neobrutal_theme_blue::palette(true);
 let screen = cx.new(|cx| Screen::new(palette, window, cx));
 ```
+
+## 使用新拟态组件
+
+在[新拟态注册表](/zh/directory/neumorphism)中可运行每个示例并复制安装命令。在同一应用中安装按钮和鼠尾草主题，渲染按钮时传入调色板。深色模式使用 `palette(true)`。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neumorphism/button.json
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neumorphism/style-sage.json
+```
+
+```rust
+let palette = ui::neumorphism_style_sage::palette(false);
+let save = ui::neumorphism_button::press_button_with_palette("save", "保存", palette);
+```

@@ -8,6 +8,7 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 import { blocks } from "@/components/blocks/block-copy";
 import { BlockDetail, BlocksGallery } from "@/components/blocks/blocks-page";
 import { RegistryDetail, RegistryDirectory } from "@/components/directory/directory-page";
+import { registries } from "@/components/directory/registries";
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
 import { accents, accentStorageKey } from "@/lib/accent";
@@ -71,13 +72,16 @@ export default app.config({
       if (props.page.slugs[0] === "directory") {
         if (props.page.slugs.length === 1) {
           const loader = await this.getLoader();
-          const registry = loader.getPage(["directory", "neobrutal"], props.lang);
-          if (!registry) throw new Error(`Missing ${props.lang} Neobrutal UI registry page`);
-          return (
-            <RegistryDirectory lang={props.lang} page={props.page.data} registry={registry.data} />
-          );
+          const entries = registries.map((registry) => {
+            const entry = loader.getPage(["directory", registry.slug], props.lang);
+            if (!entry) throw new Error(`Missing ${props.lang} ${registry.name} registry page`);
+            return { registry, page: entry.data };
+          });
+          return <RegistryDirectory lang={props.lang} page={props.page.data} entries={entries} />;
         }
-        return <RegistryDetail lang={props.lang} page={props.page.data} />;
+        const registry = registries.find((entry) => entry.slug === props.page.slugs[1]);
+        if (!registry) throw new Error(`Unknown registry ${props.page.slugs[1]}`);
+        return <RegistryDetail lang={props.lang} page={props.page.data} registry={registry} />;
       }
       const home = props.page.slugs.length === 0;
       if (home || props.page.slugs[0] === "blocks") {
