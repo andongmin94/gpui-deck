@@ -4,7 +4,7 @@ mod style;
 use super::Palette;
 use super::recipes::{DataTable, DataTableCell, DataTableColumn, DataTableRow, DataTableState};
 use gpui::{AnyView, App, Window, prelude::*};
-use gpui::{ElementId, Entity, SharedString, px};
+use gpui::{ElementId, Entity, Role, SharedString, div, px};
 pub(crate) fn data_table(
     id: impl Into<ElementId>,
     label: impl Into<SharedString>,
@@ -15,21 +15,65 @@ pub(crate) fn data_table(
 }
 
 pub(crate) fn preview(window: &mut Window, cx: &mut App) -> AnyView {
-    struct Projects(Entity<DataTableState>);
+    struct Projects {
+        table: Entity<DataTableState>,
+        opened: Option<(SharedString, SharedString, SharedString)>,
+    }
     impl Render for Projects {
-        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+        fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
             let p = palette::air();
-            style::stage(
-                p,
-                style::surface(p).child(data_table("projects", "Workspace projects", &self.0, p)),
-            )
+            let owner = cx.entity();
+            let table = data_table("projects", "Workspace projects", &self.table, p)
+                .action_label("Open")
+                .selected_value(self.opened.as_ref().map(|(name, _, _)| name.clone()))
+                .on_action(move |id, _, cx| {
+                    owner.update(cx, |this, cx| {
+                        this.opened = this
+                            .table
+                            .read(cx)
+                            .visible_rows()
+                            .find(|row| row.id() == &id)
+                            .map(|row| (id, row.cells()[1].clone(), row.cells()[2].clone()));
+                        cx.notify();
+                    })
+                });
+            let mut panel = style::surface(p)
+                .px_2()
+                .flex()
+                .flex_col()
+                .gap_3()
+                .child(table);
+            if let Some((name, status, seats)) = &self.opened {
+                panel =
+                    panel.child(
+                        palette::well(p)
+                            .p_3()
+                            .flex()
+                            .flex_col()
+                            .items_start()
+                            .gap_2()
+                            .child(
+                                div()
+                                    .id("details")
+                                    .role(Role::Status)
+                                    .child(format!("{name} · {status} · {seats} seats")),
+                            )
+                            .child(style::action("close", "Close details", p).on_click(
+                                cx.listener(|this, _, _, cx| {
+                                    this.opened = None;
+                                    cx.notify();
+                                }),
+                            )),
+                    );
+            }
+            style::stage(p, panel)
         }
     }
     cx.new(|cx| {
         let columns = [
             DataTableColumn::new("Project", px(110.)),
-            DataTableColumn::new("Status", px(80.)),
-            DataTableColumn::new("Seats", px(56.)).align_end(),
+            DataTableColumn::new("Status", px(106.)),
+            DataTableColumn::new("Seats", px(96.)).align_end(),
         ];
         let rows = [
             ("Atlas", "Active", 12),
@@ -52,9 +96,12 @@ pub(crate) fn preview(window: &mut Window, cx: &mut App) -> AnyView {
                 ],
             )
         });
-        let table = cx.new(|cx| DataTableState::new(columns, rows, 5, window, cx));
+        let table = cx.new(|cx| DataTableState::new(columns, rows, 3, window, cx));
         cx.observe(&table, |_, _, cx| cx.notify()).detach();
-        Projects(table)
+        Projects {
+            table,
+            opened: None,
+        }
     })
     .into()
 }
