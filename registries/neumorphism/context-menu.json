@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-context-menu",
+  "files": [
+    {
+      "source": "items/context-menu.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "control_style.rs",
+      "target": "control_style.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "menu_surface.rs",
+      "target": "menu_surface.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

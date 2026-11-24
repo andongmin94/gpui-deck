@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "name": "neumorphism-utils",
+  "files": [
+    { "source": "items/utils.rs", "target": "mod.rs" },
+    { "source": "palette.rs", "target": "palette.rs" },
+    { "source": "LICENSE-MIT", "target": "LICENSE-MIT" }
+  ]
+}

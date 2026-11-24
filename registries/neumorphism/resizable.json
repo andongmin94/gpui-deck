@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "neumorphism-resizable",
+  "files": [
+    {
+      "source": "items/resizable.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

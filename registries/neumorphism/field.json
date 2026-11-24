@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-field",
+  "files": [
+    {
+      "source": "items/field.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "control_style.rs",
+      "target": "control_style.rs"
+    },
+    {
+      "source": "input.rs",
+      "target": "input.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

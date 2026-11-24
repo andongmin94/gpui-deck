@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "neumorphism-chart-conversion",
+  "files": [
+    {
+      "source": "items/chart-conversion.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "items/report.rs",
+      "target": "report.rs"
+    },
+    {
+      "source": "items/analytics.rs",
+      "target": "analytics.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

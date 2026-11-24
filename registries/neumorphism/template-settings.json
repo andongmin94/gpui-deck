@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "neumorphism-template-settings",
+  "files": [
+    {
+      "source": "items/template-settings.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "items/template_layout.rs",
+      "target": "layout.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "input.rs",
+      "target": "input.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

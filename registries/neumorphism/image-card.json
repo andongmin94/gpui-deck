@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-image-card",
+  "files": [
+    {
+      "source": "items/image-card.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "items/workspace.svg",
+      "target": "workspace.svg"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

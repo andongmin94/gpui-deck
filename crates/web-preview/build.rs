@@ -53,69 +53,74 @@ fn recipe_exports(names: &[String]) -> String {
 
 // Compile each preview with the files and recipe exports its manifest actually installs.
 fn main() {
-    let registry = Path::new("../../registries/neobrutal");
     let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
     let installed = out.join("installed");
     if installed.exists() {
         fs::remove_dir_all(&installed).unwrap();
     }
-    println!("cargo:rerun-if-changed={}", registry.display());
-    let catalog: Catalog =
-        serde_json::from_slice(&fs::read(registry.join("registry.json")).unwrap()).unwrap();
     let mut modules = String::new();
     let mut names = String::new();
     let mut cases = String::new();
-    for entry in catalog.items {
-        let path = registry.join(entry.manifest);
-        // These original previews share the web form accessibility bridge.
-        if matches!(
-            path.file_stem().and_then(|s| s.to_str()),
-            Some("login" | "button" | "input")
-        ) {
-            continue;
-        }
-        let item: Item = serde_json::from_slice(
-            &fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display())),
-        )
-        .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
-        let name = item.name;
-        assert!(
-            name.starts_with("neobrutal-")
-                && name
-                    .bytes()
-                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'),
-            "invalid registry module {name}"
-        );
-        let module = name.replace('-', "_");
-        let directory = installed.join(&module);
-        for file in item.files {
-            for relative in [&file.source, &file.target] {
-                assert!(
-                    Path::new(relative)
-                        .components()
-                        .all(|part| matches!(part, Component::Normal(_))),
-                    "invalid source mapping {relative}"
-                );
+    for collection in ["neobrutal", "neumorphism"] {
+        let registry = Path::new("../../registries").join(collection);
+        println!("cargo:rerun-if-changed={}", registry.display());
+        let catalog: Catalog =
+            serde_json::from_slice(&fs::read(registry.join("registry.json")).unwrap()).unwrap();
+        for entry in catalog.items {
+            let path = registry.join(entry.manifest);
+            // These original previews share the web form accessibility bridge.
+            if collection == "neobrutal"
+                && matches!(
+                    path.file_stem().and_then(|s| s.to_str()),
+                    Some("login" | "button" | "input")
+                )
+            {
+                continue;
             }
-            let source = registry.join(file.source);
-            let target = directory.join(file.target);
-            fs::create_dir_all(target.parent().unwrap()).unwrap();
-            fs::copy(&source, target)
-                .unwrap_or_else(|error| panic!("{}: {error}", source.display()));
-        }
-        writeln!(
-            modules,
-            "mod {module} {{ use crate::{{Appearance, Palette}};
+            let item: Item = serde_json::from_slice(
+                &fs::read(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display())),
+            )
+            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+            let name = item.name;
+            assert!(
+                name.strip_prefix(collection)
+                    .is_some_and(|suffix| suffix.starts_with('-'))
+                    && name
+                        .bytes()
+                        .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-'),
+                "invalid registry module {name}"
+            );
+            let module = name.replace('-', "_");
+            let directory = installed.join(&module);
+            for file in item.files {
+                for relative in [&file.source, &file.target] {
+                    assert!(
+                        Path::new(relative)
+                            .components()
+                            .all(|part| matches!(part, Component::Normal(_))),
+                        "invalid source mapping {relative}"
+                    );
+                }
+                let source = registry.join(file.source);
+                let target = directory.join(file.target);
+                fs::create_dir_all(target.parent().unwrap()).unwrap();
+                fs::copy(&source, target)
+                    .unwrap_or_else(|error| panic!("{}: {error}", source.display()));
+            }
+            writeln!(
+                modules,
+                "mod {module} {{ use crate::{{Appearance, Palette}};
                 mod recipes {{ {} }}
                 #[path = {:?}] mod item;
                 pub(super) use item::preview;
              }}",
-            recipe_exports(&item.recipes),
-            directory.join("mod.rs")
-        )
-        .unwrap();
-        writeln!(names, "{name:?},").unwrap();
-        writeln!(cases, "{name:?} => {module}::preview(window, cx),").unwrap();
+                recipe_exports(&item.recipes),
+                directory.join("mod.rs")
+            )
+            .unwrap();
+            writeln!(names, "{name:?},").unwrap();
+            writeln!(cases, "{name:?} => {module}::preview(window, cx),").unwrap();
+        }
     }
     fs::write(out.join("registry.rs"), format!("{modules}
         pub(super) const NAMES: &[&str] = &[{names}];

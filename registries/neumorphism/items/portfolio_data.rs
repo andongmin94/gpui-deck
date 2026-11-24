@@ -1,0 +1,42 @@
+pub(super) struct Case {
+    pub title: &'static str,
+    pub discipline: &'static str,
+    pub year: &'static str,
+    pub summary: &'static str,
+    pub challenge: &'static str,
+    pub approach: &'static str,
+    pub deliverables: &'static str,
+    pub outcome: &'static str,
+}
+pub(super) const CASES: &[Case] = &[
+    Case {
+        title: "Dispatch queue",
+        discipline: "Product design · React",
+        year: "2026",
+        summary: "A queue for assigning changed delivery routes before the morning shift.",
+        challenge: "Route changes and driver assignments arrived in separate messages.",
+        approach: "Put the route, assigned driver and unresolved stops in the same row.",
+        deliverables: "Queue, route detail and reassignment form.",
+        outcome: "The prototype keeps an unassigned route visible until a dispatcher selects a driver.",
+    },
+    Case {
+        title: "Month-end review",
+        discipline: "Product design",
+        year: "2025",
+        summary: "A monthly report with the source entries next to each account total.",
+        challenge: "Reviewers had to leave the report to check an unexplained balance.",
+        approach: "Link each account row to its entries and keep the comparison period visible.",
+        deliverables: "Account table, period selector and entry detail.",
+        outcome: "The prototype shows which entries make up a total and which still need review.",
+    },
+    Case {
+        title: "Equipment directory",
+        discipline: "Web design · React",
+        year: "2025",
+        summary: "A searchable inventory of shared cameras, microphones and lighting.",
+        challenge: "Availability was recorded in a spreadsheet separate from the equipment list.",
+        approach: "Show availability with each item and group equipment by its use.",
+        deliverables: "Inventory, category filters and equipment detail.",
+        outcome: "The prototype distinguishes available equipment from checked-out items.",
+    },
+];

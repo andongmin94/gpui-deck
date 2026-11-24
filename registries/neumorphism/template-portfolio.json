@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "neumorphism-template-portfolio",
+  "files": [
+    {
+      "source": "items/template-portfolio.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "items/portfolio_data.rs",
+      "target": "portfolio_data.rs"
+    },
+    {
+      "source": "items/template_layout.rs",
+      "target": "layout.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

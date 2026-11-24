@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "name": "neumorphism-template-analytics",
+  "files": [
+    {
+      "source": "items/template-analytics.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "items/analytics.rs",
+      "target": "analytics.rs"
+    },
+    {
+      "source": "items/template_layout.rs",
+      "target": "layout.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ],
+  "recipes": [
+    "chart"
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-chart-release-activity",
+  "files": [
+    {
+      "source": "items/chart-release-activity.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "items/report.rs",
+      "target": "report.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "name": "neumorphism-template-blog-post",
+  "files": [
+    {
+      "source": "items/template-blog-post.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "items/blog_view.rs",
+      "target": "blog_view.rs"
+    },
+    {
+      "source": "items/articles.rs",
+      "target": "articles.rs"
+    },
+    {
+      "source": "items/template_layout.rs",
+      "target": "layout.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "input.rs",
+      "target": "input.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

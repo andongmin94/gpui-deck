@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-drawer",
+  "files": [
+    {
+      "source": "items/drawer.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "control_style.rs",
+      "target": "control_style.rs"
+    },
+    {
+      "source": "button.rs",
+      "target": "button.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

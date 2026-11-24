@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "neumorphism-style-air",
+  "files": [
+    {
+      "source": "items/style-air.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/swatch.rs",
+      "target": "swatch.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

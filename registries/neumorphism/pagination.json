@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "name": "neumorphism-pagination",
+  "recipes": [
+    "pagination"
+  ],
+  "files": [
+    {
+      "source": "items/pagination.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

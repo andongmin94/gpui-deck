@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "name": "neumorphism-chart-channel",
+  "files": [
+    {
+      "source": "items/chart-channel.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "items/report.rs",
+      "target": "report.rs"
+    },
+    {
+      "source": "items/analytics.rs",
+      "target": "analytics.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

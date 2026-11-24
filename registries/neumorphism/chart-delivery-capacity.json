@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-chart-delivery-capacity",
+  "files": [
+    {
+      "source": "items/chart-delivery-capacity.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "items/report.rs",
+      "target": "report.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

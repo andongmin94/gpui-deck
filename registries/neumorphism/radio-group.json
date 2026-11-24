@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "name": "neumorphism-radio-group",
+  "files": [
+    {
+      "source": "items/radio-group.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "control_style.rs",
+      "target": "control_style.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}

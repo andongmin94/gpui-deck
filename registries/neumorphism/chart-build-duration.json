@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "neumorphism-chart-build-duration",
+  "files": [
+    {
+      "source": "items/chart-build-duration.rs",
+      "target": "mod.rs"
+    },
+    {
+      "source": "palette.rs",
+      "target": "palette.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
+      "source": "items/report.rs",
+      "target": "report.rs"
+    },
+    {
+      "source": "LICENSE-MIT",
+      "target": "LICENSE-MIT"
+    }
+  ]
+}
