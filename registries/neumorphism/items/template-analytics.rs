@@ -3,15 +3,14 @@ mod analytics;
 mod button;
 mod layout;
 mod palette;
-use super::{
-    Palette,
-    recipes::{ChartKind, ChartRecipe},
-};
+mod report;
+mod style;
+use super::Palette;
 use analytics::Summary;
 pub(crate) use analytics::{Record, Totals};
 use gpui::{prelude::*, *};
-use gpui_deck::{ChartSeries, ChartState, Direction};
 use layout::{banner, choice, column, heading, note, panel, row, screen};
+use report::{Data, Plot, Report, Row};
 use std::collections::BTreeSet;
 #[derive(Clone, Copy, Eq, PartialEq)]
 enum Metric {
@@ -27,11 +26,85 @@ impl Metric {
             Self::Conversion => "Conversion rate",
         }
     }
-    fn kind(self) -> ChartKind {
-        match self {
-            Self::Channel => ChartKind::Bar,
-            _ => ChartKind::Line,
+    fn data(self, summary: &Summary) -> Data {
+        let (plot, legend, columns, format): (
+            Plot,
+            &[&str],
+            &'static [&'static str],
+            fn(f64) -> String,
+        ) = match self {
+            Self::Revenue => (
+                Plot::Revenue,
+                &["Revenue", "Target"],
+                &["Date", "Revenue", "Target"],
+                |v| format!("${v:.2}"),
+            ),
+            Self::Channel => (Plot::Bars, &["Visits"], &["Channel", "Visits"], |v| {
+                format!("{v:.0}")
+            }),
+            Self::Conversion => (Plot::Line, &["Conversion"], &["Date", "Conversion"], |v| {
+                format!("{v:.2}%")
+            }),
+        };
+        let row = |label, values: Vec<Option<f64>>| Row {
+            label,
+            cells: values
+                .iter()
+                .map(|v| v.map(format).unwrap_or_else(|| "—".into()))
+                .collect(),
+            values,
+        };
+        let rows = match self {
+            Self::Channel => summary
+                .channels
+                .iter()
+                .map(|(name, t)| row(name.clone(), vec![Some(t.visits as f64)]))
+                .collect(),
+            Self::Revenue => summary
+                .points
+                .iter()
+                .map(|(day, value)| {
+                    row(
+                        day.to_string(),
+                        vec![
+                            value.map(|t| t.revenue_cents as f64 / 100.),
+                            value.map(|t| t.target_cents as f64 / 100.),
+                        ],
+                    )
+                })
+                .collect(),
+            Self::Conversion => summary
+                .points
+                .iter()
+                .map(|(day, value)| {
+                    row(
+                        day.to_string(),
+                        vec![value.and_then(Totals::conversion).map(|r| r * 100.)],
+                    )
+                })
+                .collect(),
+        };
+        Data {
+            plot,
+            legend: legend.to_vec(),
+            columns,
+            rows,
+            format,
+            domain: None,
+            reference: None,
+            summary: String::new(),
         }
+    }
+    fn chart(
+        self,
+        summary: &Result<Summary, &'static str>,
+        p: Palette,
+        cx: &mut App,
+    ) -> Option<AnyView> {
+        summary
+            .as_ref()
+            .ok()
+            .map(|data| Report::inline(self.title(), self.data(data), p, cx))
     }
 }
 pub(crate) struct Analytics {
@@ -41,63 +114,15 @@ pub(crate) struct Analytics {
     channel: Option<String>,
     metric: Metric,
     summary: Result<Summary, &'static str>,
-    chart: Entity<ChartState>,
-    observer: Subscription,
+    chart: Option<AnyView>,
     on_export: Option<Box<dyn FnMut(&str) -> Result<(), String>>>,
     export_message: String,
-}
-fn plot(
-    data: Option<&Summary>,
-    metric: Metric,
-    cx: &mut Context<Analytics>,
-) -> (Entity<ChartState>, Subscription) {
-    let mut labels = Vec::new();
-    let mut a = Vec::new();
-    let mut b = Vec::new();
-    if let Some(summary) = data {
-        match metric {
-            Metric::Channel => {
-                for (name, v) in &summary.channels {
-                    labels.push(name.clone());
-                    a.push(v.visits as f64);
-                }
-            }
-            Metric::Revenue => {
-                for (day, point) in &summary.points {
-                    if let Some(value) = point {
-                        labels.push(day.to_string());
-                        a.push(value.revenue_cents as f64 / 100.);
-                        b.push(value.target_cents as f64 / 100.);
-                    }
-                }
-            }
-            Metric::Conversion => {
-                for (day, point) in &summary.points {
-                    if let Some(rate) = point.and_then(Totals::conversion) {
-                        labels.push(day.to_string());
-                        a.push(rate * 100.);
-                    }
-                }
-            }
-        }
-    }
-    let series = match metric {
-        Metric::Revenue => vec![
-            ChartSeries::new("Revenue", a),
-            ChartSeries::new("Target", b),
-        ],
-        Metric::Channel => vec![ChartSeries::new("Visits", a)],
-        Metric::Conversion => vec![ChartSeries::new("Conversion", a)],
-    };
-    let state = cx.new(|cx| ChartState::new(labels, series, cx));
-    let subscription = cx.observe(&state, |_, _, cx| cx.notify());
-    (state, subscription)
 }
 impl Analytics {
     pub(crate) fn new(p: Palette, records: Vec<Record>, cx: &mut Context<Self>) -> Self {
         let summary = analytics::summarize(&records, 14, None);
         let metric = Metric::Revenue;
-        let (chart, observer) = plot(summary.as_ref().ok(), metric, cx);
+        let chart = metric.chart(&summary, p, cx);
         Self {
             palette: p,
             records,
@@ -106,7 +131,6 @@ impl Analytics {
             channel: None,
             summary,
             chart,
-            observer,
             on_export: None,
             export_message: String::new(),
         }
@@ -128,7 +152,7 @@ impl Analytics {
         self.replot(cx);
     }
     fn replot(&mut self, cx: &mut Context<Self>) {
-        (self.chart, self.observer) = plot(self.summary.as_ref().ok(), self.metric, cx);
+        self.chart = self.metric.chart(&self.summary, self.palette, cx);
         cx.notify();
     }
 }
@@ -192,7 +216,7 @@ impl Render for Analytics {
             ),
         ] {
             kpis = kpis.child(
-                div().min_w(px(105.)).flex_1().child(
+                div().min_w(px(128.)).flex_1().child(
                     panel(p)
                         .p_3()
                         .gap_1()
@@ -240,25 +264,6 @@ impl Render for Analytics {
             );
         }
         let metric = self.metric;
-        let chart = ChartRecipe::new(
-            "analytics-plot",
-            &self.chart,
-            metric.kind(),
-            Direction::Ltr,
-            metric.title(),
-            "Exact values",
-            if metric == Metric::Channel {
-                "Channel"
-            } else {
-                "Date"
-            },
-        )
-        .series_colors(palette::chart_colors(p))
-        .format_value(move |v| match metric {
-            Metric::Revenue => format!("${v:.2}"),
-            Metric::Channel => format!("{v:.0}"),
-            Metric::Conversion => format!("{v:.2}%"),
-        });
         body = body.child(kpis).child(
             panel(p)
                 .child(tabs)
@@ -267,13 +272,7 @@ impl Render for Analytics {
                     p,
                     format!("{observed} observed days in the last {} days", self.days),
                 ))
-                .child(
-                    div()
-                        .id("chart-width")
-                        .w_full()
-                        .overflow_x_scroll()
-                        .child(chart),
-                )
+                .when_some(self.chart.clone(), |s, chart| s.child(chart))
                 .child(export)
                 .when(!self.export_message.is_empty(), |s| {
                     s.child(note(p, self.export_message.clone()))

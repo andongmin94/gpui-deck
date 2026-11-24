@@ -76,3 +76,35 @@ pub(crate) fn preview(_: &mut Window, cx: &mut App) -> AnyView {
     .collect();
     open(data, palette::air(), cx)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::report::{Data, Plot, Row};
+
+    #[test]
+    fn integral_counts_have_exact_ticks_and_zero_on_a_division() {
+        let range = |values: &[f64]| {
+            Data {
+                legend: vec!["Difference"],
+                columns: &[],
+                plot: Plot::Bars,
+                rows: values
+                    .iter()
+                    .map(|&v| Row {
+                        label: String::new(),
+                        values: vec![Some(v)],
+                        cells: Vec::new(),
+                    })
+                    .collect(),
+                domain: None,
+                reference: None,
+                format: |v| v.to_string(),
+                summary: String::new(),
+            }
+            .range()
+        };
+        assert_eq!(range(&[28., 39., 31., 42.]), (0., 50., 5));
+        assert_eq!(range(&[-4., 3., -3., 4.]), (-4., 4., 4));
+        assert_eq!(range(&[0., 1.]), (0., 1., 1));
+    }
+}

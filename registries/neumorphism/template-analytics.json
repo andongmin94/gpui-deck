@@ -11,6 +11,14 @@
       "target": "analytics.rs"
     },
     {
+      "source": "items/report.rs",
+      "target": "report.rs"
+    },
+    {
+      "source": "items/display_style.rs",
+      "target": "style.rs"
+    },
+    {
       "source": "items/template_layout.rs",
       "target": "layout.rs"
     },
@@ -26,8 +34,5 @@
       "source": "LICENSE-MIT",
       "target": "LICENSE-MIT"
     }
-  ],
-  "recipes": [
-    "chart"
   ]
 }

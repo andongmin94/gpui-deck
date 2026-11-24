@@ -31,9 +31,9 @@ pub(super) struct Data {
 }
 
 impl Data {
-    fn range(&self) -> (f64, f64) {
+    pub(super) fn range(&self) -> (f64, f64, u32) {
         if let Some(domain) = self.domain {
-            return domain;
+            return (domain.0, domain.1, 4);
         }
         let mut min = 0.0_f64;
         let mut max = self.reference.map_or(0., |r| r.0);
@@ -46,10 +46,27 @@ impl Data {
                 max = max.max(v);
             }
         }
-        if min == max {
-            max += 1.;
+        if self.plot == Plot::Horizontal {
+            return (min, max.max(1.), 1);
         }
-        (min, max)
+        // These series measure whole counts, cents, milliseconds or seconds. Use integer
+        // intervals and the same endpoints for vertices, grid lines and visible labels.
+        let rough = ((max - min) / 4.).max(1.);
+        let magnitude = 10_f64.powf(rough.log10().floor());
+        let normalized = rough / magnitude;
+        let unit = if normalized < 1.5 {
+            1.
+        } else if normalized < 3.5 {
+            2.
+        } else if normalized < 7.5 {
+            5.
+        } else {
+            10.
+        };
+        let step = unit * magnitude;
+        let low = (min / step).floor() * step;
+        let high = ((max / step).ceil() * step).max(low + step);
+        (low, high, ((high - low) / step).round() as u32)
     }
 }
 
@@ -59,7 +76,8 @@ pub(super) struct Report {
     filters: &'static [&'static str],
     choice: usize,
     expanded: bool,
-    source: Dataset,
+    source: Option<Dataset>,
+    visible: Vec<bool>,
     data: Rc<Data>,
     inspect: Entity<ChartState>,
     observer: Subscription,
@@ -74,21 +92,47 @@ impl Report {
         cx: &mut App,
     ) -> AnyView {
         cx.new(|cx| {
-            let data = Rc::new(source(0));
-            let (inspect, observer) = Self::inspect(&data, cx);
-            Self {
+            Self::new(
                 title,
                 filters,
-                choice: 0,
-                expanded: false,
-                source: Box::new(source),
-                data,
-                inspect,
-                observer,
+                source(0),
+                Some(Box::new(source)),
                 palette,
-            }
+                cx,
+            )
         })
         .into()
+    }
+    pub(super) fn inline(
+        title: &'static str,
+        data: Data,
+        palette: Palette,
+        cx: &mut App,
+    ) -> AnyView {
+        cx.new(|cx| Self::new(title, &[], data, None, palette, cx))
+            .into()
+    }
+    fn new(
+        title: &'static str,
+        filters: &'static [&'static str],
+        data: Data,
+        source: Option<Dataset>,
+        palette: Palette,
+        cx: &mut Context<Self>,
+    ) -> Self {
+        let (inspect, observer) = Self::inspect(&data, cx);
+        Self {
+            title,
+            filters,
+            choice: 0,
+            expanded: source.is_none(),
+            source,
+            visible: vec![true; data.legend.len()],
+            data: Rc::new(data),
+            inspect,
+            observer,
+            palette,
+        }
     }
     fn inspect(data: &Data, cx: &mut Context<Self>) -> (Entity<ChartState>, Subscription) {
         let state = cx.new(|cx| {
@@ -102,9 +146,12 @@ impl Report {
         (state, observation)
     }
     fn select(&mut self, index: usize, cx: &mut Context<Self>) {
-        if self.choice != index {
+        if self.choice != index
+            && let Some(source) = &self.source
+        {
             self.choice = index;
-            self.data = Rc::new((self.source)(index));
+            self.data = Rc::new(source(index));
+            self.visible = vec![true; self.data.legend.len()];
             (self.inspect, self.observer) = Self::inspect(&self.data, cx);
             cx.notify();
         }
@@ -158,7 +205,7 @@ impl Report {
     ) -> AnyElement {
         let p = self.palette;
         let d = &self.data;
-        let (low, high) = d.range();
+        let (low, high, intervals) = d.range();
         if d.plot == Plot::Horizontal {
             let mut bars = div().w_full().flex().flex_col().gap_3();
             for (i, row) in d.rows.iter().enumerate() {
@@ -198,6 +245,7 @@ impl Report {
             return bars.into_any_element();
         }
         let data = self.data.clone();
+        let visible = self.visible.clone();
         let image = Chart::new("plot", &self.inspect, self.title)
             .value_description(description.to_owned())
             .w_full()
@@ -212,7 +260,7 @@ impl Report {
             .child(
                 canvas(
                     |_, _, _| (),
-                    move |bounds, _, window, _| paint(&data, selected, p, bounds, window),
+                    move |bounds, _, window, _| paint(&data, &visible, selected, p, bounds, window),
                 )
                 .size_full(),
             );
@@ -223,13 +271,46 @@ impl Report {
             .justify_between()
             .text_size(px(11.))
             .text_color(p.muted)
-            .children((0..=4).map(|i| (d.format)(high - (high - low) * f64::from(i) / 4.)));
-        let label = |i| {
-            d.rows
-                .get(i)
-                .map(|r: &Row| r.label.clone())
-                .unwrap_or_default()
-        };
+            .children(
+                (0..=intervals)
+                    .map(|i| (d.format)(high - (high - low) * f64::from(i) / f64::from(intervals))),
+            );
+        let categories = d
+            .rows
+            .iter()
+            .map(|row| {
+                row.label.parse::<gpui_deck::Date>().map_or_else(
+                    |_| row.label.clone(),
+                    |date| format!("{:02}-{:02}", date.month(), date.day()),
+                )
+            })
+            .collect::<Vec<_>>();
+        let count = categories.len();
+        let longest = categories
+            .iter()
+            .map(|label| label.chars().count())
+            .max()
+            .unwrap_or(1);
+        let width = (f32::from(window.viewport_size().width).min(720.) - 120.).max(1.);
+        let max_labels = (width / (longest as f32 * 7. + 10.)).floor().max(1.) as usize;
+        let stride = count.div_ceil(max_labels).max(1);
+        let axis = div()
+            .w_full()
+            .flex()
+            .text_size(px(11.))
+            .text_color(p.muted)
+            .children(categories.into_iter().enumerate().map(|(i, label)| {
+                // Each slot occupies exactly one chart category; skipping its label must
+                // never pull another label away from the center of its line point or bar.
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .flex()
+                    .justify_center()
+                    .when(i.is_multiple_of(stride), |slot| {
+                        slot.child(div().flex_none().whitespace_nowrap().child(label))
+                    })
+            }));
         div()
             .w_full()
             .flex()
@@ -243,18 +324,7 @@ impl Report {
                     .flex_col()
                     .gap_1()
                     .child(image)
-                    .child(
-                        div()
-                            .w_full()
-                            .flex()
-                            .justify_between()
-                            .gap_1()
-                            .text_size(px(11.))
-                            .text_color(p.muted)
-                            .child(label(0))
-                            .when(d.rows.len() > 2, |s| s.child(label(d.rows.len() / 2)))
-                            .when(d.rows.len() > 1, |s| s.child(label(d.rows.len() - 1))),
-                    ),
+                    .child(axis),
             )
             .into_any_element()
     }
@@ -281,25 +351,55 @@ impl Render for Report {
                         .join(" · ");
                 }
                 std::iter::once(r.label.clone())
-                    .chain(d.legend.iter().zip(&r.values).map(|(k, v)| {
-                        format!("{k} {}", v.map(d.format).unwrap_or_else(|| "—".into()))
-                    }))
+                    .chain(
+                        d.legend
+                            .iter()
+                            .zip(&r.values)
+                            .enumerate()
+                            .filter(|(i, _)| self.visible[*i])
+                            .map(|(_, (k, v))| {
+                                format!("{k} {}", v.map(d.format).unwrap_or_else(|| "—".into()))
+                            }),
+                    )
                     .collect::<Vec<_>>()
                     .join(" · ")
             })
             .unwrap_or_else(|| "No observations in this selection.".into());
         let colors = palette::chart_colors(p);
+        let embedded = self.source.is_none();
         let legend = div()
             .flex()
             .flex_wrap()
             .gap_3()
             .children(d.legend.iter().enumerate().map(|(i, l)| {
+                if embedded {
+                    return style::action(("series", i), *l, p)
+                        .flex()
+                        .items_center()
+                        .gap_1()
+                        .child(div().rounded_full().size(px(8.)).bg(colors[i]))
+                        .accessibility_label(format!("Show {l}"))
+                        .aria_toggled(if self.visible[i] {
+                            Toggled::True
+                        } else {
+                            Toggled::False
+                        })
+                        .when(self.visible[i], |b| {
+                            b.shadow(palette::inset(p)).bg(p.highlight)
+                        })
+                        .on_click(cx.listener(move |this, _, _, cx| {
+                            this.visible[i] = !this.visible[i];
+                            cx.notify();
+                        }))
+                        .into_any_element();
+                }
                 div()
                     .flex()
                     .gap_1()
                     .items_center()
                     .child(div().rounded_full().size(px(8.)).bg(colors[i]))
                     .child(*l)
+                    .into_any_element()
             }))
             .when_some(d.reference, |s, (v, l)| {
                 s.child(format!("{l} {}", (d.format)(v)))
@@ -317,19 +417,25 @@ impl Render for Report {
                         })
                         .on_click(cx.listener(move |this, _, _, cx| this.select(i, cx)))
                 }));
-        let mut card = style::surface(p)
-            .flex()
-            .flex_col()
-            .gap_4()
-            .child(
+        let mut card = (if embedded {
+            div().w_full().min_w_0()
+        } else {
+            style::surface(p)
+        })
+        .flex()
+        .flex_col()
+        .gap_4()
+        .when(!embedded, |s| {
+            s.child(
                 div()
                     .text_size(px(24.))
                     .font_weight(FontWeight::SEMIBOLD)
                     .child(self.title),
             )
             .child(div().text_color(p.muted).child(d.summary.clone()))
-            .when(!self.filters.is_empty(), |s| s.child(choices))
-            .child(legend);
+        })
+        .when(!self.filters.is_empty(), |s| s.child(choices))
+        .child(legend);
         if !d.rows.is_empty() {
             card = card.child(self.chart(selected, &description, window, cx));
         }
@@ -360,7 +466,11 @@ impl Render for Report {
         if self.expanded {
             card = card.child(self.table());
         }
-        style::stage(p, card)
+        if embedded {
+            card.into_any_element()
+        } else {
+            style::stage(p, card).into_any_element()
+        }
     }
 }
 
@@ -385,18 +495,25 @@ fn area(points: &[Point<Pixels>], color: Hsla, window: &mut Window) {
     }
 }
 
-fn paint(d: &Data, selected: Option<usize>, p: Palette, b: Bounds<Pixels>, w: &mut Window) {
+fn paint(
+    d: &Data,
+    visible: &[bool],
+    selected: Option<usize>,
+    p: Palette,
+    b: Bounds<Pixels>,
+    w: &mut Window,
+) {
     let n = d.rows.len();
     if n == 0 {
         return;
     }
-    let (low, high) = d.range();
+    let (low, high, intervals) = d.range();
     let y = |v: f64| b.bottom() - b.size.height * ((v - low) / (high - low)).clamp(0., 1.) as f32;
     let width = b.size.width / n as f32;
     let x = |i: usize| b.left() + width * (i as f32 + 0.5);
     let colors = palette::chart_colors(p);
-    for i in 0..=4 {
-        let yy = y(low + (high - low) * f64::from(i) / 4.);
+    for i in 0..=intervals {
+        let yy = y(low + (high - low) * f64::from(i) / f64::from(intervals));
         line(
             &[point(b.left(), yy), point(b.right(), yy)],
             p.border,
@@ -415,6 +532,9 @@ fn paint(d: &Data, selected: Option<usize>, p: Palette, b: Bounds<Pixels>, w: &m
     }
     let mut lower = vec![0.; n];
     for (s, &color) in colors.iter().take(d.legend.len()).enumerate() {
+        if !visible[s] {
+            continue;
+        }
         if d.plot == Plot::Bars {
             let series_width = width * 0.72 / d.legend.len() as f32;
             for (i, r) in d.rows.iter().enumerate() {
