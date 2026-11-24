@@ -156,8 +156,14 @@ function hostPage(module) {
             observer.disconnect();
           }
         }).observe(document.body, { childList: true, subtree: true });
-        const { default: init } = await import("${module}");
+        // Software WebGPU adapters can accept a device but present a blank canvas.
+        // Use GPUI's WebGL2 renderer when the browser reports a fallback adapter.
+        const [{ default: init, start }, adapter] = await Promise.all([
+          import("${module}"),
+          navigator.gpu.requestAdapter().catch(() => null),
+        ]);
         await init();
+        start(!adapter || adapter.info?.isFallbackAdapter === true);
       }
     </script>
   </body>

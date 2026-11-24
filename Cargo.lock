@@ -2118,7 +2118,7 @@ version = "0.0.1"
 dependencies = [
  "gpui-deck",
  "gpui-pre",
- "gpui-pre-platform",
+ "gpui-pre-web",
  "serde",
  "serde_json",
  "wasm-bindgen",

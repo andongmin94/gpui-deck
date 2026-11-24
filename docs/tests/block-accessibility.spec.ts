@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// Exercise the real WebAssembly preview on CI's software WebGPU adapter.
+// Exercise the real WebAssembly preview with Chromium's software graphics adapter.
 test.use({
   channel: "chromium",
   launchOptions: {
@@ -8,9 +8,7 @@ test.use({
       "--enable-unsafe-webgpu",
       "--enable-unsafe-swiftshader",
       "--use-webgpu-adapter=swiftshader",
-      ...(process.platform === "linux"
-        ? ["--enable-features=Vulkan", "--use-vulkan=swiftshader"]
-        : []),
+      "--use-angle=swiftshader",
     ],
   },
 });
@@ -105,7 +103,7 @@ test("Neobrutal tooltip paints its hint on hover and dismisses it with Escape", 
   const canvas = page.locator("canvas");
   await expect(canvas).toBeVisible();
 
-  // The WebGPU canvas exists before GPUI paints or hit-tests its first frame.
+  // The canvas exists before GPUI paints or hit-tests its first frame.
   const patch = (x: number, y: number) =>
     page.screenshot({ clip: { x, y, width: 50, height: 20 } });
   await expect

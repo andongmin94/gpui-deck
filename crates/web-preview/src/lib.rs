@@ -44,17 +44,26 @@ mod recipes {
 
 #[cfg(target_family = "wasm")]
 mod web {
-    use gpui::{App, AppContext as _, Styled as _, WindowOptions};
+    use std::rc::Rc;
+
+    use gpui::{App, AppContext as _, Application, Styled as _, WindowOptions};
     use gpui_deck::Root;
+    use gpui_web::{WebBackendPreference, WebPlatform};
     use wasm_bindgen::prelude::*;
     use web_sys::{MutationObserver, MutationObserverInit, UrlSearchParams};
 
     use crate::{app_fonts, demos, theme::Theme};
 
-    #[wasm_bindgen(start)]
-    pub fn start() {
-        gpui_platform::web_init();
-        gpui_platform::single_threaded_web().run(move |cx: &mut App| {
+    #[wasm_bindgen]
+    pub fn start(use_webgl: bool) {
+        gpui_web::init_logging();
+        let backend = if use_webgl {
+            WebBackendPreference::WebGl
+        } else {
+            WebBackendPreference::Auto
+        };
+        let platform = WebPlatform::new_with_backend(false, backend);
+        Application::with_platform(Rc::new(platform)).run(move |cx: &mut App| {
             app_fonts::register(cx);
             gpui_deck::init(cx);
             cx.open_window(WindowOptions::default(), move |window, cx| {
