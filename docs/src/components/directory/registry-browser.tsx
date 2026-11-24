@@ -14,7 +14,8 @@ function fromHash(registry: Registry) {
 export function RegistryBrowser({ lang, collection }: { lang: string; collection: string }) {
   const registry = registries.find((entry) => entry.slug === collection)!;
   const t = registryCopy(lang);
-  const [selected, setSelected] = useState(registry.featured[0]);
+  // The static page cannot see the URL fragment. Resolve it before starting GPUI.
+  const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const detail = useRef<HTMLElement>(null);
   useEffect(() => {
@@ -24,9 +25,10 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
     return () => window.removeEventListener("hashchange", sync);
   }, [registry]);
   useEffect(() => {
-    if (window.location.hash === `#${selected}`) detail.current?.scrollIntoView({ block: "start" });
+    if (selected && window.location.hash === `#${selected}`)
+      detail.current?.scrollIntoView({ block: "start" });
   }, [selected]);
-  const current = registry.items.find((item) => item.slug === selected)!;
+  const current = registry.items.find((item) => item.slug === (selected ?? registry.featured[0]))!;
   const needle = query.trim().toLocaleLowerCase();
   const matches = registry.items.filter((item) =>
     [item.slug, itemTitle(item.slug, lang), t.kinds[item.kind]].some((s) =>
@@ -56,7 +58,7 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
           <>
             <select
               aria-label={t.choose}
-              value={matches.some((item) => item.slug === selected) ? selected : ""}
+              value={matches.some((item) => item.slug === current.slug) ? current.slug : ""}
               className="mt-2 h-10 w-full rounded-lg border bg-fd-background px-2 text-sm lg:hidden"
               onChange={(event) => {
                 window.location.hash = event.target.value;
@@ -94,7 +96,7 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
                           <li key={slug}>
                             <a
                               href={`#${slug}`}
-                              aria-current={selected === slug ? "true" : undefined}
+                              aria-current={current.slug === slug ? "true" : undefined}
                               className="block rounded px-2 py-1.5 text-sm hover:bg-fd-secondary aria-[current]:bg-fd-secondary aria-[current]:font-semibold"
                             >
                               {itemTitle(slug, lang)}
@@ -112,8 +114,8 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
       </nav>
       <section
         ref={detail}
-        key={selected}
-        id={selected}
+        key={current.slug}
+        id={current.slug}
         aria-labelledby="registry-item-title"
         className="min-w-0 scroll-mt-20"
       >
@@ -129,7 +131,12 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
             {t.kinds[current.kind]}
           </span>
         </div>
-        <BlockViewer lang={lang} title={title} block={current} />
+        <BlockViewer
+          lang={lang}
+          title={title}
+          block={current}
+          automaticPreview={selected === null ? "pending" : navigator.gpu ? "run" : "unavailable"}
+        />
         <div className="mt-4">
           <InstallCommand lang={lang} command={current.command} />
         </div>

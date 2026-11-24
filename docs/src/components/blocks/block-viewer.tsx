@@ -15,14 +15,17 @@ export function BlockViewer({
   lang,
   title,
   block,
+  automaticPreview,
 }: {
   lang: string;
   title: string;
   block: PreviewItem;
+  automaticPreview?: "pending" | "run" | "unavailable";
 }) {
   const t = blockCopy(lang);
   const [tab, setTab] = useState("preview");
-  const [mode, setMode] = useState<"image" | "checking" | "run" | "unavailable">("image");
+  const [manualMode, setMode] = useState<"image" | "checking" | "run" | "unavailable">("image");
+  const mode = automaticPreview ?? manualMode;
   const request = useRef(0);
   const previewId = useId();
 
@@ -61,7 +64,7 @@ export function BlockViewer({
             {t.source}
           </Tabs.Tab>
         </Tabs.List>
-        {tab === "preview" && (
+        {tab === "preview" && !automaticPreview && (
           <button
             type="button"
             aria-controls={previewId}
@@ -85,15 +88,17 @@ export function BlockViewer({
             {t.unavailable}
           </output>
         )}
-        <div id={previewId}>
+        <div
+          id={previewId}
+          aria-busy={mode === "pending"}
+          className={
+            mode === "pending" || mode === "run" ? "h-[min(78svh,740px)] min-h-96" : undefined
+          }
+        >
           {mode === "run" ? (
-            <iframe
-              title={title}
-              src={`/preview?c=${block.name}`}
-              className="block h-[min(78svh,740px)] min-h-96 w-full"
-            />
+            <iframe title={title} src={`/preview?c=${block.name}`} className="block size-full" />
           ) : (
-            <BlockPoster block={block} alt={title} />
+            mode !== "pending" && <BlockPoster block={block} alt={title} />
           )}
         </div>
       </Tabs.Panel>
