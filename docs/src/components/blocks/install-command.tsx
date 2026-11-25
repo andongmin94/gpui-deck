@@ -5,15 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { blockCopy } from "./block-copy";
 
-export function InstallCommand({
-  lang,
-  command,
-  compact = false,
-}: {
-  lang: string;
-  command: string;
-  compact?: boolean;
-}) {
+export function InstallCommand({ lang, command }: { lang: string; command: string }) {
   const t = blockCopy(lang);
   const [status, setStatus] = useState<"idle" | "copied" | "manual">("idle");
   const field = useRef<HTMLInputElement>(null);
@@ -35,26 +27,16 @@ export function InstallCommand({
 
   return (
     <div className="min-w-0">
-      <div
-        className={
-          compact
-            ? "flex flex-wrap items-center gap-2"
-            : "flex items-center gap-2 rounded-lg border bg-fd-background p-1.5 ps-3"
-        }
-      >
-        {(!compact || status === "manual") && (
-          <>
-            <Terminal aria-hidden className="size-4 shrink-0 text-fd-muted-foreground" />
-            <input
-              ref={field}
-              aria-label={t.command}
-              value={command}
-              readOnly
-              onFocus={(event) => event.currentTarget.select()}
-              className="min-w-12 flex-1 rounded bg-transparent py-1.5 font-mono text-xs"
-            />
-          </>
-        )}
+      <div className="flex items-center gap-2 rounded-lg border bg-fd-background p-1.5 ps-3">
+        <Terminal aria-hidden className="size-4 shrink-0 text-fd-muted-foreground" />
+        <input
+          ref={field}
+          aria-label={t.command}
+          value={command}
+          readOnly
+          onFocus={(event) => event.currentTarget.select()}
+          className="min-w-12 flex-1 rounded bg-transparent py-1.5 font-mono text-xs"
+        />
         <button
           type="button"
           aria-label={t.copy}
@@ -67,7 +49,6 @@ export function InstallCommand({
           ) : (
             <Copy aria-hidden className="size-4" />
           )}
-          {compact && (status === "copied" ? t.copied : t.copy)}
         </button>
       </div>
       <output

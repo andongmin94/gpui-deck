@@ -65,6 +65,46 @@ test("the settings card links to the Switch documentation", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Checkbox and Switch", level: 1 })).toBeVisible();
 });
 
+test("the gallery previews, installs and runs billing inline on a phone", async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.addInitScript(() => {
+    if (window === window.top) {
+      Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => ({}) } });
+    }
+  });
+  const runtimes: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith("/preview")) runtimes.push(path);
+  });
+  await page.goto("/en/blocks");
+  const billing = page.getByRole("article", { name: "Billing dashboard" });
+  await expect(page.getByRole("article").first()).toHaveAttribute("id", "billing-dashboard");
+  await expect
+    .poll(() => billing.getByRole("img").evaluate((el: HTMLImageElement) => el.currentSrc))
+    .toContain("billing-dashboard-mobile.webp");
+  await billing.getByRole("tab", { name: "Rust source" }).click();
+  const picker = billing.getByRole("combobox", { name: "Source file" });
+  await expect(picker).toBeVisible();
+  await expect(billing.getByRole("tabpanel").locator("pre")).toContainText("BillingDashboard");
+  await billing.getByRole("button", { name: "Copy install command" }).click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(
+      "gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json",
+    );
+  await billing.getByRole("tab", { name: "Preview", exact: true }).click();
+  expect(runtimes).toEqual([]);
+  await billing.getByRole("button", { name: "Run preview" }).click();
+  await expect(billing.locator("iframe")).toHaveAttribute("src", "/preview?c=billing-dashboard");
+  await expect(page.locator("iframe")).toHaveCount(1);
+  await expect(page).toHaveURL(/\/en\/blocks\/?$/);
+});
+
 test("the block image and Rust source stay available when no adapter is found", async ({
   page,
 }) => {

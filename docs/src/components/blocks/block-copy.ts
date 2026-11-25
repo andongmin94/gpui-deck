@@ -37,6 +37,7 @@ const billing = block(billingManifest, "BillingDashboard", 1360, [
   { label: "DataTable", path: "recipes/data-table" },
 ]);
 export const blocks = [
+  billing,
   block(login, "Login", 844, [
     { label: "InputGroup", path: "recipes/input-group" },
     { label: "Button", path: "components/button" },
@@ -45,13 +46,14 @@ export const blocks = [
     { label: "Sidebar", path: "recipes/sidebar" },
     { label: "Switch", path: "components/checkbox" },
   ]),
-  billing,
 ];
 export type Block = (typeof blocks)[number];
 
 const copy = {
   en: {
     all: "All blocks",
+    galleryTitle: "Building blocks for GPUI",
+    jumpTo: (name: string) => `Jump to ${name}`,
     preview: "Preview",
     source: "Rust source",
     file: "Source file",
@@ -69,6 +71,8 @@ const copy = {
   },
   ko: {
     all: "모든 블록",
+    galleryTitle: "GPUI 앱을 위한 블록",
+    jumpTo: (name: string) => `${name} 미리보기로 이동`,
     preview: "미리보기",
     source: "Rust 소스",
     file: "소스 파일",
@@ -87,6 +91,8 @@ const copy = {
   },
   ja: {
     all: "すべてのブロック",
+    galleryTitle: "GPUI アプリのためのブロック",
+    jumpTo: (name: string) => `${name}のプレビューに移動`,
     preview: "プレビュー",
     source: "Rust ソース",
     file: "ソースファイル",
@@ -105,6 +111,8 @@ const copy = {
   },
   zh: {
     all: "所有区块",
+    galleryTitle: "适用于 GPUI 应用的区块",
+    jumpTo: (name: string) => `跳至${name}预览`,
     preview: "预览",
     source: "Rust 源码",
     file: "源文件",

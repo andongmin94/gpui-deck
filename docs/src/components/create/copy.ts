@@ -13,7 +13,9 @@ const copy = {
     settings: "Style settings",
     customize: "Customize",
     preview: "Live GPUI preview",
-    unavailable: "Open this page in a browser with WebGPU to use the live preview.",
+    unavailable:
+      "Showing the default preset. Open in a browser with WebGPU to preview your changes.",
+    posterAlt: "The default GPUI release dashboard with an activity chart and saved reports.",
     reset: "Reset",
     shuffle: "Shuffle",
     share: "Share",
@@ -23,6 +25,9 @@ const copy = {
     install: "Install preset",
     cli: "Install the preset CLI",
     rust: "Rust preset",
+    gallerySource: "gallery.rs · optional example",
+    gallerySetup:
+      "To use the full gallery, save this file as src/ui/gallery.rs and add pub mod gallery; to src/ui/mod.rs.",
     use: "Open the preview in your app",
     copyCode: "Copy Rust code",
     copied: "Copied",
@@ -48,7 +53,9 @@ const copy = {
     settings: "스타일 설정",
     customize: "스타일 조정",
     preview: "GPUI 실시간 미리보기",
-    unavailable: "실시간 미리보기를 사용하려면 WebGPU를 지원하는 브라우저에서 열어 주세요.",
+    unavailable:
+      "기본 프리셋 화면입니다. 변경 사항을 미리 보려면 WebGPU를 지원하는 브라우저에서 열어 주세요.",
+    posterAlt: "활동 차트와 저장된 보고서가 있는 기본 GPUI 릴리스 대시보드",
     reset: "초기화",
     shuffle: "무작위 조합",
     share: "공유",
@@ -58,6 +65,9 @@ const copy = {
     install: "프리셋 설치",
     cli: "프리셋을 지원하는 CLI 설치",
     rust: "Rust 프리셋",
+    gallerySource: "gallery.rs · 선택 예제",
+    gallerySetup:
+      "전체 갤러리를 사용하려면 이 파일을 src/ui/gallery.rs에 저장하고 src/ui/mod.rs에 pub mod gallery;를 추가하세요.",
     use: "앱에서 미리보기 열기",
     copyCode: "Rust 코드 복사",
     copied: "복사됨",
@@ -83,7 +93,10 @@ const copy = {
     settings: "スタイル設定",
     customize: "カスタマイズ",
     preview: "GPUI ライブプレビュー",
-    unavailable: "ライブプレビューを使用するには、WebGPU 対応ブラウザで開いてください。",
+    unavailable:
+      "既定のプリセットを表示しています。変更をプレビューするには WebGPU 対応ブラウザで開いてください。",
+    posterAlt:
+      "アクティビティチャートと保存済みレポートを表示した既定の GPUI リリースダッシュボード",
     reset: "リセット",
     shuffle: "シャッフル",
     share: "共有",
@@ -93,6 +106,9 @@ const copy = {
     install: "プリセットのインストール",
     cli: "プリセット対応の CLI をインストール",
     rust: "Rust プリセット",
+    gallerySource: "gallery.rs · 追加サンプル",
+    gallerySetup:
+      "ギャラリー全体を使うには、このファイルを src/ui/gallery.rs に保存し、src/ui/mod.rs に pub mod gallery; を追加してください。",
     use: "アプリでプレビューを開く",
     copyCode: "Rust コードをコピー",
     copied: "コピーしました",
@@ -118,7 +134,8 @@ const copy = {
     settings: "样式设置",
     customize: "自定义",
     preview: "GPUI 实时预览",
-    unavailable: "请使用支持 WebGPU 的浏览器打开此页以查看实时预览。",
+    unavailable: "当前显示默认预设。要预览更改，请使用支持 WebGPU 的浏览器打开此页。",
+    posterAlt: "包含活动图表和已保存报告的默认 GPUI 发布仪表板",
     reset: "重置",
     shuffle: "随机组合",
     share: "分享",
@@ -128,6 +145,9 @@ const copy = {
     install: "安装预设",
     cli: "安装支持预设的 CLI",
     rust: "Rust 预设",
+    gallerySource: "gallery.rs · 可选示例",
+    gallerySetup:
+      "要使用完整展厅，请将此文件保存为 src/ui/gallery.rs，并在 src/ui/mod.rs 中添加 pub mod gallery;。",
     use: "在应用中打开预览",
     copyCode: "复制 Rust 代码",
     copied: "已复制",

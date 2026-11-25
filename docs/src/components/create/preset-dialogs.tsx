@@ -7,6 +7,11 @@ import { type Preset, encodePreset, parsePreset, rustPreset } from "@/lib/create
 import { blockCopy } from "../blocks/block-copy";
 import { InstallCommand } from "../blocks/install-command";
 import type { CreateCopy } from "./copy";
+import iconsSource from "../../../../crates/cli/presets/create/icons.rs?url&no-inline";
+import moduleSource from "../../../../crates/cli/presets/create/mod.rs?url&no-inline";
+import showcaseSource from "../../../../crates/cli/presets/create/showcase.rs?url&no-inline";
+import styleSource from "../../../../crates/cli/presets/create/style.rs?url&no-inline";
+import gallerySource from "../../../../crates/web-preview/src/gallery.rs?url&no-inline";
 
 const primary =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-fd-primary px-4 text-sm font-semibold text-fd-primary-foreground hover:opacity-85 disabled:opacity-60";
@@ -47,9 +52,9 @@ export function OpenPreset({ t, onApply }: { t: CreateCopy; onApply: (preset: Pr
         }
       }}
     >
-      <Dialog.Trigger className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-white/20 px-2 text-sm font-medium hover:bg-white/10">
-        <FolderOpen aria-hidden className="size-4" />
-        {t.open}
+      <Dialog.Trigger className="inline-flex min-h-9 min-w-0 items-center justify-center gap-2 rounded-[7px] border border-white/15 bg-white/[0.025] px-2 text-sm font-medium hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white md:col-span-full">
+        <FolderOpen aria-hidden className="size-4 shrink-0" />
+        <span className="truncate">{t.open}</span>
       </Dialog.Trigger>
       <Modal title={t.open} close={t.close}>
         <form
@@ -137,13 +142,11 @@ function RustSource({ t, source, name }: { t: CreateCopy; source: string; name: 
 
 // Vite emits the actual Rust files as assets. Fetch just the selected file as text.
 const sourceFiles = {
-  "style.rs": new URL("../../../../crates/cli/presets/create/style.rs?no-inline", import.meta.url),
-  "showcase.rs": new URL(
-    "../../../../crates/cli/presets/create/showcase.rs?no-inline",
-    import.meta.url,
-  ),
-  "icons.rs": new URL("../../../../crates/cli/presets/create/icons.rs?no-inline", import.meta.url),
-  "mod.rs": new URL("../../../../crates/cli/presets/create/mod.rs?no-inline", import.meta.url),
+  "style.rs": styleSource,
+  "showcase.rs": showcaseSource,
+  "icons.rs": iconsSource,
+  "mod.rs": moduleSource,
+  "gallery.rs": gallerySource,
 };
 const rustViews = Object.fromEntries(
   Object.entries(sourceFiles).map(([name, url]) => {
@@ -166,30 +169,47 @@ function SourceFiles({ lang, t, preset }: { lang: string; t: CreateCopy; preset:
   const View = rustViews[file];
   const labels = blockCopy(lang);
   return (
-    <section>
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">{t.rust}</h3>
-        <label>
-          <span className="sr-only">{labels.file}</span>
-          <select
-            value={file}
-            onChange={(e) => setFile(e.target.value)}
-            className="min-h-8 rounded-md border bg-fd-background px-2 font-mono text-xs"
-          >
-            {["selected.rs", ...Object.keys(rustViews)].map((name) => (
-              <option key={name}>{name}</option>
-            ))}
-          </select>
-        </label>
-      </div>
-      {file === "selected.rs" ? (
-        <RustSource t={t} name={file} source={rustPreset(preset)} />
-      ) : (
-        <Suspense fallback={<output className="text-sm">{labels.loading}</output>}>
-          <View t={t} />
-        </Suspense>
-      )}
-    </section>
+    <>
+      <section>
+        <div className="mb-2 flex items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold">{t.rust}</h3>
+          <label>
+            <span className="sr-only">{labels.file}</span>
+            <select
+              value={file}
+              onChange={(e) => setFile(e.target.value)}
+              className="min-h-8 rounded-md border bg-fd-background px-2 font-mono text-xs"
+            >
+              {["selected.rs", ...Object.keys(rustViews)].map((name) => (
+                <option key={name} value={name}>
+                  {name === "gallery.rs" ? t.gallerySource : name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {file === "gallery.rs" && (
+          <p className="mb-2 text-sm leading-relaxed text-fd-muted-foreground">{t.gallerySetup}</p>
+        )}
+        {file === "selected.rs" ? (
+          <RustSource t={t} name={file} source={rustPreset(preset)} />
+        ) : (
+          <Suspense fallback={<output className="text-sm">{labels.loading}</output>}>
+            <View t={t} />
+          </Suspense>
+        )}
+      </section>
+      <section>
+        <h3 className="mb-2 text-sm font-semibold">{t.use}</h3>
+        <pre className={`${pre} whitespace-pre-wrap break-words`}>
+          <code>
+            {file === "gallery.rs"
+              ? "let view = ui::gallery::open(false, window, cx);"
+              : "let view = ui::preset::showcase(false, window, cx);"}
+          </code>
+        </pre>
+      </section>
+    </>
   );
 }
 
@@ -207,8 +227,11 @@ export function GetCode({
   const code = encodePreset(preset);
   return (
     <Dialog.Root>
-      <Dialog.Trigger disabled={!ready} className={primary}>
-        <Code2 aria-hidden className="size-4" />
+      <Dialog.Trigger
+        disabled={!ready}
+        className="col-start-3 row-start-2 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[7px] bg-neutral-100 px-3 text-sm font-semibold text-neutral-950 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:opacity-60 md:col-start-2 md:row-start-1"
+      >
+        <Code2 aria-hidden className="size-4 shrink-0" />
         {t.getCode}
       </Dialog.Trigger>
       <Modal title={t.getCode} close={t.close}>
@@ -231,12 +254,6 @@ export function GetCode({
             </Link>
           </section>
           <SourceFiles key={code} lang={lang} t={t} preset={preset} />
-          <section>
-            <h3 className="mb-2 text-sm font-semibold">{t.use}</h3>
-            <pre className={`${pre} whitespace-pre-wrap break-words`}>
-              <code>let view = ui::preset::showcase(false, window, cx);</code>
-            </pre>
-          </section>
         </div>
       </Modal>
     </Dialog.Root>

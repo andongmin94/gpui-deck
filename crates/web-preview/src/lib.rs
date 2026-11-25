@@ -5,6 +5,7 @@
 //! entry point that starts GPUI in the browser is WebAssembly-specific.
 
 pub mod demos;
+pub mod gallery;
 pub mod theme;
 
 #[allow(dead_code, unused_imports)] // Also compiled as source-owned helpers in native consumer apps.
@@ -56,7 +57,7 @@ mod web {
     use wasm_bindgen::prelude::*;
     use web_sys::{MutationObserver, MutationObserverInit, UrlSearchParams};
 
-    use crate::{app_fonts, demos, preset, theme::Theme};
+    use crate::{app_fonts, demos, gallery, preset, theme::Theme};
 
     #[wasm_bindgen]
     pub fn start(use_webgl: bool) {
@@ -91,7 +92,7 @@ mod web {
                 let theme = read_theme();
                 cx.set_global(theme);
                 let demo = demos::open(&name, theme, window, cx);
-                let create = demo.clone().downcast::<preset::Showcase>().ok();
+                let create = demo.clone().downcast::<gallery::Gallery>().ok();
                 let preset_frame = frame.clone();
                 let preset_param = params.get("preset");
                 let read_preset = move || {

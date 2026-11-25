@@ -45,7 +45,7 @@ export function DocsShell({
     <div className="flex min-h-svh flex-col">
       <SiteHeader lang={lang} tree={tree} />
       <div className="mx-auto flex w-full max-w-[1400px] flex-1 px-4 md:px-6">
-        <aside className="sticky top-16 hidden h-[calc(100svh-4rem)] w-60 shrink-0 no-scrollbar overflow-y-auto overscroll-contain py-8 pr-4 lg:block">
+        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-60 shrink-0 no-scrollbar overflow-y-auto overscroll-contain py-8 pr-4 lg:block">
           <SidebarNav tree={tree} label={t.docs} />
         </aside>
         <main id="main-content" className="flex min-w-0 flex-1 justify-center py-8 lg:px-8">
@@ -101,7 +101,7 @@ export function DocsShell({
             </div>
           </div>
         </main>
-        <aside className="sticky top-16 hidden h-[calc(100svh-4rem)] no-scrollbar w-56 shrink-0 overflow-y-auto py-8 xl:block">
+        <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] no-scrollbar w-56 shrink-0 overflow-y-auto py-8 xl:block">
           <TableOfContents toc={toc} title={t.onThisPage} />
         </aside>
       </div>

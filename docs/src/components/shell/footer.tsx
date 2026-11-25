@@ -1,10 +1,11 @@
 import { GIT } from "@/lib/site";
+import { Link } from "fumapress/client";
 import { copyFor } from "./copy";
 
 export function SiteFooter({ lang }: { lang: string }) {
   return (
-    <footer className="py-6">
-      <p className="mx-auto max-w-[1400px] px-4 text-center text-xs text-fd-muted-foreground md:px-6">
+    <footer className="mx-auto flex w-full max-w-[100rem] flex-wrap items-center justify-between gap-2 px-4 py-6 text-xs text-fd-muted-foreground sm:px-6">
+      <p>
         {copyFor(lang).footer}{" "}
         <a
           href={`https://github.com/${GIT.user}/${GIT.repo}`}
@@ -16,6 +17,9 @@ export function SiteFooter({ lang }: { lang: string }) {
         </a>
         .
       </p>
+      <Link href={`/${lang}/docs/guides/blocks#publish`} className="font-medium hover:underline">
+        {copyFor(lang).publish}
+      </Link>
     </footer>
   );
 }

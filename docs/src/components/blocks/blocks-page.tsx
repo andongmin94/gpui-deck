@@ -1,5 +1,5 @@
 import { Link } from "fumapress/client";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen } from "lucide-react";
 
 import { CatalogLayout } from "../catalog-layout";
 import { type Block, blockCopy } from "./block-copy";
@@ -18,57 +18,74 @@ export function BlocksGallery({
   page: PageInfo;
   entries: GalleryEntry[];
 }) {
+  const t = blockCopy(lang);
   return (
     <CatalogLayout lang={lang}>
-      <div className="mx-auto flex max-w-2xl flex-col items-center py-10 text-center sm:py-16">
-        <h1 className="text-4xl font-semibold tracking-[-0.045em] sm:text-5xl">{page.title}</h1>
+      <header className="mx-auto flex max-w-3xl flex-col items-center py-8 text-center sm:py-16">
+        <h1 className="text-4xl font-semibold tracking-[-0.045em] text-balance sm:text-5xl">
+          {t.galleryTitle}
+        </h1>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-balance text-fd-muted-foreground sm:text-lg">
           {page.description}
         </p>
+      </header>
+      <div className="mb-7 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b pb-3">
+        <nav aria-label={t.all} className="flex flex-wrap items-center sm:gap-1">
+          {entries.map(({ block, title }) => (
+            <a
+              key={block.name}
+              href={`#${block.name}`}
+              aria-label={t.jumpTo(title)}
+              className="inline-flex min-h-9 items-center rounded-md px-2 text-sm font-medium text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground"
+            >
+              {title}
+            </a>
+          ))}
+        </nav>
+        <Link
+          href={`/${lang}/docs/guides/blocks`}
+          title={t.setup}
+          className="inline-flex min-h-9 min-w-8 items-center justify-center gap-1.5 rounded-md text-sm font-medium hover:bg-fd-secondary sm:px-2"
+        >
+          <span className="sr-only sm:not-sr-only">{t.setup}</span>
+          <BookOpen aria-hidden className="size-4" />
+        </Link>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-12 sm:space-y-16">
         {entries.map(({ block, title, description }) => (
           <article
             key={block.name}
-            className="flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-fd-background shadow-xs"
+            id={block.name}
+            aria-labelledby={`${block.name}-title`}
+            className="min-w-0 scroll-mt-20"
           >
-            <Link
-              href={`/${lang}/blocks/${block.name}`}
-              className="group block focus-visible:outline-offset-[-3px]"
+            <h2
+              id={`${block.name}-title`}
+              className="text-xl font-semibold tracking-tight sm:text-2xl"
             >
-              <div className="border-b bg-fd-secondary/50 p-3 sm:p-4">
-                <div className="overflow-hidden rounded-lg border bg-white shadow-sm group-hover:shadow-md">
-                  <img
-                    src={`${block.poster}.webp`}
-                    width={1440}
-                    height={820}
-                    alt=""
-                    data-block={block.name}
-                    className="block h-auto w-full data-[block=login]:scale-[1.65] data-[block=sidebar-settings]:origin-top data-[block=sidebar-settings]:scale-[1.16]"
-                  />
-                </div>
-              </div>
-              <h2 className="flex items-center justify-between gap-2 px-5 pt-5 text-xl font-semibold tracking-tight group-hover:underline">
+              <Link
+                href={`/${lang}/blocks/${block.name}`}
+                className="inline-flex items-center gap-1 rounded hover:underline"
+              >
                 {title}
-                <ArrowRight aria-hidden className="size-4 shrink-0" />
-              </h2>
-            </Link>
-            <p className="mt-2 flex-1 px-5 text-sm leading-relaxed text-fd-muted-foreground">
+                <ArrowUpRight aria-hidden className="size-4 text-fd-muted-foreground" />
+              </Link>
+            </h2>
+            <p className="mt-1 mb-4 text-sm leading-relaxed text-fd-muted-foreground">
               {description}
             </p>
-            <div className="mt-4 flex flex-wrap items-center gap-1.5 px-5">
+            <BlockViewer lang={lang} title={title} block={block} command={block.command} />
+            <div className="mt-2 flex flex-wrap items-center gap-x-4">
               {block.components.map(({ label, path }) => (
                 <Link
                   key={path}
                   href={`/${lang}/docs/${path}`}
-                  className="rounded-full border px-2.5 py-1 text-xs font-medium hover:bg-fd-secondary"
+                  className="inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-medium text-fd-muted-foreground hover:text-fd-foreground hover:underline"
                 >
                   {label}
+                  <ArrowUpRight aria-hidden className="size-3" />
                 </Link>
               ))}
-            </div>
-            <div className="mt-4 border-t px-3 py-1.5">
-              <InstallCommand lang={lang} command={block.command} compact />
             </div>
           </article>
         ))}

@@ -23,6 +23,11 @@
   --accent-dark: #d4d4d4;
 }
 
+[data-swatch="sage"] {
+  --accent-light: #266651;
+  --accent-dark: #83cfad;
+}
+
 :root[data-accent="blue"],
 [data-swatch="blue"] {
   --accent-light: #1d4ed8;
@@ -67,6 +72,10 @@
 
 html {
   scrollbar-gutter: stable;
+}
+
+html:has(.create-studio) {
+  scrollbar-gutter: auto;
 }
 
 .no-scrollbar {

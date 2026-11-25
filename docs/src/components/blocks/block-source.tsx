@@ -6,15 +6,18 @@ import { type PreviewItem, blockCopy } from "./block-copy";
 const sources = import.meta.glob<string>("./{blocks,registries}/**/*.rs", {
   base: "../../../..",
   import: "default",
-  query: "?raw",
+  eager: true,
+  query: "?url&no-inline",
 });
 
-// Vite emits each Rust file as its own raw-text chunk. Load the selected file on demand.
+// Only fetch the installed Rust file selected in the viewer.
 const sourceFiles = Object.fromEntries(
-  Object.entries(sources).map(([path, load]) => [
+  Object.entries(sources).map(([path, url]) => [
     path,
     lazy(async () => {
-      const source = await load();
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to load ${path} (${response.status})`);
+      const source = await response.text();
       return { default: () => <code>{source}</code> };
     }),
   ]),

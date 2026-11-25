@@ -17,6 +17,18 @@ test("the root opens the English home page", async ({ page }) => {
       `/en/blocks/${slug}`,
     );
   }
+  await main.getByRole("combobox", { name: "Style", exact: true }).selectOption("neumorphism");
+  await main.getByRole("combobox", { name: "Radius", exact: true }).selectOption("large");
+  await main.getByRole("radio", { name: "Neutral", exact: true }).focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(main.getByRole("radio", { name: "Sage", exact: true })).toBeChecked();
+  await main.getByRole("link", { name: "Open preset", exact: true }).click();
+  await expect(page).toHaveURL(
+    /\/en\/create\?preset=v1\.neumorphism\.neutral\.sage\.neutral\.pretendard\.pretendard\.outline\.large$/,
+  );
+  await expect(page.getByRole("combobox", { name: "Style", exact: true })).toHaveValue(
+    "neumorphism",
+  );
 });
 
 test("the invoice workspace loads GPUI only when launched and links to its implementation", async ({

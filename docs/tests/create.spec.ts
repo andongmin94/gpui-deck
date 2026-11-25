@@ -61,6 +61,11 @@ test("a shared preset renders in GPUI and exports the edited selection", async (
   await expect(dialog.locator("pre code").filter({ hasText: "pub struct Showcase" })).toHaveText(
     await readFile(new URL("../../crates/cli/presets/create/showcase.rs", import.meta.url), "utf8"),
   );
+  await dialog.getByRole("combobox", { name: "Source file" }).selectOption("gallery.rs");
+  await expect(dialog.locator("pre", { hasText: "pub struct Gallery" })).toHaveText(
+    await readFile(new URL("../../crates/web-preview/src/gallery.rs", import.meta.url), "utf8"),
+  );
+  await expect(dialog.getByText("let view = ui::gallery::open(false, window, cx);")).toBeVisible();
 });
 
 test("mobile users can open a preset, shuffle and reset without graphics support", async ({

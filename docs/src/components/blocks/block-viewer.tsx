@@ -6,6 +6,7 @@ import { lazy, Suspense, useId, useRef, useState } from "react";
 
 import { type PreviewItem, blockCopy } from "./block-copy";
 import { BlockPoster } from "./block-poster";
+import { InstallCommand } from "./install-command";
 
 const BlockSource = lazy(() => import("./block-source"));
 const tabStyle =
@@ -16,11 +17,13 @@ export function BlockViewer({
   title,
   block,
   automaticPreview,
+  command,
 }: {
   lang: string;
   title: string;
   block: PreviewItem;
   automaticPreview?: "pending" | "run" | "unavailable";
+  command?: string;
 }) {
   const t = blockCopy(lang);
   const [tab, setTab] = useState("preview");
@@ -51,9 +54,9 @@ export function BlockViewer({
         setTab(String(value));
         setMode("image");
       }}
-      className="overflow-hidden rounded-2xl border shadow-xs"
+      className="overflow-hidden rounded-xl border bg-fd-background"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b p-2 sm:px-4">
+      <div className="flex flex-wrap items-center gap-2 border-b p-2 sm:px-3">
         <Tabs.List aria-label={title} className="inline-flex rounded-xl bg-fd-secondary p-1">
           <Tabs.Tab value="preview" className={tabStyle}>
             <Image aria-hidden className="size-4" />
@@ -68,18 +71,24 @@ export function BlockViewer({
           <button
             type="button"
             aria-controls={previewId}
+            title={mode === "run" ? t.stop : t.run}
             onClick={togglePreview}
             disabled={mode === "checking"}
             aria-busy={mode === "checking"}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium hover:bg-fd-secondary"
+            className={`inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg border px-2 text-sm font-medium hover:bg-fd-secondary sm:px-3 ${command ? "" : "ms-auto"}`}
           >
             {mode === "run" ? (
               <Square aria-hidden className="size-3.5" />
             ) : (
               <Play aria-hidden className="size-3.5" />
             )}
-            {mode === "run" ? t.stop : t.run}
+            <span className="sr-only sm:not-sr-only">{mode === "run" ? t.stop : t.run}</span>
           </button>
+        )}
+        {command && (
+          <div className="w-full min-w-0 sm:ms-auto sm:max-w-[32rem] sm:flex-1">
+            <InstallCommand lang={lang} command={command} />
+          </div>
         )}
       </div>
       <Tabs.Panel value="preview">
@@ -96,7 +105,11 @@ export function BlockViewer({
           }
         >
           {mode === "run" ? (
-            <iframe title={title} src={`/preview?c=${block.name}`} className="block size-full" />
+            <iframe
+              title={title}
+              src={`${import.meta.env.DEV ? "/preview/index.html" : "/preview"}?c=${block.name}`}
+              className="block size-full"
+            />
           ) : (
             mode !== "pending" && <BlockPoster block={block} alt={title} />
           )}

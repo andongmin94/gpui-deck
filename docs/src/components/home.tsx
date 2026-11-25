@@ -2,6 +2,9 @@ import { Link } from "fumapress/client";
 import { ArrowRight } from "lucide-react";
 
 import type { Block } from "./blocks/block-copy";
+import { registries, registryCopy } from "./directory/registries";
+import { HomePreset } from "./home-preset";
+import { copyFor } from "./shell/copy";
 import { InvoicePoster } from "./invoice-poster";
 import { InvoiceShowcase } from "./invoice-showcase";
 import { SiteFooter } from "./shell/footer";
@@ -13,7 +16,8 @@ const copy = {
     lead: "Accessible components for native Rust apps. Bring your own palette, compose a block, and share its source with a single link.",
     start: "Get Started",
     browse: "View Components",
-    install: "Install block",
+    styles: "Style presets",
+    studio: "Explore the preset studio",
     demo: {
       title: "Invoice workspace",
       description: "Mark an invoice as paid to update the balance and monthly collections.",
@@ -28,7 +32,8 @@ const copy = {
     lead: "네이티브 Rust 앱을 위한 접근성 컴포넌트에 팀의 팔레트를 입히세요. 화면을 블록으로 조합하고 링크 하나로 소스를 공유할 수 있습니다.",
     start: "시작하기",
     browse: "컴포넌트 보기",
-    install: "블록 설치",
+    styles: "스타일 프리셋",
+    studio: "프리셋 스튜디오 둘러보기",
     demo: {
       title: "청구서 관리",
       description: "청구서를 결제 완료로 바꾸면 미수금과 월별 수금 차트가 함께 바뀝니다.",
@@ -43,7 +48,8 @@ const copy = {
     lead: "Rust のネイティブアプリ向けのアクセシブルなコンポーネント。独自の配色でブロックを組み立て、リンクひとつでソースを共有できます。",
     start: "はじめる",
     browse: "コンポーネントを見る",
-    install: "ブロックを追加",
+    styles: "スタイルプリセット",
+    studio: "プリセットスタジオを見る",
     demo: {
       title: "請求書管理",
       description: "請求書を入金済みにすると、未収金残高と月別の入金グラフが更新されます。",
@@ -58,7 +64,8 @@ const copy = {
     lead: "为原生 Rust 应用打造无障碍界面。用自己的配色组合界面区块，通过一个链接共享源码。",
     start: "开始使用",
     browse: "浏览组件",
-    install: "安装区块",
+    styles: "风格预设",
+    studio: "探索预设工作室",
     demo: {
       title: "发票管理",
       description: "将发票标记为已付款，应收余额和月度收款图表会随之更新。",
@@ -77,44 +84,31 @@ const detailThumbnails: Record<string, { suffix: string; width: number; height: 
   "sidebar-settings": { suffix: "-notifications.webp", width: 390, height: 449 },
 };
 
-function BlockTile({ entry, lang, install }: { entry: HomeBlock; lang: string; install: string }) {
+function BlockTile({ entry, lang }: { entry: HomeBlock; lang: string }) {
   const { block, title } = entry;
-  const billing = block.name === "billing-dashboard";
   const image = detailThumbnails[block.name] ?? { suffix: ".webp", width: 1440, height: 820 };
 
   return (
     <Link
       href={`/${lang}/blocks/${block.name}`}
       aria-label={title}
-      className={`group flex min-w-0 flex-col overflow-hidden rounded-2xl border bg-fd-background focus-visible:outline-offset-2 sm:rounded-3xl ${billing ? "sm:col-span-2 sm:flex-row-reverse" : ""}`}
+      className="group flex min-h-16 items-center gap-3 rounded-xl p-2 hover:bg-fd-secondary focus-visible:outline-offset-2"
     >
-      <div
-        className={`relative overflow-hidden border-b bg-fd-secondary ${billing ? "aspect-[2.7] sm:w-3/5 sm:border-s sm:border-b-0" : "aspect-[390/475]"}`}
-      >
+      <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border bg-fd-secondary">
         <img
           src={block.poster + image.suffix}
           alt=""
           loading="lazy"
           width={image.width}
           height={image.height}
-          className={
-            billing
-              ? "absolute top-0 right-0 w-[200%] max-w-none -translate-y-[30%]"
-              : "block size-full object-cover"
-          }
+          className="block size-full object-cover"
         />
       </div>
-      <div
-        className={`flex flex-1 items-center justify-between gap-2 px-4 py-3.5 sm:px-5 ${billing ? "sm:flex-col sm:items-start sm:justify-center" : "lg:max-xl:flex-col lg:max-xl:items-start lg:max-xl:justify-center"}`}
-      >
-        <h2 className="text-base leading-tight font-semibold tracking-tight group-hover:underline">
-          {title}
-        </h2>
-        <span className="inline-flex shrink-0 items-center gap-1 text-xs text-fd-muted-foreground group-hover:text-fd-foreground">
-          {install}
-          <ArrowRight aria-hidden className="size-3.5" />
-        </span>
-      </div>
+      <span className="flex-1 text-sm leading-tight font-medium">{title}</span>
+      <ArrowRight
+        aria-hidden
+        className="size-3.5 shrink-0 text-fd-muted-foreground group-hover:text-fd-foreground"
+      />
     </Link>
   );
 }
@@ -125,14 +119,21 @@ export function Home({ lang, entries }: { lang: string; entries: HomeBlock[] }) 
     <div className="flex min-h-svh flex-col">
       <SiteHeader lang={lang} />
       <main id="main-content" className="flex-1">
-        <section className="mx-auto flex max-w-6xl flex-col items-center px-4 py-8 text-center sm:py-12 lg:py-16">
+        <section className="mx-auto flex max-w-6xl flex-col items-center px-4 pt-8 pb-10 text-center sm:py-14 lg:pt-20 lg:pb-[4.5rem]">
+          <Link
+            href={`/${lang}/create`}
+            className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-fd-secondary px-2.5 py-1 text-xs font-medium leading-none hover:bg-fd-accent lg:mb-4"
+          >
+            {t.studio}
+            <ArrowRight aria-hidden className="size-3" />
+          </Link>
           <h1 className="max-w-full text-[2rem] leading-[1.08] font-semibold tracking-[-0.048em] text-balance sm:text-5xl [html:lang(ko)_&]:break-keep">
             {t.title}
           </h1>
-          <p className="mt-3 max-w-[39rem] text-base leading-6 text-pretty sm:text-lg sm:leading-7 [html:lang(ko)_&]:break-keep">
+          <p className="mt-3 max-w-[40rem] text-base leading-6 text-pretty sm:mt-4 sm:text-lg sm:leading-7 [html:lang(ko)_&]:break-keep">
             {t.lead}
           </p>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <div className="mt-5 flex flex-wrap justify-center gap-2 sm:mt-6">
             <Link
               href={`/${lang}/docs`}
               className="inline-flex min-h-9 items-center rounded-full bg-fd-primary px-4 text-sm font-medium text-fd-primary-foreground transition-opacity hover:opacity-85"
@@ -147,14 +148,51 @@ export function Home({ lang, entries }: { lang: string; entries: HomeBlock[] }) 
             </Link>
           </div>
         </section>
-        <div className="mx-auto grid max-w-[1480px] items-start gap-3 px-3 pb-10 sm:gap-4 sm:px-6 lg:grid-cols-[minmax(0,1.16fr)_minmax(0,1fr)] lg:pb-16">
-          <InvoiceShowcase labels={t.demo}>
-            <InvoicePoster lang={lang} />
-          </InvoiceShowcase>
-          <div className="grid min-w-0 gap-3 sm:grid-cols-2 sm:gap-4">
-            {entries.map((entry) => (
-              <BlockTile key={entry.block.name} entry={entry} lang={lang} install={t.install} />
-            ))}
+        <div className="bg-linear-to-b from-fd-background to-fd-secondary/60">
+          <div className="mx-auto grid max-w-[100rem] items-start gap-4 px-3 pb-10 sm:grid-cols-2 sm:px-6 lg:pb-16 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] xl:gap-5">
+            <div className="min-w-0 sm:col-span-2 xl:order-2 xl:col-span-1">
+              <InvoiceShowcase labels={t.demo}>
+                <InvoicePoster lang={lang} />
+              </InvoiceShowcase>
+            </div>
+            <div className="min-w-0 xl:order-1">
+              <HomePreset lang={lang} title={t.styles} />
+            </div>
+            <div className="grid min-w-0 gap-4 xl:order-3 xl:gap-5">
+              <section className="rounded-3xl border bg-fd-background p-3 shadow-xs">
+                <h2 className="px-2 pt-2 pb-3 text-base font-semibold tracking-tight">
+                  <Link href={`/${lang}/blocks`} className="hover:underline">
+                    {copyFor(lang).blocks}
+                  </Link>
+                </h2>
+                <div className="grid">
+                  {entries.map((entry) => (
+                    <BlockTile key={entry.block.name} entry={entry} lang={lang} />
+                  ))}
+                </div>
+              </section>
+              <section className="rounded-3xl border bg-fd-background p-5 shadow-xs">
+                <h2 className="text-base font-semibold tracking-tight">
+                  <Link href={`/${lang}/directory`} className="hover:underline">
+                    {registryCopy(lang).directory}
+                  </Link>
+                </h2>
+                <div className="mt-3 divide-y">
+                  {registries.map((registry) => (
+                    <Link
+                      key={registry.slug}
+                      href={`/${lang}/directory/${registry.slug}`}
+                      className="group flex min-h-11 items-center justify-between gap-2 text-sm"
+                    >
+                      <span className="font-medium group-hover:underline">{registry.name}</span>
+                      <span className="shrink-0 text-xs text-fd-muted-foreground">
+                        {registry.items.length} {registryCopy(lang).count}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </main>

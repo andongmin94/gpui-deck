@@ -56,11 +56,7 @@ pub fn names() -> impl Iterator<Item = &'static str> {
 
 pub fn open(name: &str, theme: Theme, window: &mut Window, cx: &mut App) -> AnyView {
     let control = match name {
-        "create" => Some(crate::preset::showcase(
-            theme.background.l < 0.5,
-            window,
-            cx,
-        )),
+        "create" => Some(crate::gallery::open(theme.background.l < 0.5, window, cx)),
         "billing-dashboard" => Some(
             cx.new(|cx| crate::billing_dashboard::BillingDashboard::new(window, cx))
                 .into(),

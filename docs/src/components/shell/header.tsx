@@ -48,7 +48,7 @@ function SectionLinks({
       className={
         onNavigate
           ? "flex min-h-12 items-center rounded-md text-2xl font-medium tracking-tight hover:underline aria-[current]:underline underline-offset-4"
-          : "inline-flex h-9 items-center rounded-md px-2.5 text-sm font-medium hover:bg-fd-accent aria-[current]:bg-fd-secondary"
+          : "inline-flex h-8 items-center whitespace-nowrap rounded-lg px-2 text-sm font-medium hover:bg-fd-accent focus-visible:outline-offset-2 aria-[current]:font-semibold xl:px-2.5"
       }
     >
       {link.label}
@@ -164,20 +164,26 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
   const { setOpenSearch } = useSearchContext();
   const current = path.replace(/\/$/, "");
   const links = [
+    { href: `/${lang}`, label: t.home },
     { href: `/${lang}/docs`, label: t.docs },
     { href: `/${lang}/docs/components`, label: t.components },
     { href: `/${lang}/blocks`, label: t.blocks },
+    { href: `/${lang}/docs/components/chart`, label: t.charts },
     { href: `/${lang}/docs/recipes`, label: t.recipes },
     { href: `/${lang}/directory`, label: t.directory },
+    { href: `/${lang}/docs/recipes/typography`, label: t.typography },
     { href: `/${lang}/create`, label: t.create },
   ];
   return (
-    <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">
-      <div className="mx-auto flex h-14 w-full max-w-[1480px] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-3 sm:px-6 lg:h-16">
+    <header
+      aria-label={SITE_NAME}
+      className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur"
+    >
+      <div className="mx-auto flex h-14 w-full max-w-[100rem] items-center gap-1 px-2 min-[360px]:gap-2 min-[360px]:px-3 sm:px-6">
         <MobileNavigation key={current} lang={lang} links={links} current={current} tree={tree} />
         <Link
           href={`/${lang}`}
-          className="inline-flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight lg:mr-3"
+          className="inline-flex shrink-0 items-center gap-2 text-base font-semibold tracking-tight lg:hidden"
         >
           <img src="/deck.svg" alt="" width={23} height={23} className="hidden min-[360px]:block" />
           {SITE_NAME}
@@ -185,12 +191,12 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
         <nav aria-label={t.navigation} className="hidden items-center lg:flex">
           <SectionLinks links={links} current={current} />
         </nav>
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex min-w-0 items-center gap-1.5">
           <button
             type="button"
             aria-label={t.search}
             onClick={() => setOpenSearch(true)}
-            className="inline-flex h-9 items-center justify-center gap-2 rounded-md px-2.5 text-fd-muted-foreground hover:bg-fd-accent xl:h-8 xl:w-56 xl:justify-between xl:bg-fd-secondary xl:text-xs"
+            className="inline-flex h-9 min-w-0 items-center justify-center gap-2 rounded-lg px-2.5 hover:bg-fd-accent xl:h-8 xl:w-64 xl:justify-between xl:bg-fd-secondary xl:text-sm"
           >
             <Search aria-hidden className="size-4 xl:hidden" />
             <span className="hidden truncate xl:block">{t.search}</span>
@@ -211,11 +217,11 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
             <SitePreferences lang={lang} path={current} />
           </div>
           <Link
-            href={`/${lang}/docs/guides/blocks#publish`}
-            className="inline-flex min-h-8 items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-fd-primary px-3 text-xs font-medium text-fd-primary-foreground hover:opacity-85"
+            href={`/${lang}/create`}
+            className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-fd-primary px-3 text-xs font-medium text-fd-primary-foreground hover:opacity-85"
           >
             <Plus aria-hidden className="size-3.5" />
-            {t.publish}
+            {t.newPreset}
           </Link>
         </div>
       </div>

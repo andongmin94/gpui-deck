@@ -16,11 +16,14 @@ test("the mobile menu keeps the same destinations across the home, docs and bloc
     await expect(menu).toBeVisible({ timeout: 1000 });
   }).toPass();
   await expect(nav.getByRole("link")).toHaveText([
+    "홈",
     "문서",
     "컴포넌트",
     "블록",
+    "차트",
     "레시피",
     "레지스트리",
+    "타이포그래피",
     "만들기",
   ]);
   await expect(menu.getByRole("link", { name: "설치", exact: true })).toHaveAttribute(

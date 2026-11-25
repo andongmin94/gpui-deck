@@ -59,7 +59,7 @@ export function SitePreferences({
       <Menu.Root modal={false}>
         <Menu.Trigger aria-label={accentLabel} title={accentLabel} className={button}>
           <Palette aria-hidden className="size-4" />
-          <span className={panel ? undefined : "text-xs font-medium"}>{t.colors[accent]}</span>
+          {panel && <span>{t.colors[accent]}</span>}
         </Menu.Trigger>
         <Menu.Portal container={panel}>
           <Menu.Positioner sideOffset={6} align={panel ? "start" : "end"} className="z-[60]">

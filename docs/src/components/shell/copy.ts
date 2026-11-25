@@ -9,6 +9,10 @@ export const languages = [
 /** Interface strings of the site shell, by language. */
 export const shellCopy = {
   en: {
+    home: "Home",
+    charts: "Charts",
+    typography: "Typography",
+    newPreset: "New preset",
     docs: "Docs",
     components: "Components",
     recipes: "Recipes",
@@ -35,6 +39,10 @@ export const shellCopy = {
     footer: "A headless UI foundation for Rust and GPUI. The source code is available on",
   },
   ko: {
+    home: "홈",
+    charts: "차트",
+    typography: "타이포그래피",
+    newPreset: "새 프리셋",
     docs: "문서",
     components: "컴포넌트",
     recipes: "레시피",
@@ -61,6 +69,10 @@ export const shellCopy = {
     footer: "Rust와 GPUI를 위한 헤드리스 UI 기반입니다. 소스 코드는 다음에서 볼 수 있습니다:",
   },
   ja: {
+    home: "ホーム",
+    charts: "チャート",
+    typography: "タイポグラフィ",
+    newPreset: "新規プリセット",
     docs: "ドキュメント",
     components: "コンポーネント",
     recipes: "レシピ",
@@ -93,6 +105,10 @@ export const shellCopy = {
     footer: "Rust と GPUI のためのヘッドレス UI 基盤です。ソースコードはこちらで公開しています:",
   },
   zh: {
+    home: "首页",
+    charts: "图表",
+    typography: "排版",
+    newPreset: "新建预设",
     docs: "文档",
     components: "组件",
     recipes: "配方",
