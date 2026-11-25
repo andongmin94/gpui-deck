@@ -21,6 +21,7 @@ test("the mobile menu keeps the same destinations across the home, docs and bloc
     "블록",
     "레시피",
     "레지스트리",
+    "만들기",
   ]);
   await expect(menu.getByRole("link", { name: "설치", exact: true })).toHaveAttribute(
     "href",

@@ -1,7 +1,7 @@
 [package]
 name = "gpui-deck-cli"
-description = "Install application-owned GPUI Deck recipes and GitHub-hosted blocks."
-version = "0.0.2"
+description = "Install application-owned GPUI Deck recipes, Create presets and GitHub-hosted blocks."
+version = "0.0.3"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true

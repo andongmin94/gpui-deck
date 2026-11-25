@@ -7,6 +7,10 @@
 pub mod demos;
 pub mod theme;
 
+#[allow(dead_code, unused_imports)] // Also compiled as source-owned helpers in native consumer apps.
+#[path = "../../cli/presets/create/mod.rs"]
+mod preset;
+
 // Render the installable blocks with the same sibling recipes and palette as a consumer.
 #[path = "../../../blocks/billing-dashboard/dashboard.rs"]
 mod billing_dashboard;
@@ -52,7 +56,7 @@ mod web {
     use wasm_bindgen::prelude::*;
     use web_sys::{MutationObserver, MutationObserverInit, UrlSearchParams};
 
-    use crate::{app_fonts, demos, theme::Theme};
+    use crate::{app_fonts, demos, preset, theme::Theme};
 
     #[wasm_bindgen]
     pub fn start(use_webgl: bool) {
@@ -87,6 +91,20 @@ mod web {
                 let theme = read_theme();
                 cx.set_global(theme);
                 let demo = demos::open(&name, theme, window, cx);
+                let create = demo.clone().downcast::<preset::Showcase>().ok();
+                let preset_frame = frame.clone();
+                let preset_param = params.get("preset");
+                let read_preset = move || {
+                    let code = preset_frame
+                        .as_ref()
+                        .and_then(|el| el.get_attribute("data-preset"));
+                    code.as_deref()
+                        .or(preset_param.as_deref())
+                        .and_then(preset::Preset::parse)
+                };
+                if let (Some(create), Some(preset)) = (&create, read_preset()) {
+                    create.update(cx, |view, cx| view.set_preset(preset, dark, cx));
+                }
                 crate::block_forms::attach(&demo, window, cx);
                 cx.new(|cx| {
                     if let Some(frame) = frame {
@@ -94,6 +112,9 @@ mod web {
                         let on_change = Closure::<dyn FnMut()>::new(move || {
                             let next = read_theme();
                             app.update(|cx| {
+                                if let (Some(create), Some(preset)) = (&create, read_preset()) {
+                                    create.update(cx, |view, cx| view.set_preset(preset, dark, cx));
+                                }
                                 if cx.global::<Theme>().primary != next.primary {
                                     cx.set_global(next);
                                     cx.refresh_windows();

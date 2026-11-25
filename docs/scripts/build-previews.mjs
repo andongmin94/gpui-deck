@@ -96,6 +96,10 @@ copyFileSync(
   new URL("crates/base/examples/assets/fonts/LICENSE", root),
   new URL("Pretendard-LICENSE.txt", out),
 );
+const createLicenses = ["Spectral", "SpaceMono", "Lucide", "Bootstrap", "Neumorphism"].map((name) =>
+  readFileSync(new URL(`crates/cli/presets/create/assets/${name}-LICENSE.txt`, root), "utf8"),
+);
+writeFileSync(new URL("Create-LICENSES.txt", out), createLicenses.join("\n\n"));
 writeFileSync(new URL("index.html", out), hostPage(`/preview/${hash}/gpui_deck_web_preview.js`));
 
 /**
@@ -111,6 +115,7 @@ function hostPage(module) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>GPUI Deck preview</title>
     <link rel="license" title="Embedded Pretendard fonts" href="/preview/Pretendard-LICENSE.txt" />
+    <link rel="license" title="Create fonts and icons" href="/preview/Create-LICENSES.txt" />
     <link rel="modulepreload" href="${module}" />
     <style>
       html, body { margin: 0; height: 100%; overflow: hidden; }

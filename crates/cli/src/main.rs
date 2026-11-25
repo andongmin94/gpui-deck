@@ -8,11 +8,12 @@ use std::{
 };
 
 use anyhow::{Context as _, Result, bail};
-use block::{Block, BlockIndex, InstalledBlock};
+use block::{Block, BlockIndex, InstalledBlock, Source};
 use gpui_deck::recipe_sources::{LICENSE, PRESENTATION, RECIPES, Recipe};
 
 mod block;
 mod changes;
+mod preset;
 
 const USAGE: &str = "GPUI Deck source recipes
 
@@ -20,6 +21,7 @@ Usage:
   gpui-deck list
   gpui-deck add <recipe>... --to <module-directory>
   gpui-deck add <github-manifest-url> [--to <module-directory>]
+  gpui-deck add --preset <code> [--to <module-directory>]
   gpui-deck diff --to <module-directory>
 
 Example:
@@ -27,7 +29,8 @@ Example:
 
 Adds recipe dependencies, presentation tokens, module declarations and license.
 GitHub block URLs also install the author's files. The default block destination
-is src/ui. URL installs require curl on PATH.
+is src/ui. URL installs require curl on PATH. Create presets install from the
+CLI bundle into src/ui/preset by default.
 Existing installed recipe and token edits are kept. Modified generated module
 declarations or conflicting new files stop the command before any files change.
 The consumer supplies its gpui and gpui-deck Cargo dependencies.
@@ -49,6 +52,7 @@ enum Command {
     List,
     Add { names: Vec<String>, to: PathBuf },
     AddBlock { url: String, to: PathBuf },
+    AddPreset { code: String, to: PathBuf },
     Diff { to: PathBuf },
 }
 
@@ -75,6 +79,7 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
         Some("add") => {
             let mut names = Vec::new();
             let mut to = None;
+            let mut preset = None;
             while let Some(argument) = arguments.next() {
                 if argument == "--to" {
                     if to.is_some() {
@@ -83,6 +88,16 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
                     to = Some(PathBuf::from(
                         arguments.next().context("--to needs a directory")?,
                     ));
+                } else if argument == "--preset" {
+                    if preset.is_some() {
+                        bail!("supply --preset once");
+                    }
+                    let code = arguments.next().context("--preset needs a preset code")?;
+                    let code = code
+                        .into_string()
+                        .map_err(|_| anyhow::anyhow!("preset code must be UTF-8"))?;
+                    preset::validate(&code)?;
+                    preset = Some(code);
                 } else {
                     let name = argument
                         .into_string()
@@ -92,6 +107,15 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
                     }
                     names.push(name);
                 }
+            }
+            if let Some(code) = preset {
+                if !names.is_empty() {
+                    bail!("add one preset at a time, without recipe names or a block URL");
+                }
+                return Ok(Command::AddPreset {
+                    code,
+                    to: to.unwrap_or_else(|| "src/ui".into()),
+                });
             }
             if names.is_empty() {
                 bail!("add needs at least one recipe; use list to see available names");
@@ -186,6 +210,8 @@ fn matches_text(contents: &[u8], expected: &str) -> bool {
 
 fn matches_generated(path: &Path, contents: &[u8], expected: &str) -> bool {
     matches_text(contents, expected)
+        || (path == Path::new("preset/selected.rs")
+            && matches_text(contents, &expected.replace(" = \"", " =\n    \"")))
         || (path == Path::new("recipes/mod.rs")
             && matches_text(
                 contents,
@@ -223,6 +249,7 @@ fn installed_blocks(to: &Path) -> Result<BlockIndex> {
 fn generated_files(
     names: &BTreeSet<String>,
     blocks: &BlockIndex,
+    include_preset_selection: bool,
 ) -> Result<BTreeMap<PathBuf, String>> {
     let mut root = ROOT_MODULE.to_owned();
     for module in blocks.keys() {
@@ -239,6 +266,16 @@ fn generated_files(
         files.insert(
             block::INDEX.into(),
             serde_json::to_string_pretty(blocks)? + "\n",
+        );
+    }
+    if include_preset_selection
+        && let Some(entry) = blocks.get(preset::MODULE)
+        && let Source::Preset(code) = &entry.source
+    {
+        preset::validate(code)?;
+        files.insert(
+            Path::new(preset::MODULE).join("selected.rs"),
+            preset::selection(code),
         );
     }
     Ok(files)
@@ -309,7 +346,10 @@ fn install(mut names: Vec<String>, block: Option<Block>, to: &Path) -> Result<In
     let has_manifest = installed.is_some();
     let previous = installed.unwrap_or_default();
     let mut blocks = installed_blocks(to)?;
-    let old = generated_files(&previous, &blocks)?;
+    let installing_preset = block
+        .as_ref()
+        .is_some_and(|item| matches!(item.source, Source::Preset(_)));
+    let old = generated_files(&previous, &blocks, installing_preset)?;
     let mut sources = BTreeMap::new();
     if let Some(block) = block {
         let module = block.module;
@@ -320,11 +360,18 @@ fn install(mut names: Vec<String>, block: Option<Block>, to: &Path) -> Result<In
         let entry = blocks
             .entry(module.clone())
             .or_insert_with(|| InstalledBlock {
-                url: block.url.clone(),
+                source: block.source.clone(),
                 files: BTreeSet::new(),
             });
-        if entry.url != block.url {
-            bail!("block {module} is already installed from another URL");
+        if entry.source != block.source {
+            if matches!(
+                (&entry.source, &block.source),
+                (Source::Preset(_), Source::Preset(_))
+            ) {
+                entry.source = block.source;
+            } else {
+                bail!("block {module} is already installed from another source");
+            }
         }
         names.extend(block.recipes);
         for (file, bytes) in block.files {
@@ -361,7 +408,7 @@ fn install(mut names: Vec<String>, block: Option<Block>, to: &Path) -> Result<In
             }
         }
     }
-    for (path, new) in generated_files(&selected, &blocks)? {
+    for (path, new) in generated_files(&selected, &blocks, installing_preset)? {
         check_destination(to, &path)?;
         match read(&to.join(&path))? {
             Some(contents) if matches_generated(&path, &contents, &new) => result.kept.push(path),
@@ -391,19 +438,32 @@ fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
         .with_context(|| format!("no installed recipe manifest in {}", to.display()))?;
     let selected = resolve(installed)?;
     let blocks = installed_blocks(to)?;
-    let mut files = generated_files(&selected, &blocks)?;
+    let mut files: BTreeMap<_, Vec<u8>> = generated_files(&selected, &blocks, true)?
+        .into_iter()
+        .map(|(path, source)| (path, source.into_bytes()))
+        .collect();
     files.extend(
         source_files(&selected)?
             .into_iter()
-            .map(|(path, source)| (path, source.to_owned())),
+            .map(|(path, source)| (path, source.as_bytes().to_owned())),
     );
+    for (module, entry) in &blocks {
+        if let Source::Preset(_) = entry.source {
+            files.extend(
+                preset::FILES
+                    .iter()
+                    .map(|(file, bytes)| (Path::new(module).join(file), bytes.to_vec())),
+            );
+        }
+    }
     let mut different = false;
     for (path, bundled) in files {
         let local = read(&to.join(&path))?;
-        if local
-            .as_deref()
-            .is_some_and(|contents| matches_generated(&path, contents, &bundled))
-        {
+        if local.as_deref().is_some_and(|contents| {
+            contents == bundled
+                || std::str::from_utf8(&bundled)
+                    .is_ok_and(|source| matches_generated(&path, contents, source))
+        }) {
             continue;
         }
         // Git accepts '-' as stdin in --no-index mode, so the bundled version
@@ -433,7 +493,7 @@ fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
             .stderr(Stdio::piped())
             .spawn()
             .context("run git diff (Git must be on PATH)")?;
-        child.stdin.take().unwrap().write_all(bundled.as_bytes())?;
+        child.stdin.take().unwrap().write_all(&bundled)?;
         let output = child.wait_with_output()?;
         match output.status.code() {
             Some(0) => continue,
@@ -452,7 +512,10 @@ fn diff(to: &Path, mut writer: impl Write) -> Result<()> {
     if !different {
         writeln!(writer, "Installed files match the bundled sources.")?;
     }
-    if !blocks.is_empty() {
+    if blocks
+        .values()
+        .any(|entry| matches!(entry.source, Source::Github(_)))
+    {
         writeln!(
             writer,
             "GitHub block files are application-owned and were not compared."
@@ -499,6 +562,10 @@ fn run() -> Result<()> {
             println!("Installing block module {}", block.module);
             report(&to, install(Vec::new(), Some(block), &to)?);
         }
+        Command::AddPreset { code, to } => {
+            report(&to, install(Vec::new(), Some(preset::block(code)), &to)?);
+            println!("Use the installed preset::showcase(dark, window, cx) to open your design.");
+        }
     }
     Ok(())
 }
@@ -514,6 +581,10 @@ fn main() {
 mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
+
+    mod default_preset {
+        include!("../presets/create/selected.rs");
+    }
 
     struct Directory(PathBuf);
     impl Directory {
@@ -542,6 +613,27 @@ mod tests {
     fn arguments_require_named_recipes_and_one_destination() {
         let arguments = |items: &[&str]| items.iter().map(OsString::from).collect::<Vec<_>>();
         assert_eq!(parse(arguments(&["list"])).unwrap(), Command::List);
+        assert_eq!(
+            parse(arguments(&["add", "--preset", default_preset::CODE])).unwrap(),
+            Command::AddPreset {
+                code: default_preset::CODE.into(),
+                to: "src/ui".into()
+            }
+        );
+        assert_eq!(
+            parse(arguments(&[
+                "add",
+                "--to",
+                "app/ui",
+                "--preset",
+                default_preset::CODE
+            ]))
+            .unwrap(),
+            Command::AddPreset {
+                code: default_preset::CODE.into(),
+                to: "app/ui".into()
+            }
+        );
         assert_eq!(
             parse(arguments(&["add", EXAMPLE_URL])).unwrap(),
             Command::AddBlock {
@@ -576,6 +668,17 @@ mod tests {
             vec!["add", "card", "--to"],
             vec!["add", "card", "--to", "a", "--to", "b"],
             vec!["add", EXAMPLE_URL, "card"],
+            vec!["add", "--preset"],
+            vec!["add", "--preset", "v1.neumorphism"],
+            vec![
+                "add",
+                "--preset",
+                default_preset::CODE,
+                "--preset",
+                default_preset::CODE,
+            ],
+            vec!["add", "card", "--preset", default_preset::CODE],
+            vec!["add", EXAMPLE_URL, "--preset", default_preset::CODE],
             vec!["diff"],
             vec!["diff", "--to"],
             vec!["diff", "card", "--to", "src/ui"],
@@ -583,6 +686,81 @@ mod tests {
         ] {
             assert!(parse(arguments(&invalid)).is_err());
         }
+    }
+
+    #[test]
+    fn preset_owns_its_sources_and_replaces_only_an_unmodified_selection() {
+        let directory = Directory::new();
+        let to = &directory.0;
+        let add_preset = |code: &str| install(Vec::new(), Some(preset::block(code.to_owned())), to);
+        let first = default_preset::CODE;
+        let next = "v1.neumorphism.sage.rose.forest.spectral.space-mono.solid.small";
+        add_preset(first).unwrap();
+        assert!(
+            fs::read_to_string(to.join("mod.rs"))
+                .unwrap()
+                .contains("pub(crate) mod preset;")
+        );
+        let selected = to.join("preset/selected.rs");
+        assert_eq!(
+            fs::read_to_string(&selected).unwrap(),
+            preset::selection(first)
+        );
+        let mut report = Vec::new();
+        diff(to, &mut report).unwrap();
+        assert_eq!(report, b"Installed files match the bundled sources.\n");
+
+        let custom = to.join("preset/style.rs");
+        fs::write(&custom, "// my styles").unwrap();
+        assert!(add_preset(first).unwrap().written.is_empty());
+        let long = "v1.neumorphism.lavender.neutral.neutral.pretendard.pretendard.outline.default";
+        add_preset(long).unwrap();
+        fs::write(
+            &selected,
+            preset::selection(long).replace(" = \"", " =\n    \""),
+        )
+        .unwrap();
+        assert!(add_preset(long).unwrap().written.is_empty());
+        add_preset(next).unwrap();
+        assert_eq!(
+            fs::read_to_string(&selected).unwrap(),
+            preset::selection(next)
+        );
+        assert_eq!(fs::read_to_string(custom).unwrap(), "// my styles");
+        fs::write(&selected, "// my preset").unwrap();
+        add(vec!["card".into()], to).unwrap();
+        let old_index = fs::read(to.join(block::INDEX)).unwrap();
+        assert!(add_preset(first).is_err());
+        assert_eq!(fs::read_to_string(selected).unwrap(), "// my preset");
+        assert_eq!(fs::read(to.join(block::INDEX)).unwrap(), old_index);
+        report.clear();
+        diff(to, &mut report).unwrap();
+        assert!(String::from_utf8(report).unwrap().contains("-// my styles"));
+    }
+
+    #[test]
+    fn malformed_preset_and_existing_block_module_leave_the_destination_untouched() {
+        let directory = Directory::new();
+        let to = &directory.0;
+        let invalid = default_preset::CODE.replace(".outline.", ".unknown.");
+        assert!(install(Vec::new(), Some(preset::block(invalid)), to).is_err());
+        assert_eq!(fs::read_dir(to).unwrap().count(), 0);
+        let existing =
+            sample(EXAMPLE_URL, &EXAMPLE.replace("billing-dashboard", "preset")).unwrap();
+        install(Vec::new(), Some(existing), to).unwrap();
+        assert!(
+            install(
+                Vec::new(),
+                Some(preset::block(default_preset::CODE.into())),
+                to
+            )
+            .is_err()
+        );
+        assert_eq!(
+            fs::read_to_string(to.join("preset/mod.rs")).unwrap(),
+            "mod palette;"
+        );
+        assert!(!to.join("preset/selected.rs").exists());
     }
 
     const EXAMPLE_URL: &str = "https://github.com/acme/ui/blob/main/billing/block.json";
@@ -608,12 +786,12 @@ mod tests {
         let directory = Directory::new();
         let to = &directory.0;
         let block = sample(EXAMPLE_URL, EXAMPLE).unwrap();
-        assert_eq!(block.url, RAW_URL);
+        assert_eq!(block.source, Source::Github(RAW_URL.into()));
         assert_eq!(
             sample(&RAW_URL.replace("/main/", "/refs/heads/main/"), EXAMPLE)
                 .unwrap()
-                .url,
-            RAW_URL
+                .source,
+            Source::Github(RAW_URL.into())
         );
         install(Vec::new(), Some(block), to).unwrap();
         let palette = to.join("billing_dashboard/palette.rs");

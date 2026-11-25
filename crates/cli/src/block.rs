@@ -26,14 +26,23 @@ struct SourceFile {
 
 pub struct Block {
     pub module: String,
-    pub url: String,
+    pub source: Source,
     pub recipes: Vec<String>,
     pub files: BTreeMap<PathBuf, Vec<u8>>,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Eq, Serialize)]
+pub enum Source {
+    #[serde(rename = "url")]
+    Github(String),
+    #[serde(rename = "preset")]
+    Preset(String),
+}
+
 #[derive(Deserialize, Serialize)]
 pub struct InstalledBlock {
-    pub url: String,
+    #[serde(flatten)]
+    pub source: Source,
     pub files: BTreeSet<PathBuf>,
 }
 
@@ -201,7 +210,7 @@ pub fn load(url: &str, fetch: impl Fn(&str) -> Result<Vec<u8>>) -> Result<Block>
     }
     Ok(Block {
         module,
-        url: canonical,
+        source: Source::Github(canonical),
         recipes: manifest.recipes,
         files,
     })

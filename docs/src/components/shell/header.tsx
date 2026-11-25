@@ -169,6 +169,7 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
     { href: `/${lang}/blocks`, label: t.blocks },
     { href: `/${lang}/docs/recipes`, label: t.recipes },
     { href: `/${lang}/directory`, label: t.directory },
+    { href: `/${lang}/create`, label: t.create },
   ];
   return (
     <header className="sticky top-0 z-40 w-full bg-fd-background/95 backdrop-blur">

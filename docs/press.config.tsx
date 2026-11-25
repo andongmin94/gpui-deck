@@ -7,6 +7,8 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 
 import { blocks } from "@/components/blocks/block-copy";
 import { BlockDetail, BlocksGallery } from "@/components/blocks/blocks-page";
+import { CatalogLayout } from "@/components/catalog-layout";
+import { CreatePage } from "@/components/create/create-page";
 import { RegistryDetail, RegistryDirectory } from "@/components/directory/directory-page";
 import { registries } from "@/components/directory/registries";
 import { Home } from "@/components/home";
@@ -69,6 +71,16 @@ export default app.config({
   ui: {
     translations,
     async renderPage(props) {
+      if (props.page.slugs[0] === "create") {
+        return (
+          <CatalogLayout lang={props.lang}>
+            <CreatePage
+              lang={props.lang}
+              page={{ title: props.page.data.title, description: props.page.data.description }}
+            />
+          </CatalogLayout>
+        );
+      }
       if (props.page.slugs[0] === "directory") {
         if (props.page.slugs.length === 1) {
           const loader = await this.getLoader();

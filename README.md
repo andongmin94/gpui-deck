@@ -26,12 +26,31 @@ From your Rust application, add the library and install the recipe CLI from crat
 
 ```sh
 cargo add gpui-deck@0.0.1
-cargo install gpui-deck-cli --version 0.0.2 --locked
+cargo install gpui-deck-cli --version 0.0.3 --locked
 gpui-deck add button --to src/ui
 ```
 
 Declare `mod ui;` in your app, and use the matching `gpui-pre` and
 `gpui-pre-platform` dependencies in the [installation guide](https://gpui-deck.andongmin.com/en/docs/installation/).
+
+### Create a preset
+
+[Create](https://gpui-deck.andongmin.com/en/create) opens a live GPUI workspace.
+Choose Base, Neobrutal or Neumorphism, then adjust the base color, accent, chart
+palette, heading and body fonts, icons and corner radius. Share the URL to reopen
+the same settings, or choose **Get code** to install them in a Rust application.
+Preset installation is available in CLI 0.0.3.
+
+```sh
+gpui-deck add --preset v1.neumorphism.sage.sage.forest.pretendard.pretendard.outline.small
+```
+
+The command writes the selected configuration, editable components, fonts and
+icons to `src/ui/preset`. In a window opened after `gpui_deck::init(cx)`, use
+`ui::preset::showcase(false, window, cx)` to render the installed workspace in
+light mode, or pass `true` for dark mode.
+Use `ui::preset::selected().tokens(false).palette()` with existing palette-aware
+recipes, or use the installed panel, button and field helpers for the chosen style.
 
 The [block gallery](https://gpui-deck.andongmin.com/en/blocks/) includes a
 [billing dashboard](https://gpui-deck.andongmin.com/en/blocks/billing-dashboard/),
@@ -437,9 +456,16 @@ The Neumorphism collection ports the components, analytics examples, page templa
 and preset tokens from [Neumorphism UI at `8df59f3`](https://github.com/andongmin94/neumorphism-ui/tree/8df59f3af43e2f2bbb87bddd090ca153af16223e).
 It uses GPUI views and state, native style refinements, and paired light and dark
 shadows. Installable sources carry the MIT notices for andongmin94 and shadcn.
+Create derives its Sage, Lavender, Clay and Graphite surfaces from this collection.
 
 The native examples and GPUI web previews share the unmodified Regular, Medium,
 SemiBold and Bold OpenType faces from [Pretendard 1.3.9](https://github.com/orioncactus/pretendard/releases/tag/v1.3.9).
 The fonts are distributed under the [SIL Open Font License 1.1](crates/base/examples/assets/fonts/LICENSE).
 The documentation site loads the variable webfont from the Pretendard npm package.
+
+Create also includes the regular faces of [Spectral and Space Mono](https://github.com/google/fonts/tree/6ebe737e44fd64ee736bbc6feed6136a6dbfd222/ofl)
+under the SIL Open Font License. The activity and bookmark icons come from
+[Lucide](https://github.com/lucide-icons/lucide/tree/0d2d161eee4a9b50e1f73e8f8c50713128d7d751/icons)
+and [Bootstrap Icons](https://github.com/twbs/icons/tree/8ead55224786ab489ad7e5db78b3ab23b2045934/icons).
+Installed presets include the [font and icon notices](crates/cli/presets/create/assets/).
 
