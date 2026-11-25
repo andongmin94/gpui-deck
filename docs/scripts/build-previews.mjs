@@ -105,7 +105,7 @@ writeFileSync(new URL("index.html", out), hostPage(`/preview/${hash}/gpui_deck_w
 /**
  * The frame page. A same-origin frame follows the theme of the docs page and
  * reloads when it changes, so the docs page can render the frame before it
- * hydrates. A spinner shows until GPUI adds its canvas.
+ * hydrates. A spinner shows until GPUI sets up its keyboard input.
  */
 function hostPage(module) {
   return `<!doctype html>
@@ -122,6 +122,9 @@ function hostPage(module) {
       body { background: #ffffff; color: #737373; }
       body.dark { background: #0a0a0a; color: #a1a1a1; }
       .status { position: fixed; inset: 0; display: grid; place-items: center; font: 14px system-ui, sans-serif; }
+      /* The backend focuses its keyboard receiver when mounting. An embedded
+         preview must leave focus in the docs until the user enters it. */
+      body.embedded > .status ~ textarea { visibility: hidden; }
       .spinner { width: 20px; height: 20px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
       @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -143,6 +146,7 @@ function hostPage(module) {
       }
       document.body.classList.toggle("dark", theme === "dark");
       if (host) {
+        document.body.classList.add("embedded");
         new MutationObserver(() => {
           const next = themeOf(host);
           if (next !== theme) {
@@ -156,7 +160,7 @@ function hostPage(module) {
         status.textContent = "This preview needs a browser with WebGPU.";
       } else {
         new MutationObserver((_, observer) => {
-          if (document.querySelector("canvas")) {
+          if (document.querySelector("body > textarea")) {
             status.remove();
             observer.disconnect();
           }

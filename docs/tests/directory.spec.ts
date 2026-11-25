@@ -36,6 +36,13 @@ test("select a Neumorphism theme, inspect its installed source and copy its URL"
 }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/ko/directory");
+  let resumePreview!: () => void;
+  const previewPaused = new Promise<void>((resolve) => {
+    resumePreview = resolve;
+  });
+  await page.route("**/*.wasm", (route) => previewPaused.then(() => route.continue()), {
+    times: 1,
+  });
   await page.getByRole("link", { name: "Neumorphism UI", exact: true }).click();
   await expect(page.getByRole("heading", { name: "분석 대시보드", exact: true })).toBeVisible();
   await expect(page.locator("iframe")).toHaveAttribute(
@@ -43,7 +50,15 @@ test("select a Neumorphism theme, inspect its installed source and copy its URL"
     "/preview?c=neumorphism-template-analytics",
   );
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("searchbox").fill("테마");
+  const search = page.getByRole("searchbox");
+  await search.click();
+  await page.keyboard.insertText("테");
+  resumePreview();
+  await expect(page.frameLocator("iframe").locator("body > textarea")).toBeAttached({
+    timeout: 15_000,
+  });
+  await expect(search).toBeFocused();
+  await page.keyboard.insertText("마");
   const select = page.getByRole("combobox", { name: "항목 선택" });
   await expect(select.locator("optgroup option")).toHaveCount(5);
   await select.selectOption("style-sage");
