@@ -3,7 +3,7 @@ use gpui::{
 };
 use gpui_deck::Root;
 
-use crate::screen::{Screen, TITLE, WINDOW_SIZE};
+use crate::screen::{TITLE, WINDOW_SIZE, mount};
 
 pub(crate) fn open(cx: &mut App) {
     let (width, height) = WINDOW_SIZE;
@@ -17,7 +17,7 @@ pub(crate) fn open(cx: &mut App) {
             ..WindowOptions::default()
         },
         |window, cx| {
-            let screen = cx.new(|cx| Screen::new(window, cx));
+            let screen = mount(window, cx);
             cx.new(|cx| Root::new(screen, window, cx).font_family("Pretendard"))
         },
     )

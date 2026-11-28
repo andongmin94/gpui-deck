@@ -1,7 +1,7 @@
 "use client";
 
 import { Link } from "fumapress/client";
-import { ArrowUpRight, BookOpen } from "lucide-react";
+import { ArrowUpRight, BookOpen, Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { optionLabel } from "../create/copy";
 import { blockCopy, type DocLink, type PreviewItem, type Purpose, purposes } from "./block-copy";
@@ -148,7 +148,7 @@ export function FilteredBlocks({
                   aria-labelledby={`${block.name}-title`}
                   className="min-w-0 scroll-mt-20 has-[iframe]:col-span-full"
                 >
-                  <div className="mb-2 flex items-center justify-between gap-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
                     <h3 id={`${block.name}-title`} className="font-medium">
                       <Link
                         href={href}
@@ -160,13 +160,22 @@ export function FilteredBlocks({
                       </Link>
                     </h3>
                     <div className="flex shrink-0 items-center gap-2">
-                      {style === "base" && (
+                      {style === "base" ? (
                         <Link
                           href={`${href}#new-app`}
                           className="inline-flex min-h-8 items-center text-xs underline underline-offset-4"
                         >
                           {t.newApp}
                         </Link>
+                      ) : (
+                        <a
+                          href={`/downloads/${block.name}.zip`}
+                          download
+                          className="inline-flex min-h-8 items-center gap-1 text-xs underline underline-offset-4"
+                        >
+                          <Download aria-hidden className="size-3.5" />
+                          {t.download}
+                        </a>
                       )}
                       <span className="rounded-md bg-fd-secondary px-2 py-0.5 text-xs font-medium">
                         {styles[style]}

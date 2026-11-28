@@ -3,6 +3,7 @@
 import { Box, Search } from "lucide-react";
 import { useRouter } from "fumapress/client";
 import { useEffect, useRef, useState } from "react";
+import { BlockInstall } from "../blocks/block-install";
 import { BlockViewer } from "../blocks/block-viewer";
 import { InstallCommand } from "../blocks/install-command";
 import { itemTitle, kinds, type Registry, registries, registryCopy } from "./registries";
@@ -38,6 +39,7 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
     ),
   );
   const title = itemTitle(current.slug, lang);
+  const isScreen = current.kind === "template" || current.kind === "block";
 
   return (
     <div className="grid items-start gap-6 pt-6 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-10">
@@ -133,15 +135,18 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
             {t.kinds[current.kind]}
           </span>
         </div>
+        {isScreen && <BlockInstall lang={lang} block={current} />}
         <BlockViewer
           lang={lang}
           title={title}
           block={current}
           automaticPreview={selected === null ? "pending" : navigator.gpu ? "run" : "unavailable"}
         />
-        <div className="mt-4">
-          <InstallCommand lang={lang} command={current.command} />
-        </div>
+        {!isScreen && (
+          <div className="mt-4">
+            <InstallCommand lang={lang} command={current.command} />
+          </div>
+        )}
       </section>
     </div>
   );

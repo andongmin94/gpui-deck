@@ -59,13 +59,13 @@ The [block gallery](https://gpui-deck.andongmin.com/en/blocks/) includes a
 [billing dashboard](https://gpui-deck.andongmin.com/en/blocks/billing-dashboard/),
 [login screen](https://gpui-deck.andongmin.com/en/blocks/login/) and
 [settings screen with sidebar navigation](https://gpui-deck.andongmin.com/en/blocks/sidebar-settings/).
-On any of these three pages, choose **Run as a new app**, download and extract
-the project, then run `cargo run` in the extracted folder. To use the same
-screen in an existing GPUI app, choose **Add to an existing app** for its
-install command and instructions for mounting the view in your window.
+Use the purpose and style filters to browse the seven Neobrutal screens and
+eight Neumorphism templates. Open a screen's detail page and download the
+project under **Run as a new app**. Extract the ZIP and run `cargo run` in the
+project folder. To mount that screen in an existing GPUI window, use the
+install command and Rust example under **Add to an existing app**.
 
-Use the purpose and style filters to find more screens from the Neobrutal and
-Neumorphism registries. The [chart gallery](https://gpui-deck.andongmin.com/en/charts)
+The [chart gallery](https://gpui-deck.andongmin.com/en/charts)
 groups their chart examples by type. Each item includes a preview, Rust source and an install command.
 
 ```sh

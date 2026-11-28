@@ -80,7 +80,11 @@ let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(win
 
 `settings`를 `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` 필드에 보관하고 `.child(self.settings.clone())`으로 표시하세요. 적용한 설정은 현재 세션에 유지됩니다.
 
-[네오브루탈 로그인](/ko/directory/neobrutal#login)은 레지스트리에서 설치한 뒤 별도 창 예제의 `src/screen.rs`에서 `pub(crate) use crate::ui::neobrutal_login::Login as Screen;`을 사용하세요.
+## 레지스트리 블록 실행 [#registry-blocks]
+
+[네오브루탈](/ko/blocks?style=neobrutal)이나 [뉴모피즘](/ko/blocks?style=neumorphism) 화면을 고르세요. 프로젝트 ZIP을 내려받아 풀고 `Cargo.toml`이 있는 폴더에서 `cargo run`을 실행하세요.
+
+기존 앱에는 [GPUI 의존성](/ko/docs/installation)을 추가하고 시작할 때 `gpui_deck::init(cx)`를 호출한 뒤 부모 뷰를 `gpui_deck::Root`에 연결하세요. 선택한 화면의 Directory 페이지에서 `gpui-deck add` 명령을 복사해 프로젝트 루트에서 실행합니다. 크레이트 루트에 `mod ui;`를 선언하고 **내 앱의 창에 이 화면 연결하기**에서 Rust 코드를 복사해 부모 뷰의 생성자에 넣으세요. `screen`을 `gpui::AnyView` 필드로 보관하고 `.child(self.screen.clone())`으로 표시합니다.
 
 ## 우리 팀의 블록 공유 [#publish]
 
@@ -119,14 +123,14 @@ let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(win
 
 ## 설치한 레지스트리 항목 실행 [#registry]
 
-[Cargo 의존성](/ko/docs/installation)을 추가하고 아래 명령으로 Select를 설치하세요. 별도 창 예제의 `src/screen.rs`에서 `Screen` 별칭을 지우세요. `src/block_window.rs`에서는 `crate::screen::{TITLE, WINDOW_SIZE}`를 가져오고 `screen`을 만드는 한 줄을 아래 Rust 코드로 바꾸세요. `cargo run`을 실행하면 예제가 열립니다.
+[Cargo 의존성](/ko/docs/installation)을 추가하고 아래 명령으로 Select를 설치하세요. 독립 앱의 `src/screen.rs`에서 기존 `mount` 함수 또는 가져오기 선언을 아래 Rust 코드로 바꾼 뒤 `cargo run`을 실행하세요.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
 ```
 
 ```rust
-let screen = crate::ui::neobrutal_select::preview(window, cx);
+pub(crate) use crate::ui::neobrutal_select::preview as mount;
 ```
 
 내 앱의 데이터와 동작을 연결할 때는 같은 모듈의 컴포넌트 함수를 뷰에서 직접 호출하세요.
@@ -151,17 +155,16 @@ let save = crate::ui::neobrutal_button::press_button_with_palette("save", "저�
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-`src/screen.rs`의 `Screen` 별칭을 아래 코드로 바꾸세요.
+`src/screen.rs`에서 기존 `mount` 함수 또는 가져오기 선언을 다음 함수로 바꾸고 `cargo run`을 실행하세요.
 
 ```rust
-pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
-```
+pub(crate) fn mount(window: &mut gpui::Window, cx: &mut gpui::App) -> gpui::AnyView {
+    use gpui::AppContext as _;
+    use crate::ui::neobrutal_dashboard_template::Dashboard;
 
-`open_window` 안에서 `screen`을 만드는 한 줄을 아래 두 줄로 바꾼 뒤 `cargo run`으로 창을 여세요.
-
-```rust
-let palette = crate::ui::neobrutal_theme_blue::palette(true);
-let screen = cx.new(|cx| Screen::new(palette, window, cx));
+    let palette = crate::ui::neobrutal_theme_blue::palette(true);
+    cx.new(|cx| Dashboard::new(palette, window, cx)).into()
+}
 ```
 
 ## 뉴모피즘 컬렉션 사용

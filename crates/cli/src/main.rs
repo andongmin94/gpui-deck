@@ -40,13 +40,7 @@ the consumer supplies its gpui and gpui-deck Cargo dependencies.
 Use diff to review installed files against the sources bundled with this CLI.
 It prints changes using Git and leaves the installation untouched.";
 
-const ROOT_MODULE: &str = "//! Application-owned GPUI Deck presentation sources.
-
-mod presentation;
-pub(crate) mod recipes;
-
-pub(crate) use presentation::{Appearance, Palette};
-";
+const ROOT_MODULE: &str = include_str!("../templates/ui-root.rs");
 const MANIFEST: &str = "recipes/.gpui-deck";
 
 #[derive(Debug, PartialEq, Eq)]
@@ -162,9 +156,10 @@ fn resolve(names: impl IntoIterator<Item = String>) -> Result<BTreeSet<String>> 
 }
 
 fn module_source(names: &BTreeSet<String>) -> Result<String> {
-    let mut source =
-        "//! Recipe modules managed by gpui-deck add; edit the recipe files to customize them.\n\n"
-            .to_owned();
+    let mut source = include_str!("../templates/recipes-header.rs")
+        .trim_end()
+        .to_owned();
+    source.push_str("\n\n");
     for name in names {
         let recipe = recipe(name)?;
         source.push_str(&format!("mod {};\n", recipe.module));
@@ -255,7 +250,7 @@ fn generated_files(
     blocks: &BlockIndex,
     include_preset_selection: bool,
 ) -> Result<BTreeMap<PathBuf, String>> {
-    let mut root = ROOT_MODULE.to_owned();
+    let mut root = ROOT_MODULE.replace("\r\n", "\n");
     for module in blocks.keys() {
         block::check_module(module)?;
         root.push_str(&format!("pub(crate) mod {module};\n"));

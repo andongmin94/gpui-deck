@@ -26,6 +26,61 @@ test("registry authors can reach the submission form and publishing guide", asyn
   await expect(form).toBeInViewport();
 });
 
+test("registry screens offer standalone projects and copy their Rust mount code", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.addInitScript(() => Object.defineProperty(navigator, "gpu", { value: undefined }));
+  for (const [collection, selected] of [
+    ["neobrutal", "login"],
+    ["neumorphism", "template-settings"],
+  ]) {
+    const directory = new URL(`../../registries/${collection}/`, import.meta.url);
+    const catalog = JSON.parse(await readFile(new URL("registry.json", directory), "utf8")) as {
+      items: { manifest: string; kind: string }[];
+    };
+    const names = await Promise.all(
+      catalog.items
+        .filter(({ kind }) => kind === "block" || kind === "template")
+        .map(
+          async ({ manifest }) =>
+            JSON.parse(await readFile(new URL(manifest, directory), "utf8")).name as string,
+        ),
+    );
+    await page.goto(`/en/blocks?style=${collection}`);
+    const cards = page.getByRole("article");
+    await expect(cards).toHaveCount(names.length);
+    expect(
+      await cards
+        .locator("a[download]")
+        .evaluateAll((links) => links.map((a) => a.getAttribute("href")).sort()),
+    ).toEqual(names.map((name) => `/downloads/${name}.zip`).sort());
+    const name = `${collection}-${selected}`;
+    await page.locator(`article#${name} h3 a`).click();
+    const item = page.locator(`section#${selected}`);
+    await expect(item.getByRole("link", { name: "Download project (.zip)" })).toHaveAttribute(
+      "href",
+      `/downloads/${name}.zip`,
+    );
+    await item.locator("summary").click();
+    const code = item.locator("details pre");
+    const expected =
+      selected === "login"
+        ? "use gpui::AppContext as _;\nlet screen: gpui::AnyView = cx.new(|cx| crate::ui::neobrutal_login::Login::new(window, cx)).into();"
+        : "let screen = crate::ui::neumorphism_template_settings::preview(window, cx);";
+    await expect(code).toHaveText(expected);
+    await item.locator("details figure").getByRole("button").click();
+    await expect
+      .poll(() =>
+        page.evaluate(async () => (await navigator.clipboard.readText()).replaceAll("\r\n", "\n")),
+      )
+      .toBe(expected);
+    await item.locator("details").getByRole("link", { name: "Installation guide" }).click();
+    await expect(page.locator("h2#registry-blocks")).toBeInViewport();
+  }
+});
+
 for (const collection of ["neobrutal", "neumorphism"]) {
   test(`every ${collection} item ships a desktop and mobile preview`, async ({ request }) => {
     const url = new URL(`../../registries/${collection}/registry.json`, import.meta.url);
@@ -76,6 +131,7 @@ test("select a Neumorphism theme, inspect its installed source and copy its URL"
   await expect(select.locator("optgroup option")).toHaveCount(5);
   await select.selectOption("style-sage");
   const item = page.getByRole("region", { name: "세이지", exact: true });
+  await expect(item.locator("a[download]")).toHaveCount(0);
   await expect(page).toHaveURL(/\/ko\/directory\/neumorphism\/?#style-sage$/);
   const frame = item.locator("iframe");
   await expect(frame).toHaveAttribute("src", "/preview?c=neumorphism-style-sage");
@@ -148,7 +204,7 @@ test("discover the Neobrutal registry, inspect its Rust and copy standalone inst
       manifest.files.find((file) => file.source.endsWith(`${slug}.rs`)) ??
       manifest.files.find((file) => file.target === "mod.rs")!;
     await item.getByRole("combobox", { name: "Source file" }).selectOption(source.source);
-    await expect(item.locator("pre")).toHaveText(
+    await expect(item.getByRole("tabpanel").locator("pre")).toHaveText(
       await readFile(new URL(source.source, directory), "utf8"),
     );
   }

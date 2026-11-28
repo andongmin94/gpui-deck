@@ -80,7 +80,11 @@ let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(win
 
 Keep `settings` in a `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` field and render it with `.child(self.settings.clone())`. Apply keeps preferences for the current session.
 
-For the [Neobrutal login](/en/directory/neobrutal#login), install the block from its registry page and use `pub(crate) use crate::ui::neobrutal_login::Login as Screen;` in `src/screen.rs` in the separate-window example.
+## Run registry blocks [#registry-blocks]
+
+Choose a [Neobrutal](/en/blocks?style=neobrutal) or [Neumorphism](/en/blocks?style=neumorphism) screen. Download its project, unzip it and run `cargo run` from the folder containing `Cargo.toml`.
+
+For an existing app, set up the [GPUI dependencies](/en/docs/installation), call `gpui_deck::init(cx)` at startup and mount your parent view in `gpui_deck::Root`. Open the screen’s Directory page and run its `gpui-deck add` command in your project. Declare `mod ui;` in the crate root. Under **Connect this screen to your window**, copy the Rust snippet into the parent view’s constructor. Store `screen` in a `gpui::AnyView` field and render it with `.child(self.screen.clone())`.
 
 ## Publish your team's block [#publish]
 
@@ -119,14 +123,14 @@ Choose [Submit a registry in the directory](/en/directory#submit-registry) to op
 
 ## Run an installed registry item [#registry]
 
-After adding the [Cargo dependencies](/en/docs/installation), install Select with the command below. In the separate-window example, delete the `Screen` alias in `src/screen.rs`. In `src/block_window.rs`, import `crate::screen::{TITLE, WINDOW_SIZE}` and replace the line that creates `screen` with the Rust line below. Run `cargo run` to open the example.
+After adding the [Cargo dependencies](/en/docs/installation), install Select with the command below. In the standalone app’s `src/screen.rs`, replace the existing `mount` function or import with this Rust line, then run `cargo run`.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
 ```
 
 ```rust
-let screen = crate::ui::neobrutal_select::preview(window, cx);
+pub(crate) use crate::ui::neobrutal_select::preview as mount;
 ```
 
 Use the component's function directly in your own view when you are ready to supply your own state and content.
@@ -151,17 +155,16 @@ To run the project dashboard with the same theme, install its template into the 
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-In `src/screen.rs`, replace the `Screen` alias with this import.
+In `src/screen.rs`, replace the existing `mount` function or import with this function, then run `cargo run`.
 
 ```rust
-pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
-```
+pub(crate) fn mount(window: &mut gpui::Window, cx: &mut gpui::App) -> gpui::AnyView {
+    use gpui::AppContext as _;
+    use crate::ui::neobrutal_dashboard_template::Dashboard;
 
-Inside `open_window`, replace the line that creates `screen` with these two lines, then run `cargo run`.
-
-```rust
-let palette = crate::ui::neobrutal_theme_blue::palette(true);
-let screen = cx.new(|cx| Screen::new(palette, window, cx));
+    let palette = crate::ui::neobrutal_theme_blue::palette(true);
+    cx.new(|cx| Dashboard::new(palette, window, cx)).into()
+}
 ```
 
 ## Use the Neumorphism collection

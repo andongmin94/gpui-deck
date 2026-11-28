@@ -80,7 +80,11 @@ let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(win
 
 将 `settings` 保存在类型为 `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` 的字段中，用 `.child(self.settings.clone())` 显示。应用后的设置会保留在当前会话中。
 
-[Neobrutal 登录](/zh/directory/neobrutal#login)可从注册表安装。在独立窗口示例的 `src/screen.rs` 中使用 `pub(crate) use crate::ui::neobrutal_login::Login as Screen;`。
+## 运行注册表区块 [#registry-blocks]
+
+选择 [Neobrutal](/zh/blocks?style=neobrutal) 或 [Neumorphism](/zh/blocks?style=neumorphism) 中的界面。下载并解压项目 ZIP，在包含 `Cargo.toml` 的文件夹中运行 `cargo run`。
+
+在现有应用中添加 [GPUI 依赖](/zh/docs/installation)，启动时调用 `gpui_deck::init(cx)`，并将父视图挂载到 `gpui_deck::Root`。在所选界面的 Directory 页面复制 `gpui-deck add` 命令，在项目根目录运行。在 crate 根模块中声明 `mod ui;`，从**在应用窗口中显示此界面**复制 Rust 代码到父视图的构造函数。将 `screen` 保存在 `gpui::AnyView` 类型的字段中，并用 `.child(self.screen.clone())` 渲染。
 
 ## 发布团队区块 [#publish]
 
@@ -119,14 +123,14 @@ let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(win
 
 ## 运行安装的注册表项目 [#registry]
 
-添加 [Cargo 依赖](/zh/docs/installation)后，用下面的命令安装 Select。在独立窗口示例的 `src/screen.rs` 中删除 `Screen` 别名。在 `src/block_window.rs` 中引入 `crate::screen::{TITLE, WINDOW_SIZE}`，并将创建 `screen` 的语句替换为下面的 Rust 代码。运行 `cargo run` 即可打开示例。
+添加 [Cargo 依赖](/zh/docs/installation)后，用下面的命令安装 Select。在独立应用的 `src/screen.rs` 中将现有的 `mount` 函数或导入语句替换为下面的 Rust 代码，然后运行 `cargo run`。
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
 ```
 
 ```rust
-let screen = crate::ui::neobrutal_select::preview(window, cx);
+pub(crate) use crate::ui::neobrutal_select::preview as mount;
 ```
 
 要接入自己的数据和行为，可以在视图中直接调用同一模块的组件函数。
@@ -151,17 +155,16 @@ let save = crate::ui::neobrutal_button::press_button_with_palette("save", "保�
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-把 `src/screen.rs` 中的 `Screen` 别名替换为以下导入。
+在 `src/screen.rs` 中将现有的 `mount` 函数或导入语句替换为下面的函数，然后运行 `cargo run`。
 
 ```rust
-pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
-```
+pub(crate) fn mount(window: &mut gpui::Window, cx: &mut gpui::App) -> gpui::AnyView {
+    use gpui::AppContext as _;
+    use crate::ui::neobrutal_dashboard_template::Dashboard;
 
-在 `open_window` 中，用下面两行替换创建 `screen` 的语句，然后运行 `cargo run`。
-
-```rust
-let palette = crate::ui::neobrutal_theme_blue::palette(true);
-let screen = cx.new(|cx| Screen::new(palette, window, cx));
+    let palette = crate::ui::neobrutal_theme_blue::palette(true);
+    cx.new(|cx| Dashboard::new(palette, window, cx)).into()
+}
 ```
 
 ## 使用新拟态组件
