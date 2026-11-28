@@ -91,3 +91,6 @@ jobs:
             cargo build --manifest-path "$RUNNER_TEMP/downloads/$name/Cargo.toml" \
               --config "patch.crates-io.gpui-deck.path='$GITHUB_WORKSPACE/crates/base'"
           done
+          cargo test --bin team-records --features test-support \
+            --manifest-path "$RUNNER_TEMP/downloads/neumorphism-template-data-manager/Cargo.toml" \
+            --config "patch.crates-io.gpui-deck.path='$GITHUB_WORKSPACE/crates/base'"

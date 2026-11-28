@@ -9,12 +9,6 @@ for (const [slug, title] of [
   test(`browse, inspect and copy the installable ${slug} block`, async ({ page, context }) => {
     const command = `gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/${slug}/block.json`;
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-    // Exercise the launch control independently of the host GPU. The frame uses its own backend.
-    await page.addInitScript(() => {
-      if (window === window.top) {
-        Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => ({}) } });
-      }
-    });
     const runtimeRequests: string[] = [];
     page.on("request", (request) => {
       const url = new URL(request.url());
@@ -101,6 +95,7 @@ test("purpose and style filters reveal installable registry screens and survive 
   await expect(
     articles.getByRole("link", { name: "분석 대시보드 · Neumorphism UI" }),
   ).toHaveAttribute("href", "/ko/directory/neumorphism#template-analytics");
+  await articles.getByRole("button", { name: "미리보기", exact: true }).click();
   await expect(articles.getByRole("textbox", { name: "설치 명령" })).toHaveValue(
     /\/registries\/neumorphism\/template-analytics\.json$/,
   );
@@ -117,6 +112,7 @@ test("purpose and style filters reveal installable registry screens and survive 
   await expect(articles).toHaveCount(2);
   await style.selectOption("neobrutal");
   await expect(articles).toHaveCount(1);
+  await articles.getByRole("button", { name: "미리보기", exact: true }).click();
   await expect(articles.getByRole("textbox", { name: "설치 명령" })).toHaveValue(
     /\/registries\/neobrutal\/login\.json$/,
   );
@@ -136,11 +132,6 @@ test("the gallery previews, installs and runs billing inline on a phone", async 
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.addInitScript(() => {
-    if (window === window.top) {
-      Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => ({}) } });
-    }
-  });
   const runtimes: string[] = [];
   page.on("request", (request) => {
     const path = new URL(request.url()).pathname;
@@ -149,6 +140,8 @@ test("the gallery previews, installs and runs billing inline on a phone", async 
   await page.goto("/en/blocks");
   const billing = page.getByRole("article", { name: "Billing dashboard" });
   await expect(page.getByRole("article").first()).toHaveAttribute("id", "billing-dashboard");
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await billing.getByRole("button", { name: "Preview", exact: true }).click();
   await expect
     .poll(() => billing.getByRole("img").evaluate((el: HTMLImageElement) => el.currentSrc))
     .toContain("billing-dashboard-mobile.webp");
@@ -170,19 +163,18 @@ test("the gallery previews, installs and runs billing inline on a phone", async 
   await expect(page).toHaveURL(/\/en\/blocks\/?$/);
 });
 
-test("the block image and Rust source stay available when no adapter is found", async ({
+test("the block image and Rust source stay available without a graphics backend", async ({
   page,
 }) => {
   await page.addInitScript(() => {
-    if (window === window.top) {
-      Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => null } });
-    }
+    Object.defineProperty(navigator, "gpu", { value: { requestAdapter: async () => null } });
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", { value: () => null });
   });
   await page.goto("/ko/blocks/billing-dashboard");
   const preview = page.getByRole("tabpanel", { name: "미리보기" });
   await expect(async () => {
     await page.getByRole("button", { name: "미리보기 실행" }).click();
-    await expect(preview.getByRole("status")).toContainText("WebGPU", { timeout: 1000 });
+    await expect(preview.getByRole("status")).toContainText("WebGL2", { timeout: 1000 });
   }).toPass();
   await expect(preview.getByRole("img")).toBeVisible();
   await expect(page.locator("iframe")).toHaveCount(0);

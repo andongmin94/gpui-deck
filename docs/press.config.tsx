@@ -46,7 +46,12 @@ const app = createPress(docs.toFumadocsSource(), { i18n, mode: "force-static" })
               const page = loader.getPage(slugs, lang);
               const english = loader.getPage(slugs, "en");
               if (!page || !english) throw new Error(`Missing ${lang} block ${block.name}`);
-              return { block, title: page.data.title, english: english.data.title };
+              return {
+                block,
+                title: page.data.title,
+                english: english.data.title,
+                description: page.data.description,
+              };
             });
             return Response.json(searchCatalog(lang, entries));
           },

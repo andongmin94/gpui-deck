@@ -14,22 +14,7 @@ import {
   type SharedProps,
 } from "fumadocs-ui/components/dialog/search";
 import type { CatalogEntry } from "@/lib/search-catalog";
-
-function normalize(value: string) {
-  return value
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
-    .trim();
-}
-
-function matchRank(entry: CatalogEntry, query: string) {
-  const names = [entry.title, ...entry.aliases].map(normalize);
-  if (names.includes(query)) return 0;
-  if (names.some((name) => name.startsWith(query))) return 1;
-  const searchable = [...names, ...entry.breadcrumbs.map(normalize)].join(" ");
-  return query.split(" ").every((word) => searchable.includes(word)) ? 2 : -1;
-}
+import { matchRank, normalizeSearch } from "@/lib/catalog-match";
 
 export function CatalogSearchDialog({
   from,
@@ -55,10 +40,17 @@ export function CatalogSearchDialog({
   }, [props.open, catalog?.locale, locale]);
 
   const items = useMemo(() => {
-    const query = normalize(docs.search);
+    const query = normalizeSearch(docs.search);
     if (!query) return null;
     const ranked = (catalog?.locale === locale ? catalog.entries : [])
-      .map((entry) => ({ entry, rank: matchRank(entry, query) }))
+      .map((entry) => ({
+        entry,
+        rank: matchRank(
+          query,
+          [entry.title, ...entry.aliases],
+          [...entry.breadcrumbs, ...(entry.features ?? [])],
+        ),
+      }))
       .filter(({ rank }) => rank >= 0)
       .sort((left, right) => left.rank - right.rank);
     const hits = ranked.map(({ entry }) => ({

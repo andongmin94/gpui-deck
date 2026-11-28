@@ -26,6 +26,25 @@ test("registry authors can reach the submission form and publishing guide", asyn
   await expect(form).toBeInViewport();
 });
 
+test("opening host integration keeps the data manager selected and offers the mounted source", async ({
+  page,
+}) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, "gpu", { value: undefined }));
+  await page.goto("/ko/directory/neumorphism#template-data-manager");
+  const item = page.locator("section#template-data-manager");
+  await expect(item.getByText("cargo run --bin team-records", { exact: true })).toBeVisible();
+  await item.locator("summary").filter({ hasText: "내 앱의 레코드 연결하기" }).click();
+  await expect(page).toHaveURL(/#template-data-manager$/);
+  const link = item.getByRole("link", { name: "호스트 Rust 소스 다운로드" });
+  await expect(link).toHaveAttribute("download", "team_records.rs");
+  const file = await page.request.get((await link.getAttribute("href"))!);
+  expect(file.ok()).toBe(true);
+  const source = await file.text();
+  expect(source).toContain("DataManager::new(");
+  expect(source).toContain(".on_save(");
+  expect(source).toContain(".on_delete(");
+});
+
 test("registry screens offer standalone projects and copy their Rust mount code", async ({
   page,
   context,
@@ -143,7 +162,8 @@ test("select a Neumorphism theme, inspect its installed source and copy its URL"
       "gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neumorphism/style-sage.json",
     );
   await item.getByRole("tab", { name: "Rust 소스" }).click();
-  await expect(frame).toHaveCount(0);
+  await expect(frame).toBeAttached();
+  await expect(frame).toBeHidden();
   const manifest = JSON.parse(
     await readFile(
       new URL("../../registries/neumorphism/style-sage.json", import.meta.url),
@@ -235,13 +255,22 @@ test("search the Korean registry on mobile and return to the previous item", asy
   await expect(page.getByText("검색 결과가 없습니다.")).toBeVisible();
 });
 
-test("shows the selected item's image and a status when WebGPU is unavailable", async ({
+test("shows the selected item's image when the WebGL2 renderer fails to initialize", async ({
   page,
 }) => {
-  await page.addInitScript(() => Object.defineProperty(navigator, "gpu", { value: undefined }));
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "gpu", { value: undefined });
+    const original = HTMLCanvasElement.prototype.getContext;
+    Object.defineProperty(HTMLCanvasElement.prototype, "getContext", {
+      value(this: HTMLCanvasElement, type: string, options: unknown) {
+        if (this.isConnected && type === "webgl2") return null;
+        return Reflect.apply(original, this, [type, options]);
+      },
+    });
+  });
   await page.goto("/en/directory/neumorphism#number-field");
   const panel = page.getByRole("tabpanel", { name: "Preview", exact: true });
-  await expect(panel.getByRole("status")).toContainText("WebGPU");
+  await expect(panel.getByRole("status")).toContainText("WebGPU or WebGL2", { timeout: 15_000 });
   await expect(panel.getByRole("img")).toHaveAttribute("src", /\/number-field\.webp$/);
   await expect(panel.locator("iframe")).toHaveCount(0);
 });

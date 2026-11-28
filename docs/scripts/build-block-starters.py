@@ -91,12 +91,37 @@ def stage_app(app, path, manifest, registry):
     workspace = tomllib.loads((ROOT / "Cargo.toml").read_text(encoding="utf-8"))["workspace"]
     dependencies = (TEMPLATES / "dependencies.toml").read_text(encoding="utf-8")
     package = f'[package]\nname = "{app.name}"\nversion = "0.1.0"\nedition = "2024"\n\n'
+    host_example = app.name == "neumorphism-template-data-manager"
+    if host_example:
+        package += f'default-run = "{app.name}"\n\n'
+        dependencies += """
+[[bin]]
+name = "team-records"
+path = "src/host_main.rs"
+
+[dependencies.serde]
+version = "1"
+features = ["derive"]
+
+[dependencies.serde_json]
+version = "1"
+"""
     (app / "Cargo.toml").write_text(
         package + dependencies.replace("GPUI_DECK_VERSION", workspace["package"]["version"]),
         encoding="utf-8",
     )
     for name in ("main.rs", "block_window.rs"):
         shutil.copyfile(BLOCKS / "starter" / name, app / "src" / name)
+    if host_example:
+        host_main = (app / "src/main.rs").read_text(encoding="utf-8").replace(
+            "mod screen;", '#[path = "data-manager-host.rs"]\nmod screen;'
+        )
+        (app / "src/host_main.rs").write_text(
+            host_main + '\n#[cfg(all(test, feature = "test-support"))]\nmod host_test;\n',
+            encoding="utf-8",
+        )
+        shutil.copyfile(BLOCKS / "starter/data-manager-host.rs", app / "src/data-manager-host.rs")
+        shutil.copyfile(BLOCKS / "starter/data-manager-host-test.rs", app / "src/host_test.rs")
     screen = app / "src/screen.rs"
     if registry:
         screen.write_text(
@@ -110,7 +135,8 @@ def stage_app(app, path, manifest, registry):
         "Pretendard-Regular.otf", "Pretendard-Medium.otf", "Pretendard-SemiBold.otf", "LICENSE"
     ):
         shutil.copyfile(ROOT / "crates/base/examples/assets/fonts" / name, fonts / name)
-    (app / ".gitignore").write_text("/target\n", encoding="utf-8")
+    ignored = "/target\n" + ("/team-records.json\n/team-records.json.tmp\n" if host_example else "")
+    (app / ".gitignore").write_text(ignored, encoding="utf-8")
 
 
 def build_archive(path, registry=None):
@@ -136,6 +162,8 @@ def build_archive(path, registry=None):
                         data = data.replace(b"\r\n", b"\n")
                     bundle.writestr(info, data, compress_type=ZIP_DEFLATED)
         archive.replace(output)
+    if name == "neumorphism-template-data-manager":
+        shutil.copyfile(BLOCKS / "starter/data-manager-host.rs", DOWNLOADS / "data-manager-host.rs")
     print(f"Built {output.relative_to(ROOT)}")
 
 

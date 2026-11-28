@@ -3,6 +3,7 @@ import { CodeBlock, Pre } from "fumadocs-ui/components/codeblock";
 import { ArrowRight, Download } from "lucide-react";
 
 import { type Block, blockCopy } from "./block-copy";
+import { DataManagerHost, DataManagerHostRun } from "./data-manager-host";
 import { InstallCommand } from "./install-command";
 
 const labels = {
@@ -53,6 +54,7 @@ export function BlockInstall({
   const t = labels[lang as keyof typeof labels] ?? labels.en;
   const guideAnchor = block.name === "billing-dashboard" ? "existing-app" : block.name;
   const module = `crate::ui::${block.name.replaceAll("-", "_")}`;
+  const usesTeamRecords = block.name === "neumorphism-template-data-manager";
   const mount =
     block.name === "neobrutal-login"
       ? `use gpui::AppContext as _;\nlet screen: gpui::AnyView = cx.new(|cx| ${module}::Login::new(window, cx)).into();`
@@ -79,6 +81,7 @@ export function BlockInstall({
           </a>
           <code className="font-mono text-sm">cargo run</code>
         </div>
+        {usesTeamRecords && <DataManagerHostRun lang={lang} />}
       </section>
       <section aria-labelledby="existing-app-title" className="min-w-0 rounded-xl border p-4">
         <h2 id="existing-app-title" className="font-semibold">
@@ -99,6 +102,8 @@ export function BlockInstall({
               <ArrowRight aria-hidden className="size-3.5" />
             </Link>
           </>
+        ) : usesTeamRecords ? (
+          <DataManagerHost lang={lang} />
         ) : (
           <details className="mt-2 text-sm">
             <summary className="w-fit cursor-pointer py-1.5 font-medium underline underline-offset-4">

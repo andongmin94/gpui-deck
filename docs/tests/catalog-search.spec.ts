@@ -46,3 +46,32 @@ test("mobile global search applies successive named presets in Create", async ({
   await openResult(page, "Neobrutal", "네오브루탈");
   await expect(style).toHaveValue("neobrutal");
 });
+
+test("compare compact mobile blocks and find installable screens by feature", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/blocks?purpose=authentication");
+  const cards = page.getByRole("article");
+  await expect(cards).toHaveCount(2);
+  await expect(cards.last().locator("p")).toBeInViewport({ ratio: 1 });
+  await expect(page.getByRole("tab")).toHaveCount(0);
+  await cards.first().getByRole("button", { name: "미리보기" }).click();
+  await expect(cards.first().getByRole("tab", { name: "Rust 소스" })).toBeVisible();
+  await cards.last().getByRole("button", { name: "미리보기" }).click();
+  await expect(cards.first().getByRole("tab")).toHaveCount(0);
+  await expect(cards.last().getByRole("tab", { name: "Rust 소스" })).toBeVisible();
+
+  await page.getByRole("combobox", { name: "용도" }).selectOption("management");
+  const search = page.getByRole("searchbox", { name: "블록 검색" });
+  await search.fill("초안");
+  await expect(cards).toHaveCount(3);
+  await page.getByRole("combobox", { name: "스타일" }).selectOption("neumorphism");
+  await expect(cards).toHaveCount(2);
+  await search.fill("일괄 삭제");
+  await expect(cards).toHaveCount(1);
+  await expect(cards.getByRole("heading")).toContainText("데이터 관리");
+  await page.reload();
+  await expect(search).toHaveValue("일괄 삭제");
+  await expect(cards).toHaveCount(1);
+  await openResult(page, "레코드 편집", "데이터 관리");
+  await expect(page).toHaveURL(/\/ko\/directory\/neumorphism#template-data-manager$/);
+});

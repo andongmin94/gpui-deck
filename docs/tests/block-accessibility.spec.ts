@@ -45,6 +45,25 @@ test("login exposes named fields and reports the Rust form validation result", a
   await expect(email).toHaveValue("sample@example.com");
 });
 
+test("a WebGL2-only block keeps entered credentials while its Rust source is open", async ({
+  page,
+}) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, "gpu", { value: undefined }));
+  await page.goto("/en/blocks/login");
+  await page.getByRole("button", { name: "Run preview" }).click();
+  const frame = page.frameLocator("iframe");
+  await frame.getByRole("button", { name: "Form controls" }).click();
+  const email = frame.getByRole("textbox", { name: "Email address" });
+  await email.fill("reader@example.com");
+  await page.getByRole("tab", { name: "Rust source" }).click();
+  await expect(page.getByRole("combobox", { name: "Source file" })).toBeVisible();
+  await page.getByRole("tab", { name: "Preview", exact: true }).click();
+  await expect(email).toBeVisible();
+  await expect(email).toHaveValue("reader@example.com");
+  await page.getByRole("button", { name: "Stop preview" }).click();
+  await expect(page.locator("iframe")).toHaveCount(0);
+});
+
 test("settings exposes switch state and applies or discards edits", async ({ page }) => {
   await page.goto("/preview?c=sidebar-settings");
   await page.getByRole("button", { name: "Form controls" }).click();

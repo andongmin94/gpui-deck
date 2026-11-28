@@ -1,5 +1,6 @@
 import { Link } from "fumapress/client";
 import { ArrowLeft } from "lucide-react";
+import { registryBlockDescription } from "@/lib/block-descriptions";
 
 import { CatalogLayout } from "../catalog-layout";
 import { itemTitle, registries } from "../directory/registries";
@@ -40,6 +41,7 @@ export function BlocksGallery({
       screens.push({
         block: item,
         title: itemTitle(item.slug, lang),
+        description: registryBlockDescription(item.slug, lang),
         purpose,
         style: registry.slug,
         href: `/${lang}/directory/${registry.slug}#${item.slug}`,

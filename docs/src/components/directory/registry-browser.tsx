@@ -140,7 +140,7 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
           lang={lang}
           title={title}
           block={current}
-          automaticPreview={selected === null ? "pending" : navigator.gpu ? "run" : "unavailable"}
+          automaticPreview={selected === null ? "pending" : "run"}
         />
         {!isScreen && (
           <div className="mt-4">

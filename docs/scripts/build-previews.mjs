@@ -116,7 +116,6 @@ function hostPage(module) {
     <title>GPUI Deck preview</title>
     <link rel="license" title="Embedded Pretendard fonts" href="/preview/Pretendard-LICENSE.txt" />
     <link rel="license" title="Create fonts and icons" href="/preview/Create-LICENSES.txt" />
-    <link rel="modulepreload" href="${module}" />
     <style>
       html, body { margin: 0; height: 100%; overflow: hidden; }
       body { background: #ffffff; color: #737373; }
@@ -156,24 +155,44 @@ function hostPage(module) {
         }).observe(host, { attributes: true, attributeFilter: ["class"] });
       }
       const status = document.querySelector(".status");
-      if (!("gpu" in navigator)) {
-        status.textContent = "This preview needs a browser with WebGPU.";
-      } else {
-        new MutationObserver((_, observer) => {
+      function unavailable(message) {
+        status.removeAttribute("aria-label");
+        status.textContent = message;
+        if (host) parent.postMessage("gpui-deck:preview-unavailable", location.origin);
+      }
+
+      async function runPreview() {
+        const adapter = await navigator.gpu?.requestAdapter().catch(() => null);
+        // Software WebGPU adapters can accept a device but present a blank canvas.
+        const useWebGL = !adapter || adapter.info?.isFallbackAdapter === true;
+        if (useWebGL) {
+          const gl = document.createElement("canvas").getContext("webgl2");
+          if (!gl) {
+            unavailable("This preview needs WebGPU or WebGL2.");
+            return;
+          }
+          gl.getExtension("WEBGL_lose_context")?.loseContext();
+        }
+        const { default: init, start } = await import("${module}");
+        await init();
+        const observer = new MutationObserver(() => {
           if (document.querySelector("body > textarea")) {
             status.remove();
             observer.disconnect();
+            return;
           }
-        }).observe(document.body, { childList: true, subtree: true });
-        // Software WebGPU adapters can accept a device but present a blank canvas.
-        // Use GPUI's WebGL2 renderer when the browser reports a fallback adapter.
-        const [{ default: init, start }, adapter] = await Promise.all([
-          import("${module}"),
-          navigator.gpu.requestAdapter().catch(() => null),
-        ]);
-        await init();
-        start(!adapter || adapter.info?.isFallbackAdapter === true);
+          // GPUI reports a graphics initialization failure in a paragraph on the host page.
+          const failure = document.querySelector("body > p");
+          if (failure?.textContent.startsWith("Failed to initialize browser graphics:")) {
+            observer.disconnect();
+            unavailable(failure.textContent);
+            failure.remove();
+          }
+        });
+        observer.observe(document.body, { childList: true });
+        start(useWebGL);
       }
+      runPreview().catch((error) => unavailable("Could not start the preview: " + error.message));
     </script>
   </body>
 </html>

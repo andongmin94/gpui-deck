@@ -2,7 +2,7 @@
 
 import { Tabs } from "@base-ui/react/tabs";
 import { Code2, Image, Play, Square } from "lucide-react";
-import { lazy, Suspense, useId, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 
 import { useHydrated } from "../use-hydrated";
 import { type PreviewItem, blockCopy } from "./block-copy";
@@ -23,39 +23,36 @@ export function BlockViewer({
   lang: string;
   title: string;
   block: PreviewItem;
-  automaticPreview?: "pending" | "run" | "unavailable";
+  automaticPreview?: "pending" | "run";
   command?: string;
 }) {
   const t = blockCopy(lang);
   const ready = useHydrated();
   const [tab, setTab] = useState("preview");
-  const [manualMode, setMode] = useState<"image" | "checking" | "run" | "unavailable">("image");
-  const mode = automaticPreview ?? manualMode;
-  const request = useRef(0);
+  const [manualMode, setMode] = useState<"image" | "run" | "unavailable" | null>(null);
+  const mode = manualMode ?? automaticPreview ?? "image";
+  const frame = useRef<HTMLIFrameElement>(null);
   const previewId = useId();
 
-  async function togglePreview() {
-    if (mode === "run") {
-      setMode("image");
-      return;
+  useEffect(() => {
+    if (mode !== "run") return;
+    function handleMessage(event: MessageEvent) {
+      if (
+        event.origin === window.location.origin &&
+        event.source === frame.current?.contentWindow &&
+        event.data === "gpui-deck:preview-unavailable"
+      ) {
+        setMode("unavailable");
+      }
     }
-    const id = ++request.current;
-    setMode("checking");
-    try {
-      const adapter = await navigator.gpu?.requestAdapter();
-      if (request.current === id) setMode(adapter ? "run" : "unavailable");
-    } catch {
-      if (request.current === id) setMode("unavailable");
-    }
-  }
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [mode]);
+
   return (
     <Tabs.Root
       value={tab}
-      onValueChange={(value) => {
-        request.current++;
-        setTab(String(value));
-        setMode("image");
-      }}
+      onValueChange={(value) => setTab(String(value))}
       className="overflow-hidden rounded-xl border bg-fd-background"
     >
       <fieldset
@@ -73,14 +70,13 @@ export function BlockViewer({
             {t.source}
           </Tabs.Tab>
         </Tabs.List>
-        {tab === "preview" && !automaticPreview && (
+        {tab === "preview" && (
           <button
             type="button"
             aria-controls={previewId}
             title={mode === "run" ? t.stop : t.run}
-            onClick={togglePreview}
-            disabled={mode === "checking"}
-            aria-busy={mode === "checking"}
+            onClick={() => setMode(mode === "run" ? "image" : "run")}
+            disabled={mode === "pending"}
             className={`inline-flex min-h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg border px-2 text-sm font-medium hover:bg-fd-secondary sm:px-3 ${command ? "" : "ms-auto"}`}
           >
             {mode === "run" ? (
@@ -97,7 +93,7 @@ export function BlockViewer({
           </div>
         )}
       </fieldset>
-      <Tabs.Panel value="preview">
+      <Tabs.Panel value="preview" keepMounted>
         {mode === "unavailable" && (
           <output className="block border-b px-4 py-3 text-sm text-fd-muted-foreground">
             {t.unavailable}
@@ -112,6 +108,7 @@ export function BlockViewer({
         >
           {mode === "run" ? (
             <iframe
+              ref={frame}
               title={title}
               src={`${import.meta.env.DEV ? "/preview/index.html" : "/preview"}?c=${block.name}`}
               className="block size-full"
