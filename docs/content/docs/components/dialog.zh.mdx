@@ -5,6 +5,16 @@ description: "打开/关闭状态、原生模态元数据、背景输入隔离�
 
 <ComponentPreview name="dialog" height={360} />
 
+## 可复制运行的 Rust 示例
+
+添加[安装指南中的 Cargo 依赖](/zh/docs/installation/)，将下面的代码复制到 `src/main.rs`，然后运行 `cargo run`。
+
+打开 **Profile details** 后，焦点会移到 **Close** 按钮。按 Escape 或选择 Close 可将焦点移回原来的按钮。
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/dialog.rs</include>
+
+## 交互行为
+
 `Dialog::new(&state)` 是模态的：它呈现原生模态元数据，并阻止
 背景的指针/滚轮输入，即使没有装饰性的背景遮罩也是如此。
 应用提供无障碍名称、弹出层和视觉背景遮罩。请将其保持

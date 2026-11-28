@@ -149,16 +149,14 @@ export function Home({ lang, entries }: { lang: string; entries: HomeBlock[] }) 
           </div>
         </section>
         <div className="bg-linear-to-b from-fd-background to-fd-secondary/60">
-          <div className="mx-auto grid max-w-[100rem] items-start gap-4 px-3 pb-10 sm:grid-cols-2 sm:px-6 lg:pb-16 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)] xl:gap-5">
-            <div className="min-w-0 sm:col-span-2 xl:order-2 xl:col-span-1">
+          <div className="mx-auto grid max-w-[100rem] items-start gap-4 px-3 pb-10 sm:px-6 lg:pb-16 xl:grid-cols-[minmax(0,3fr)_minmax(0,1fr)] xl:gap-5">
+            <div className="grid min-w-0 gap-4 xl:gap-5">
+              <HomePreset lang={lang} title={t.styles} />
               <InvoiceShowcase labels={t.demo}>
                 <InvoicePoster lang={lang} />
               </InvoiceShowcase>
             </div>
-            <div className="min-w-0 xl:order-1">
-              <HomePreset lang={lang} title={t.styles} />
-            </div>
-            <div className="grid min-w-0 gap-4 xl:order-3 xl:gap-5">
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-1 xl:gap-5">
               <section className="rounded-3xl border bg-fd-background p-3 shadow-xs">
                 <h2 className="px-2 pt-2 pb-3 text-base font-semibold tracking-tight">
                   <Link href={`/${lang}/blocks`} className="hover:underline">

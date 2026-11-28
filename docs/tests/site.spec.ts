@@ -17,11 +17,29 @@ test("the root opens the English home page", async ({ page }) => {
       `/en/blocks/${slug}`,
     );
   }
-  await main.getByRole("combobox", { name: "Style", exact: true }).selectOption("neumorphism");
+  const style = main.getByRole("combobox", { name: "Style", exact: true });
+  const reports = main.getByRole("region", { name: "Saved reports" });
+  const field = reports.getByRole("textbox", { name: "Report name" });
+  const save = reports.getByRole("button", { name: "Save report" });
+  await expect(reports).toHaveCSS("border-top-width", "1px");
+  await expect(save).toHaveCSS("border-radius", "10px");
+  await expect(save).toHaveCSS("background-color", "rgb(38, 38, 38)");
+  await field.fill("Team release");
+  await style.selectOption("neobrutal");
+  await expect(reports).toHaveCSS("border-top-width", "2px");
+  await expect(save).toHaveCSS("border-radius", "2px");
+  await style.selectOption("neumorphism");
+  await expect(reports).toHaveCSS("border-top-width", "0px");
+  await expect(field).toHaveCSS("box-shadow", /inset/);
   await main.getByRole("combobox", { name: "Radius", exact: true }).selectOption("large");
+  await expect(save).toHaveCSS("border-radius", "22px");
   await main.getByRole("radio", { name: "Neutral", exact: true }).focus();
   await page.keyboard.press("ArrowLeft");
   await expect(main.getByRole("radio", { name: "Sage", exact: true })).toBeChecked();
+  await expect(save).toHaveCSS("background-color", "rgb(38, 102, 81)");
+  await expect(field).toHaveValue("Team release");
+  await save.click();
+  await expect(reports.getByRole("status")).toHaveText("Team release");
   await main.getByRole("link", { name: "Open preset", exact: true }).click();
   await expect(page).toHaveURL(
     /\/en\/create\?preset=v1\.neumorphism\.neutral\.sage\.neutral\.pretendard\.pretendard\.outline\.large$/,
@@ -82,7 +100,7 @@ test("the invoice accent follows the picker and survives a reload before the dem
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko");
   const poster = page.getByRole("img", { name: /청구 현황/ });
-  await expect(poster).toBeInViewport({ ratio: 0.75 });
+  await expect(page.getByRole("combobox", { name: "스타일", exact: true })).toBeInViewport();
   const trigger = page.getByRole("button", { name: "탐색 열기/닫기" });
   const menu = page.getByRole("dialog", { name: "메뉴" });
   await expect(async () => {

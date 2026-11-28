@@ -26,6 +26,18 @@ name = "starter"
 path = "examples/starter.rs"
 required-features = ["components"]
 
+[[example]]
+name = "select"
+required-features = ["components"]
+
+[[example]]
+name = "dialog"
+required-features = ["components"]
+
+[[example]]
+name = "combobox"
+required-features = ["components"]
+
 [[test]]
 name = "element_ext"
 path = "tests/element_ext.rs"

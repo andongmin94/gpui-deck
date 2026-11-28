@@ -5,6 +5,16 @@ description: "옵션을 갱신할 수 있는 단일 선택, 버퍼링되는 타�
 
 <ComponentPreview name="select" height={360} />
 
+## 복사해서 실행하는 Rust 예제
+
+[설치 가이드의 Cargo 의존성](/ko/docs/installation/)을 추가하고 아래 코드를 `src/main.rs`에 복사한 뒤 `cargo run`을 실행하세요.
+
+도시 여섯 개가 담긴 목록을 열고 End를 누르면 높이 96px의 팝업이 Sydney까지 스크롤됩니다. Paris는 비활성 항목이며, Enter로 선택을 확정하면 버튼에 도시 이름이 표시됩니다.
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/select.rs</include>
+
+## 동작
+
 시간대 목록을 열고 Home, End, 방향키를 누르거나 도시 이름의 첫 글자를 입력해 보세요.
 강조된 항목이 보이도록 목록이 스크롤되고, Enter를 누르면 선택이 확정됩니다.
 휠로 다른 항목을 둘러볼 수도 있습니다. 짧은 목록은 내용에 맞게 표시되며

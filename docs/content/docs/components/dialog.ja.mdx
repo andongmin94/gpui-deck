@@ -5,6 +5,16 @@ description: "開閉状態、ネイティブのモーダルメタデータ、背
 
 <ComponentPreview name="dialog" height={360} />
 
+## コピーして実行できる Rust の例
+
+[インストールガイドの Cargo 依存関係](/ja/docs/installation/) を追加し、以下を `src/main.rs` にコピーして `cargo run` を実行してください。
+
+**Profile details** を開くと **Close** ボタンにフォーカスが移ります。Escape を押すか Close を選ぶと、開いたときのボタンにフォーカスが戻ります。
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/dialog.rs</include>
+
+## 操作と動作
+
 `Dialog::new(&state)` はモーダルです。ネイティブのモーダルメタデータを公開し、
 装飾用のバックドロップがなくても背景のポインター/ホイール入力をブロックします。
 アクセシブルな名前、ポップアップ、視覚的なバックドロップはアプリケーションが提供します。Tab と Shift-Tab が

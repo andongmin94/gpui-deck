@@ -5,6 +5,16 @@ description: "Editable single/multiple selection, grouped search results, replac
 
 <ComponentPreview name="combobox" height={360} />
 
+## Runnable Rust example
+
+Use the [Cargo dependencies from the installation guide](/en/docs/installation/). Copy the example into `src/main.rs` and run `cargo run`.
+
+Search for `react` to find Next.js by keyword, or `sve` to find SvelteKit by name. Press Enter to commit. A query with no results shows an empty state.
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/combobox.rs</include>
+
+## Behavior
+
 In the preview, type `s` and press Enter to choose SvelteKit. The arrow keys follow the displayed search ranking and skip disabled matches.
 
 Construct `ComboboxState::new(items, window, cx)` with ordered, unique

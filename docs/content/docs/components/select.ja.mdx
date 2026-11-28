@@ -5,6 +5,16 @@ description: "選択肢を更新できる単一選択、バッファされた先
 
 <ComponentPreview name="select" height={360} />
 
+## コピーして実行できる Rust の例
+
+[インストールガイドの Cargo 依存関係](/ja/docs/installation/) を追加し、以下を `src/main.rs` にコピーして `cargo run` を実行してください。
+
+6 都市のリストを開いて End を押すと、高さ 96px のポップアップが Sydney までスクロールします。Paris は無効です。Enter で確定した都市名がボタンに表示されます。
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/select.rs</include>
+
+## 操作と動作
+
 タイムゾーンの一覧を開き、Home、End、矢印キー、または都市名の先頭文字を入力すると、
 強調表示された項目が見える位置までスクロールします。Enter で選択を確定できます。
 ホイールでほかの項目も閲覧できます。短い一覧は内容に応じた高さで表示され、

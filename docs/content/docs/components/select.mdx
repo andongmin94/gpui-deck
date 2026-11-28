@@ -5,6 +5,16 @@ description: "Single selection with replaceable options, buffered typeahead, Hom
 
 <ComponentPreview name="select" height={360} />
 
+## Runnable Rust example
+
+Use the [Cargo dependencies from the installation guide](/en/docs/installation/). Copy the example into `src/main.rs` and run `cargo run`.
+
+Open the six-city list and press End. The 96-pixel popup scrolls to Sydney. Paris is disabled and the trigger shows the city you commit with Enter.
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/select.rs</include>
+
+## Behavior
+
 Open the time-zone list and press Home, End, an arrow key or the first letters of
 a city. The list scrolls the highlighted option into view. Enter commits it.
 Wheel scrolling lets you inspect other options. Short lists use their natural

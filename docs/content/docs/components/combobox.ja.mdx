@@ -5,6 +5,16 @@ description: "編集可能な単一/複数選択、グループ化された検�
 
 <ComponentPreview name="combobox" height={360} />
 
+## コピーして実行できる Rust の例
+
+[インストールガイドの Cargo 依存関係](/ja/docs/installation/) を追加し、以下を `src/main.rs` にコピーして `cargo run` を実行してください。
+
+`react` と入力するとキーワードが一致する Next.js が、`sve` と入力すると名前が一致する SvelteKit が表示されます。Enter で選択を確定します。一致する候補がなければ空の状態を示します。
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/combobox.rs</include>
+
+## 操作と動作
+
 プレビューで `s` を入力して Enter を押すと SvelteKit が選択されます。矢印キーは表示された検索順位に沿って移動し、無効な項目を飛ばします。
 
 順序付きで一意な `SearchItem::new(value, label)` エントリから

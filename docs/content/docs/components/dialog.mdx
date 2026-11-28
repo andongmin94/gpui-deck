@@ -5,6 +5,16 @@ description: "Open/close state, native modal metadata, background input isolatio
 
 <ComponentPreview name="dialog" height={360} />
 
+## Runnable Rust example
+
+Use the [Cargo dependencies from the installation guide](/en/docs/installation/). Copy the example into `src/main.rs` and run `cargo run`.
+
+Open **Profile details**. Focus moves to **Close**. Press Escape or activate Close to return focus to the trigger.
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/dialog.rs</include>
+
+## Behavior
+
 `Dialog::new(&state)` is modal: it exposes native modal metadata and blocks
 background pointer/wheel input even without a decorative backdrop. The
 application supplies the accessible name, popup and visual backdrop. Keep it

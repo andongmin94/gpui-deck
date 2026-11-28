@@ -5,6 +5,16 @@ description: "열기/닫기 상태, 네이티브 모달 메타데이터, 배경 
 
 <ComponentPreview name="dialog" height={360} />
 
+## 복사해서 실행하는 Rust 예제
+
+[설치 가이드의 Cargo 의존성](/ko/docs/installation/)을 추가하고 아래 코드를 `src/main.rs`에 복사한 뒤 `cargo run`을 실행하세요.
+
+**Profile details**를 열면 **Close** 버튼으로 포커스가 이동합니다. Escape를 누르거나 Close를 선택하면 처음 버튼으로 포커스가 돌아옵니다.
+
+<include lang="rust" meta='title="src/main.rs"'>../../../../crates/base/examples/dialog.rs</include>
+
+## 동작
+
 `Dialog::new(&state)`는 모달입니다. 네이티브 모달 메타데이터를 노출하고, 장식용
 배경막이 없어도 배경의 포인터/휠 입력을 차단합니다. 접근 가능한 이름, 팝업, 시각적
 배경막은 애플리케이션이 제공합니다. Tab과 Shift-Tab이 활성 대화상자 안에 머물도록
