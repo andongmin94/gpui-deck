@@ -1,9 +1,13 @@
 use std::{collections::BTreeMap, path::PathBuf};
 
-use anyhow::{Result, ensure};
+use anyhow::{Context as _, Result, ensure};
 use serde::Deserialize;
 
 use crate::block::{Block, Source};
+
+pub mod default {
+    include!("../presets/create/selected.rs");
+}
 
 pub const MODULE: &str = "preset";
 const AXES: [&str; 8] = [
@@ -13,6 +17,25 @@ const AXES: [&str; 8] = [
 #[derive(Deserialize)]
 struct Choice<'a> {
     value: &'a str,
+}
+
+pub fn parse(input: &str) -> Result<String> {
+    let input = input.trim();
+    let code = if input.starts_with("https://") || input.starts_with("http://") {
+        let link = url::Url::parse(input)?;
+        ensure!(
+            link.path().trim_end_matches('/').ends_with("/create"),
+            "expected a Create URL"
+        );
+        link.query_pairs()
+            .find(|(key, _)| key == "preset")
+            .map(|(_, code)| code.into_owned())
+            .context("Create URL needs a preset parameter")?
+    } else {
+        input.to_owned()
+    };
+    validate(&code)?;
+    Ok(code)
 }
 
 pub fn validate(code: &str) -> Result<()> {

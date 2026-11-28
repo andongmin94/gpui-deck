@@ -12,13 +12,29 @@ export type PreviewItem = Manifest & {
   posterHeight: number;
   mobileHeight?: number;
 };
-type DocLink = { label: string; path: string };
+export const purposes = [
+  "dashboards",
+  "authentication",
+  "settings",
+  "management",
+  "publishing",
+  "profiles",
+] as const;
+export type Purpose = (typeof purposes)[number];
+export type DocLink = { label: string; path: string };
 
-function block(manifest: Manifest, view: string, mobileHeight: number, components: DocLink[]) {
+function block(
+  manifest: Manifest,
+  purpose: Purpose,
+  view: string,
+  mobileHeight: number,
+  components: DocLink[],
+) {
   const sourcePath = `blocks/${manifest.name}`;
   const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/${sourcePath}`;
   return {
     name: manifest.name,
+    purpose,
     files: manifest.files.filter((file) => file.target.endsWith(".rs")),
     source,
     sourcePath,
@@ -32,17 +48,17 @@ function block(manifest: Manifest, view: string, mobileHeight: number, component
   };
 }
 
-const billing = block(billingManifest, "BillingDashboard", 1360, [
+const billing = block(billingManifest, "dashboards", "BillingDashboard", 1360, [
   { label: "Chart", path: "components/chart" },
   { label: "DataTable", path: "recipes/data-table" },
 ]);
 export const blocks = [
   billing,
-  block(login, "Login", 844, [
+  block(login, "authentication", "Login", 844, [
     { label: "InputGroup", path: "recipes/input-group" },
     { label: "Button", path: "components/button" },
   ]),
-  block(settings, "SidebarSettings", 844, [
+  block(settings, "settings", "SidebarSettings", 844, [
     { label: "Sidebar", path: "recipes/sidebar" },
     { label: "Switch", path: "components/checkbox" },
   ]),
@@ -53,7 +69,20 @@ const copy = {
   en: {
     all: "All blocks",
     galleryTitle: "Building blocks for GPUI",
-    jumpTo: (name: string) => `Jump to ${name}`,
+    purpose: "Purpose",
+    style: "Style",
+    everyPurpose: "All purposes",
+    everyStyle: "All styles",
+    empty: "No blocks match this purpose and style.",
+    clear: "Clear filters",
+    purposes: {
+      dashboards: "Dashboards",
+      authentication: "Authentication",
+      settings: "Settings",
+      management: "Management",
+      publishing: "Publishing",
+      profiles: "Portfolios and landing pages",
+    },
     preview: "Preview",
     source: "Rust source",
     file: "Source file",
@@ -72,7 +101,20 @@ const copy = {
   ko: {
     all: "모든 블록",
     galleryTitle: "GPUI 앱을 위한 블록",
-    jumpTo: (name: string) => `${name} 미리보기로 이동`,
+    purpose: "용도",
+    style: "스타일",
+    everyPurpose: "모든 용도",
+    everyStyle: "모든 스타일",
+    empty: "이 용도와 스타일에 맞는 블록이 없습니다.",
+    clear: "필터 초기화",
+    purposes: {
+      dashboards: "대시보드",
+      authentication: "인증",
+      settings: "설정",
+      management: "관리",
+      publishing: "블로그·출판",
+      profiles: "포트폴리오·랜딩",
+    },
     preview: "미리보기",
     source: "Rust 소스",
     file: "소스 파일",
@@ -92,7 +134,20 @@ const copy = {
   ja: {
     all: "すべてのブロック",
     galleryTitle: "GPUI アプリのためのブロック",
-    jumpTo: (name: string) => `${name}のプレビューに移動`,
+    purpose: "用途",
+    style: "スタイル",
+    everyPurpose: "すべての用途",
+    everyStyle: "すべてのスタイル",
+    empty: "この用途とスタイルに一致するブロックはありません。",
+    clear: "絞り込みを解除",
+    purposes: {
+      dashboards: "ダッシュボード",
+      authentication: "認証",
+      settings: "設定",
+      management: "管理",
+      publishing: "ブログ・出版",
+      profiles: "ポートフォリオ・ランディングページ",
+    },
     preview: "プレビュー",
     source: "Rust ソース",
     file: "ソースファイル",
@@ -112,7 +167,20 @@ const copy = {
   zh: {
     all: "所有区块",
     galleryTitle: "适用于 GPUI 应用的区块",
-    jumpTo: (name: string) => `跳至${name}预览`,
+    purpose: "用途",
+    style: "风格",
+    everyPurpose: "所有用途",
+    everyStyle: "所有风格",
+    empty: "没有符合此用途和风格的区块。",
+    clear: "清除筛选",
+    purposes: {
+      dashboards: "仪表板",
+      authentication: "身份验证",
+      settings: "设置",
+      management: "管理",
+      publishing: "博客与出版",
+      profiles: "作品集与着陆页",
+    },
     preview: "预览",
     source: "Rust 源码",
     file: "源文件",

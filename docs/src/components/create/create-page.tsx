@@ -281,7 +281,13 @@ export function CreatePage({ lang, title }: { lang: string; title: string }) {
                   <LinkIcon aria-hidden className="size-4" />
                 )}
               </button>
-              <GetCode preset={preset} lang={lang} t={t} ready={selection !== null} />
+              <GetCode
+                preset={preset}
+                dark={resolvedTheme === "dark"}
+                lang={lang}
+                t={t}
+                ready={selection !== null}
+              />
               {shared === "manual" && (
                 <label className="col-span-full row-start-4 grid min-w-0 gap-1 px-1 py-1 text-xs md:row-start-2">
                   {t.shareLink}

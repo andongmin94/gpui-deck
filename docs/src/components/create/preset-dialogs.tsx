@@ -11,7 +11,7 @@ import iconsSource from "../../../../crates/cli/presets/create/icons.rs?url&no-i
 import moduleSource from "../../../../crates/cli/presets/create/mod.rs?url&no-inline";
 import showcaseSource from "../../../../crates/cli/presets/create/showcase.rs?url&no-inline";
 import styleSource from "../../../../crates/cli/presets/create/style.rs?url&no-inline";
-import gallerySource from "../../../../crates/web-preview/src/gallery.rs?url&no-inline";
+import gallerySource from "../../../../crates/cli/templates/gallery.rs?url&no-inline";
 
 const primary =
   "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-fd-primary px-4 text-sm font-semibold text-fd-primary-foreground hover:opacity-85 disabled:opacity-60";
@@ -164,7 +164,17 @@ const rustViews = Object.fromEntries(
   }),
 );
 
-function SourceFiles({ lang, t, preset }: { lang: string; t: CreateCopy; preset: Preset }) {
+function SourceFiles({
+  lang,
+  t,
+  preset,
+  dark,
+}: {
+  lang: string;
+  t: CreateCopy;
+  preset: Preset;
+  dark: boolean;
+}) {
   const [file, setFile] = useState("selected.rs");
   const View = rustViews[file];
   const labels = blockCopy(lang);
@@ -204,8 +214,8 @@ function SourceFiles({ lang, t, preset }: { lang: string; t: CreateCopy; preset:
         <pre className={`${pre} whitespace-pre-wrap break-words`}>
           <code>
             {file === "gallery.rs"
-              ? "let view = ui::gallery::open(false, window, cx);"
-              : "let view = ui::preset::showcase(false, window, cx);"}
+              ? `let view = gallery::open(${dark}, window, cx);`
+              : `let view = ui::preset::showcase(${dark}, window, cx);`}
           </code>
         </pre>
       </section>
@@ -215,11 +225,13 @@ function SourceFiles({ lang, t, preset }: { lang: string; t: CreateCopy; preset:
 
 export function GetCode({
   preset,
+  dark,
   lang,
   t,
   ready,
 }: {
   preset: Preset;
+  dark: boolean;
   lang: string;
   t: CreateCopy;
   ready: boolean;
@@ -237,14 +249,26 @@ export function GetCode({
       <Modal title={t.getCode} close={t.close}>
         <div className="grid gap-5">
           <section>
-            <h3 className="mb-2 text-sm font-semibold">{t.install}</h3>
-            <InstallCommand lang={lang} command={`gpui-deck add --preset ${code}`} />
+            <h3 className="mb-2 text-sm font-semibold">{t.newApp}</h3>
+            <InstallCommand
+              lang={lang}
+              command={`gpui-deck init my-app --preset ${code}${dark ? " --dark" : ""}`}
+            />
+            <pre className={`${pre} mt-2`}>
+              <code>{"cd my-app\ncargo run"}</code>
+            </pre>
             <details className="mt-2 text-sm">
               <summary className="cursor-pointer py-1 text-fd-muted-foreground">{t.cli}</summary>
               <InstallCommand
                 lang={lang}
-                command="cargo install gpui-deck-cli --version 0.0.3 --locked"
+                command="cargo install gpui-deck-cli --version 0.0.4 --locked"
               />
+            </details>
+            <details className="mt-2 text-sm">
+              <summary className="cursor-pointer py-1 text-fd-muted-foreground">
+                {t.existingApp}
+              </summary>
+              <InstallCommand lang={lang} command={`gpui-deck add --preset ${code}`} />
             </details>
             <Link
               href={`/${lang}/docs/installation`}
@@ -253,7 +277,7 @@ export function GetCode({
               {blockCopy(lang).setup}
             </Link>
           </section>
-          <SourceFiles key={code} lang={lang} t={t} preset={preset} />
+          <SourceFiles key={code} lang={lang} t={t} preset={preset} dark={dark} />
         </div>
       </Modal>
     </Dialog.Root>

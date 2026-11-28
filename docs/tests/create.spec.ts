@@ -50,7 +50,12 @@ test("a shared preset renders in GPUI and exports the edited selection", async (
   await dialog.getByRole("button", { name: "Copy install command" }).click();
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toBe(`gpui-deck add --preset ${changed}`);
+    .toBe(`gpui-deck init my-app --preset ${changed}`);
+  await expect(dialog.getByText("cd my-app\ncargo run")).toBeVisible();
+  await dialog.getByText("Add the preset to an existing app").click();
+  await expect(dialog.getByRole("textbox", { name: "Install command" }).last()).toHaveValue(
+    `gpui-deck add --preset ${changed}`,
+  );
   await dialog.getByRole("button", { name: "Copy Rust code" }).click();
   await expect
     .poll(() =>
@@ -63,9 +68,9 @@ test("a shared preset renders in GPUI and exports the edited selection", async (
   );
   await dialog.getByRole("combobox", { name: "Source file" }).selectOption("gallery.rs");
   await expect(dialog.locator("pre", { hasText: "pub struct Gallery" })).toHaveText(
-    await readFile(new URL("../../crates/web-preview/src/gallery.rs", import.meta.url), "utf8"),
+    await readFile(new URL("../../crates/cli/templates/gallery.rs", import.meta.url), "utf8"),
   );
-  await expect(dialog.getByText("let view = ui::gallery::open(false, window, cx);")).toBeVisible();
+  await expect(dialog.getByText("let view = gallery::open(false, window, cx);")).toBeVisible();
 });
 
 test("mobile users can open a preset, shuffle and reset without graphics support", async ({

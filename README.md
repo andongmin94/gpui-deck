@@ -25,8 +25,8 @@ validation. Catalogue coverage alone is not a claim of shadcn/ui-level completen
 From your Rust application, add the library and install the recipe CLI from crates.io.
 
 ```sh
-cargo add gpui-deck@0.0.1
-cargo install gpui-deck-cli --version 0.0.3 --locked
+cargo add gpui-deck@0.0.4
+cargo install gpui-deck-cli --version 0.0.4 --locked
 gpui-deck add button --to src/ui
 ```
 
@@ -38,15 +38,18 @@ Declare `mod ui;` in your app, and use the matching `gpui-pre` and
 [Create](https://gpui-deck.andongmin.com/en/create) opens a live GPUI workspace.
 Choose Base, Neobrutal or Neumorphism, then adjust the base color, accent, chart
 palette, heading and body fonts, icons and corner radius. Share the URL to reopen
-the same settings, or choose **Get code** to install them in a Rust application.
-Preset installation is available in CLI 0.0.3.
+the same settings. **Get code** gives you a command to create an app that opens
+the same interactive gallery. The library and CLI share release version 0.0.4.
 
 ```sh
-gpui-deck add --preset v1.neumorphism.sage.sage.forest.pretendard.pretendard.outline.small
+gpui-deck init my-app --preset v1.neumorphism.sage.sage.forest.pretendard.pretendard.outline.small
+cd my-app
+cargo run
 ```
 
-The command writes the selected configuration, editable components, fonts and
-icons to `src/ui/preset`. In a window opened after `gpui_deck::init(cx)`, use
+Use `--dark` to start in dark mode. In an existing application, use
+`gpui-deck add --preset <code>` to install the selected configuration,
+editable components, fonts and icons into `src/ui/preset`. In a window opened after `gpui_deck::init(cx)`, use
 `ui::preset::showcase(false, window, cx)` to render the installed workspace in
 light mode, or pass `true` for dark mode.
 Use `ui::preset::selected().tokens(false).palette()` with existing palette-aware
@@ -56,7 +59,9 @@ The [block gallery](https://gpui-deck.andongmin.com/en/blocks/) includes a
 [billing dashboard](https://gpui-deck.andongmin.com/en/blocks/billing-dashboard/),
 [login screen](https://gpui-deck.andongmin.com/en/blocks/login/) and
 [settings screen with sidebar navigation](https://gpui-deck.andongmin.com/en/blocks/sidebar-settings/).
-Each page includes a live preview, the installable Rust source and its install command.
+Use the purpose and style filters to find more screens from the Neobrutal and
+Neumorphism registries. The [chart gallery](https://gpui-deck.andongmin.com/en/charts)
+groups their chart examples by type. Each item includes a preview, Rust source and an install command.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-dashboard/block.json

@@ -7,6 +7,7 @@ import { findNeighbour } from "fumadocs-core/page-tree";
 
 import { blocks } from "@/components/blocks/block-copy";
 import { BlockDetail, BlocksGallery } from "@/components/blocks/blocks-page";
+import { ChartsGallery } from "@/components/charts/charts-page";
 import { CreatePage } from "@/components/create/create-page";
 import { RegistryDetail, RegistryDirectory } from "@/components/directory/directory-page";
 import { registries } from "@/components/directory/registries";
@@ -70,6 +71,9 @@ export default app.config({
   ui: {
     translations,
     async renderPage(props) {
+      if (props.page.slugs[0] === "charts") {
+        return <ChartsGallery lang={props.lang} page={props.page.data} />;
+      }
       if (props.page.slugs[0] === "create") {
         return <CreatePage lang={props.lang} title={props.page.data.title} />;
       }

@@ -5,6 +5,7 @@
 //! entry point that starts GPUI in the browser is WebAssembly-specific.
 
 pub mod demos;
+#[path = "../../cli/templates/gallery.rs"]
 pub mod gallery;
 pub mod theme;
 

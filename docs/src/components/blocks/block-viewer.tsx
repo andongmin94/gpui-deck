@@ -4,6 +4,7 @@ import { Tabs } from "@base-ui/react/tabs";
 import { Code2, Image, Play, Square } from "lucide-react";
 import { lazy, Suspense, useId, useRef, useState } from "react";
 
+import { useHydrated } from "../use-hydrated";
 import { type PreviewItem, blockCopy } from "./block-copy";
 import { BlockPoster } from "./block-poster";
 import { InstallCommand } from "./install-command";
@@ -26,6 +27,7 @@ export function BlockViewer({
   command?: string;
 }) {
   const t = blockCopy(lang);
+  const ready = useHydrated();
   const [tab, setTab] = useState("preview");
   const [manualMode, setMode] = useState<"image" | "checking" | "run" | "unavailable">("image");
   const mode = automaticPreview ?? manualMode;
@@ -56,7 +58,11 @@ export function BlockViewer({
       }}
       className="overflow-hidden rounded-xl border bg-fd-background"
     >
-      <div className="flex flex-wrap items-center gap-2 border-b p-2 sm:px-3">
+      <fieldset
+        disabled={!ready}
+        aria-label={title}
+        className="flex min-w-0 flex-wrap items-center gap-2 border-b p-2 sm:px-3"
+      >
         <Tabs.List aria-label={title} className="inline-flex rounded-xl bg-fd-secondary p-1">
           <Tabs.Tab value="preview" className={tabStyle}>
             <Image aria-hidden className="size-4" />
@@ -90,7 +96,7 @@ export function BlockViewer({
             <InstallCommand lang={lang} command={command} />
           </div>
         )}
-      </div>
+      </fieldset>
       <Tabs.Panel value="preview">
         {mode === "unavailable" && (
           <output className="block border-b px-4 py-3 text-sm text-fd-muted-foreground">

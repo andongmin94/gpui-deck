@@ -168,7 +168,7 @@ export function SiteHeader({ lang, tree }: { lang: string; tree?: PageTree.Root 
     { href: `/${lang}/docs`, label: t.docs },
     { href: `/${lang}/docs/components`, label: t.components },
     { href: `/${lang}/blocks`, label: t.blocks },
-    { href: `/${lang}/docs/components/chart`, label: t.charts },
+    { href: `/${lang}/charts`, label: t.charts },
     { href: `/${lang}/docs/recipes`, label: t.recipes },
     { href: `/${lang}/directory`, label: t.directory },
     { href: `/${lang}/docs/recipes/typography`, label: t.typography },

@@ -18,13 +18,24 @@ sudo apt-get install --no-install-recommends -y \
   libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
 ```
 
+## Start a new app with Create
+
+Choose a style in [Create](/en/create), then copy the command from **Get code**. The generated project includes Cargo dependencies, fonts, and the same interactive gallery you saw in the browser.
+
+```sh
+cargo install gpui-deck-cli --version 0.0.4 --locked
+gpui-deck init my-app --preset v1.neumorphism.sage.sage.forest.pretendard.pretendard.outline.small
+cd my-app
+cargo run
+```
+
 ## Install in a Rust application
 
 Add GPUI Deck and the matching GPUI crates to your application's `Cargo.toml`.
 
 ```toml
 [dependencies]
-gpui-deck = "0.0.1"
+gpui-deck = "0.0.4"
 gpui = { package = "gpui-pre", version = "=0.3.12" }
 gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
 
@@ -43,7 +54,7 @@ The GPUI snapshot family is pinned to **`=0.3.12`**. Update those pins and
 From your application root, install the CLI from crates.io and copy the recipes into `src/ui`.
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.3 --locked
+cargo install gpui-deck-cli --version 0.0.4 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```

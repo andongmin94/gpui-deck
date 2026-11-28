@@ -65,6 +65,48 @@ test("the settings card links to the Switch documentation", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "Checkbox and Switch", level: 1 })).toBeVisible();
 });
 
+test("purpose and style filters reveal installable registry screens and survive navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/ko/blocks?purpose=dashboards&style=neumorphism");
+  const purpose = page.getByRole("combobox", { name: "용도" });
+  const style = page.getByRole("combobox", { name: "스타일" });
+  await expect(style).toHaveValue("neumorphism");
+  await expect(purpose).toHaveValue("dashboards");
+  const articles = page.getByRole("article");
+  await expect(articles).toHaveCount(1);
+  await expect(
+    articles.getByRole("link", { name: "분석 대시보드 · Neumorphism UI" }),
+  ).toHaveAttribute("href", "/ko/directory/neumorphism#template-analytics");
+  await expect(articles.getByRole("textbox", { name: "설치 명령" })).toHaveValue(
+    /\/registries\/neumorphism\/template-analytics\.json$/,
+  );
+  await articles.getByRole("tab", { name: "Rust 소스" }).click();
+  await expect(articles.getByRole("tabpanel").locator("pre")).toHaveText(
+    await readFile(
+      new URL("../../registries/neumorphism/items/template-analytics.rs", import.meta.url),
+      "utf8",
+    ),
+  );
+  await style.selectOption("");
+  await expect(articles).toHaveCount(3);
+  await purpose.selectOption("authentication");
+  await expect(articles).toHaveCount(2);
+  await style.selectOption("neobrutal");
+  await expect(articles).toHaveCount(1);
+  await expect(articles.getByRole("textbox", { name: "설치 명령" })).toHaveValue(
+    /\/registries\/neobrutal\/login\.json$/,
+  );
+  await style.selectOption("neumorphism");
+  await expect(articles).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "필터 초기화" })).toBeVisible();
+  await page.goBack();
+  await expect(style).toHaveValue("neobrutal");
+  await expect(page.locator("iframe")).toHaveCount(0);
+  expect(await page.locator("html").evaluate((el) => el.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("the gallery previews, installs and runs billing inline on a phone", async ({
   page,
   context,

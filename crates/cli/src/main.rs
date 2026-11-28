@@ -13,11 +13,13 @@ use gpui_deck::recipe_sources::{LICENSE, PRESENTATION, RECIPES, Recipe};
 
 mod block;
 mod changes;
+mod init;
 mod preset;
 
 const USAGE: &str = "GPUI Deck source recipes
 
 Usage:
+  gpui-deck init <new-project-directory> [--preset <code-or-Create-URL>] [--dark]
   gpui-deck list
   gpui-deck add <recipe>... --to <module-directory>
   gpui-deck add <github-manifest-url> [--to <module-directory>]
@@ -33,7 +35,8 @@ is src/ui. URL installs require curl on PATH. Create presets install from the
 CLI bundle into src/ui/preset by default.
 Existing installed recipe and token edits are kept. Modified generated module
 declarations or conflicting new files stop the command before any files change.
-The consumer supplies its gpui and gpui-deck Cargo dependencies.
+Init creates a runnable native gallery with its Cargo dependencies. For add,
+the consumer supplies its gpui and gpui-deck Cargo dependencies.
 Use diff to review installed files against the sources bundled with this CLI.
 It prints changes using Git and leaves the installation untouched.";
 
@@ -49,6 +52,7 @@ const MANIFEST: &str = "recipes/.gpui-deck";
 #[derive(Debug, PartialEq, Eq)]
 enum Command {
     Help,
+    Init(init::Project),
     List,
     Add { names: Vec<String>, to: PathBuf },
     AddBlock { url: String, to: PathBuf },
@@ -60,6 +64,7 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
     let mut arguments = arguments.into_iter();
     match arguments.next().as_deref().and_then(|value| value.to_str()) {
         None | Some("--help" | "-h") => Ok(Command::Help),
+        Some("init") => Ok(Command::Init(init::Project::parse(arguments)?)),
         Some("list") => {
             if arguments.next().is_some() {
                 bail!("list does not accept arguments");
@@ -96,8 +101,7 @@ fn parse(arguments: impl IntoIterator<Item = OsString>) -> Result<Command> {
                     let code = code
                         .into_string()
                         .map_err(|_| anyhow::anyhow!("preset code must be UTF-8"))?;
-                    preset::validate(&code)?;
-                    preset = Some(code);
+                    preset = Some(preset::parse(&code)?);
                 } else {
                     let name = argument
                         .into_string()
@@ -537,6 +541,13 @@ fn report(to: &Path, result: Installed) {
 fn run() -> Result<()> {
     match parse(std::env::args_os().skip(1))? {
         Command::Help => println!("{USAGE}"),
+        Command::Init(project) => {
+            let directory = project.create()?;
+            println!(
+                "Created {}. Run cargo run in that directory to open the gallery.",
+                directory.display()
+            );
+        }
         Command::List => {
             for recipe in RECIPES {
                 if recipe.dependencies.is_empty() {
@@ -582,9 +593,7 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
-    mod default_preset {
-        include!("../presets/create/selected.rs");
-    }
+    use preset::default as default_preset;
 
     struct Directory(PathBuf);
     impl Directory {

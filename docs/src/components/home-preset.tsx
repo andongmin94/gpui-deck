@@ -2,19 +2,15 @@
 
 import { Link } from "fumapress/client";
 import { ArrowRight, ChevronDown } from "lucide-react";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { defaultPreset, encodePreset, options } from "@/lib/create-preset";
 import { createCopy, optionLabel } from "./create/copy";
 
-const subscribe = () => () => {};
+import { useHydrated } from "./use-hydrated";
 
 export function HomePreset({ lang, title }: { lang: string; title: string }) {
   const [preset, setPreset] = useState(defaultPreset);
-  const ready = useSyncExternalStore(
-    subscribe,
-    () => true,
-    () => false,
-  );
+  const ready = useHydrated();
   const t = createCopy(lang);
   return (
     <section className="rounded-3xl border bg-fd-background p-5 shadow-xs">

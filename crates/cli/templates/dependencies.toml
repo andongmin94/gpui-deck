@@ -1,0 +1,18 @@
+# Keep the native GPUI engine and platform crates on the same snapshot.
+[dependencies.gpui]
+package = "gpui-pre"
+version = "=0.3.12"
+
+[dependencies.gpui_platform]
+package = "gpui-pre-platform"
+version = "=0.3.12"
+features = ["font-kit", "x11", "wayland", "runtime_shaders"]
+
+[dependencies.gpui-deck]
+version = "=GPUI_DECK_VERSION"
+
+[features]
+test-support = ["gpui-deck/test-support"]
+
+# This starter can run independently even inside another Cargo workspace.
+[workspace]

@@ -1,8 +1,10 @@
 import { Link } from "fumapress/client";
-import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { CatalogLayout } from "../catalog-layout";
-import { type Block, blockCopy } from "./block-copy";
+import { itemTitle, registries } from "../directory/registries";
+import { FilteredBlocks, type Screen } from "./filtered-blocks";
+import { type Block, blockCopy, purposes } from "./block-copy";
 import { BlockViewer } from "./block-viewer";
 import { InstallCommand } from "./install-command";
 
@@ -19,6 +21,31 @@ export function BlocksGallery({
   entries: GalleryEntry[];
 }) {
   const t = blockCopy(lang);
+  const screens: Screen[] = entries.map(({ block, title, description }) => ({
+    block,
+    title,
+    description,
+    components: block.components,
+    purpose: block.purpose,
+    style: "base",
+    href: `/${lang}/blocks/${block.name}`,
+  }));
+  const styles: Record<string, string> = { base: "Base" };
+  for (const registry of registries) {
+    styles[registry.slug] = registry.name;
+    for (const item of registry.items) {
+      if (item.kind !== "template" && item.kind !== "block") continue;
+      const purpose = purposes.find((value) => value === item.purpose);
+      if (!purpose) throw new Error(`Missing block purpose for ${item.name}`);
+      screens.push({
+        block: item,
+        title: itemTitle(item.slug, lang),
+        purpose,
+        style: registry.slug,
+        href: `/${lang}/directory/${registry.slug}#${item.slug}`,
+      });
+    }
+  }
   return (
     <CatalogLayout lang={lang}>
       <header className="mx-auto flex max-w-3xl flex-col items-center py-8 text-center sm:py-16">
@@ -29,67 +56,7 @@ export function BlocksGallery({
           {page.description}
         </p>
       </header>
-      <div className="mb-7 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b pb-3">
-        <nav aria-label={t.all} className="flex flex-wrap items-center sm:gap-1">
-          {entries.map(({ block, title }) => (
-            <a
-              key={block.name}
-              href={`#${block.name}`}
-              aria-label={t.jumpTo(title)}
-              className="inline-flex min-h-9 items-center rounded-md px-2 text-sm font-medium text-fd-muted-foreground hover:bg-fd-secondary hover:text-fd-foreground"
-            >
-              {title}
-            </a>
-          ))}
-        </nav>
-        <Link
-          href={`/${lang}/docs/guides/blocks`}
-          title={t.setup}
-          className="inline-flex min-h-9 min-w-8 items-center justify-center gap-1.5 rounded-md text-sm font-medium hover:bg-fd-secondary sm:px-2"
-        >
-          <span className="sr-only sm:not-sr-only">{t.setup}</span>
-          <BookOpen aria-hidden className="size-4" />
-        </Link>
-      </div>
-      <div className="space-y-12 sm:space-y-16">
-        {entries.map(({ block, title, description }) => (
-          <article
-            key={block.name}
-            id={block.name}
-            aria-labelledby={`${block.name}-title`}
-            className="min-w-0 scroll-mt-20"
-          >
-            <h2
-              id={`${block.name}-title`}
-              className="text-xl font-semibold tracking-tight sm:text-2xl"
-            >
-              <Link
-                href={`/${lang}/blocks/${block.name}`}
-                className="inline-flex items-center gap-1 rounded hover:underline"
-              >
-                {title}
-                <ArrowUpRight aria-hidden className="size-4 text-fd-muted-foreground" />
-              </Link>
-            </h2>
-            <p className="mt-1 mb-4 text-sm leading-relaxed text-fd-muted-foreground">
-              {description}
-            </p>
-            <BlockViewer lang={lang} title={title} block={block} command={block.command} />
-            <div className="mt-2 flex flex-wrap items-center gap-x-4">
-              {block.components.map(({ label, path }) => (
-                <Link
-                  key={path}
-                  href={`/${lang}/docs/${path}`}
-                  className="inline-flex min-h-8 items-center gap-0.5 rounded text-xs font-medium text-fd-muted-foreground hover:text-fd-foreground hover:underline"
-                >
-                  {label}
-                  <ArrowUpRight aria-hidden className="size-3" />
-                </Link>
-              ))}
-            </div>
-          </article>
-        ))}
-      </div>
+      <FilteredBlocks lang={lang} screens={screens} styles={styles} />
     </CatalogLayout>
   );
 }

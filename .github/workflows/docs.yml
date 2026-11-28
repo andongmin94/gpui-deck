@@ -63,16 +63,25 @@ jobs:
           import tomllib
           from pathlib import Path
 
-          workspace = tomllib.loads(Path("../Cargo.toml").read_text(encoding="utf-8"))["workspace"]["dependencies"]
+          workspace = tomllib.loads(Path("../Cargo.toml").read_text(encoding="utf-8"))["workspace"]
+          version = workspace["package"]["version"]
+          def check_gpui_pins(path, deps):
+              for name in ("gpui", "gpui_platform"):
+                  for key in ("package", "version"):
+                      if deps[name][key] != workspace["dependencies"][name][key]:
+                          raise SystemExit(f"{path}: {name}.{key} must match workspace.dependencies")
+
+          template = Path("../crates/cli/templates/dependencies.toml")
+          check_gpui_pins(template, tomllib.loads(template.read_text(encoding="utf-8"))["dependencies"])
           for page in Path("content/docs").glob("installation*.mdx"):
-              snippet = re.search(r"^```toml\n(.+?)^```", page.read_text(encoding="utf-8"), re.M | re.S)
+              content = page.read_text(encoding="utf-8")
+              snippet = re.search(r"^```toml\n(.+?)^```", content, re.M | re.S)
               if not snippet:
                   raise SystemExit(f"{page}: missing consumer Cargo.toml")
               deps = tomllib.loads(snippet[1])["dependencies"]
-              for name in ("gpui", "gpui_platform"):
-                  for key in ("package", "version"):
-                      if deps[name][key] != workspace[name][key]:
-                          raise SystemExit(f"{page}: {name}.{key} must match workspace.dependencies")
+              if deps["gpui-deck"] != version or f"gpui-deck-cli --version {version} --locked" not in content:
+                  raise SystemExit(f"{page}: use the workspace release {version} for the library and CLI")
+              check_gpui_pins(page, deps)
           PY
 
       - name: Lint and type-check

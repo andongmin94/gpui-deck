@@ -2070,7 +2070,7 @@ dependencies = [
 
 [[package]]
 name = "gpui-deck"
-version = "0.0.1"
+version = "0.0.4"
 dependencies = [
  "aho-corasick",
  "anyhow",
@@ -2103,18 +2103,19 @@ dependencies = [
 
 [[package]]
 name = "gpui-deck-cli"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "anyhow",
  "gpui-deck",
  "serde",
  "serde_json",
  "tempfile",
+ "url",
 ]
 
 [[package]]
 name = "gpui-deck-web-preview"
-version = "0.0.1"
+version = "0.0.4"
 dependencies = [
  "gpui-deck",
  "gpui-pre",

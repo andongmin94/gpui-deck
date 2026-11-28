@@ -1,4 +1,4 @@
-//! Optional Create example. Place this file next to the installed `preset` module.
+//! The Create workspace, shared by the web preview and generated native apps.
 use super::preset::{self, Preset, Showcase, Tokens};
 use gpui::{prelude::*, *};
 use gpui_deck::{Checkbox, CheckboxState, Progress, Switch};

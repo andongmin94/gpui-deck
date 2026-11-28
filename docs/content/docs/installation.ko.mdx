@@ -18,13 +18,24 @@ sudo apt-get install --no-install-recommends -y \
   libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
 ```
 
+## Create 프리셋으로 새 앱 시작하기
+
+[Create](/ko/create)에서 스타일을 고르고 **코드 받기**의 명령을 복사하세요. 새 프로젝트에는 Cargo 의존성과 글꼴, 브라우저에서 본 갤러리가 함께 들어갑니다.
+
+```sh
+cargo install gpui-deck-cli --version 0.0.4 --locked
+gpui-deck init my-app --preset v1.neumorphism.sage.sage.forest.pretendard.pretendard.outline.small
+cd my-app
+cargo run
+```
+
 ## Rust 앱에 설치
 
 앱의 `Cargo.toml`에 GPUI Deck과 호환되는 GPUI 크레이트를 추가합니다.
 
 ```toml
 [dependencies]
-gpui-deck = "0.0.1"
+gpui-deck = "0.0.4"
 gpui = { package = "gpui-pre", version = "=0.3.12" }
 gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
 
@@ -44,7 +55,7 @@ GPUI 스냅샷 패밀리는 **`=0.3.12`**로 고정되어 있습니다. 렌더�
 앱 루트에서 crates.io의 CLI를 설치하고 레시피를 `src/ui`에 복사합니다.
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.3 --locked
+cargo install gpui-deck-cli --version 0.0.4 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```

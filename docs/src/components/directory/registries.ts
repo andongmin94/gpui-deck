@@ -38,14 +38,18 @@ function posterSize(collection: string, slug: string, kind: string) {
   return { posterWidth: 960, posterHeight: 600, mobileHeight: 560 };
 }
 
-function collection(slug: string, catalog: typeof neobrutal, featured: string[]) {
+type Catalog = Omit<typeof neobrutal, "items"> & {
+  items: { manifest: string; kind: string; purpose?: string; chartType?: string }[];
+};
+
+function collection(slug: string, catalog: Catalog, featured: string[]) {
   const sourcePath = `registries/${slug}`;
   const source = `https://github.com/${GIT.user}/${GIT.repo}/blob/${GIT.branch}/${sourcePath}`;
   return {
     ...catalog,
     slug,
     featured,
-    items: catalog.items.map(({ manifest: filename, kind }) => {
+    items: catalog.items.map(({ manifest: filename, kind, purpose, chartType }) => {
       const manifest = manifests[`./${slug}/${filename}`];
       if (!manifest || !kinds.includes(kind as Kind))
         throw new Error(`Invalid registry entry ${filename}`);
@@ -55,6 +59,8 @@ function collection(slug: string, catalog: typeof neobrutal, featured: string[])
         files: manifest.files.filter((file) => file.target.endsWith(".rs")),
         slug: item,
         kind: kind as Kind,
+        purpose,
+        chartType,
         sourcePath,
         source,
         command: `gpui-deck add ${source}/${filename}`,

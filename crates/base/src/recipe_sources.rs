@@ -81,5 +81,10 @@ pub const RECIPES: &[Recipe] = &[
 
 /// Application-owned palette and typography copied with every installation.
 pub const PRESENTATION: &str = include_str!("../examples/presentation.rs");
+/// Additional faces used by the Create gallery's field labels and headings.
+pub const PRETENDARD_MEDIUM: &[u8] =
+    include_bytes!("../examples/assets/fonts/Pretendard-Medium.otf");
+pub const PRETENDARD_SEMIBOLD: &[u8] =
+    include_bytes!("../examples/assets/fonts/Pretendard-SemiBold.otf");
 /// License distributed with the recipe sources.
 pub const LICENSE: &str = include_str!("../LICENSE-APACHE");

@@ -16,13 +16,24 @@ sudo apt-get install --no-install-recommends -y \
   libxkbcommon-x11-dev libx11-xcb-dev libvulkan1
 ```
 
+## 使用 Create 预设创建应用
+
+在 [Create](/zh/create) 中选择样式，再从**获取代码**复制命令。生成的项目包含 Cargo 依赖、字体，以及在浏览器中看到的交互式示例。
+
+```sh
+cargo install gpui-deck-cli --version 0.0.4 --locked
+gpui-deck init my-app --preset v1.neumorphism.sage.sage.forest.pretendard.pretendard.outline.small
+cd my-app
+cargo run
+```
+
 ## 在 Rust 应用中安装
 
 在应用的 `Cargo.toml` 中添加 GPUI Deck 和与其匹配的 GPUI 依赖。
 
 ```toml
 [dependencies]
-gpui-deck = "0.0.1"
+gpui-deck = "0.0.4"
 gpui = { package = "gpui-pre", version = "=0.3.12" }
 gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "x11", "wayland", "runtime_shaders"] }
 
@@ -40,7 +51,7 @@ GPUI 快照系列固定为 **`=0.3.12`**。更改渲染依赖时，请同时更�
 在应用根目录下从 crates.io 安装 CLI，然后将配方复制到 `src/ui`。
 
 ```sh
-cargo install gpui-deck-cli --version 0.0.3 --locked
+cargo install gpui-deck-cli --version 0.0.4 --locked
 gpui-deck list
 gpui-deck add data-table avatar --to src/ui
 ```
