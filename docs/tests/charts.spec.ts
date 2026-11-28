@@ -5,6 +5,8 @@ test("a chart type links to the matching renderer, install command and Rust sour
   page,
   context,
 }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/charts?type=stacked-area");
@@ -42,4 +44,5 @@ test("a chart type links to the matching renderer, install command and Rust sour
   await page.goBack();
   await expect(example).toContainText("Neumorphism UI");
   expect(await page.locator("html").evaluate((root) => root.scrollWidth <= innerWidth)).toBe(true);
+  expect(pageErrors).toEqual([]);
 });

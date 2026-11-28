@@ -3,11 +3,12 @@
 import { Link, useRouter } from "fumapress/client";
 import { ArrowUpRight } from "lucide-react";
 import { BlockViewer } from "../blocks/block-viewer";
+import { useHydrated } from "../use-hydrated";
 import { chartCopy, chartTypes, type ChartExample } from "./charts";
 
 export function ChartsBrowser({ lang, examples }: { lang: string; examples: ChartExample[] }) {
   const { query } = useRouter();
-  const requested = new URLSearchParams(query).get("type");
+  const requested = useHydrated() ? new URLSearchParams(query).get("type") : null;
   const selected = chartTypes.find((type) => type === requested) ?? "all";
   const visible = examples.filter((entry) => selected === "all" || entry.type === selected);
   const t = chartCopy(lang);

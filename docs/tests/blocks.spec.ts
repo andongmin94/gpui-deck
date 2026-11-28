@@ -68,6 +68,8 @@ test("the settings card links to the Switch documentation", async ({ page }) => 
 test("purpose and style filters reveal installable registry screens and survive navigation", async ({
   page,
 }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/ko/blocks?purpose=dashboards&style=neumorphism");
   const purpose = page.getByRole("combobox", { name: "용도" });
@@ -105,6 +107,7 @@ test("purpose and style filters reveal installable registry screens and survive 
   await expect(style).toHaveValue("neobrutal");
   await expect(page.locator("iframe")).toHaveCount(0);
   expect(await page.locator("html").evaluate((el) => el.scrollWidth <= innerWidth)).toBe(true);
+  expect(pageErrors).toEqual([]);
 });
 
 test("the gallery previews, installs and runs billing inline on a phone", async ({

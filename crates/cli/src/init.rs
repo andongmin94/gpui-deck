@@ -125,8 +125,7 @@ impl Project {
             include_str!("../templates/main.rs")
                 .replace("CREATE_DARK_MODE", if self.dark { "true" } else { "false" }),
         )?;
-        let fonts = src.join("fonts");
-        fs::create_dir(&fonts)?;
+        let fonts = src.join("ui/preset/assets");
         fs::write(fonts.join("Pretendard-Medium.otf"), PRETENDARD_MEDIUM)?;
         fs::write(fonts.join("Pretendard-SemiBold.otf"), PRETENDARD_SEMIBOLD)?;
         fs::rename(app, &destination)

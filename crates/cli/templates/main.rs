@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 
-use gpui::{AppContext as _, TitlebarOptions, WindowBounds, WindowOptions, px, size};
+use gpui::{AppContext as _, Styled as _, TitlebarOptions, WindowBounds, WindowOptions, px, size};
 use gpui_deck::Root;
 use ui::preset;
 
-mod gallery;
+pub mod gallery;
 #[allow(dead_code, unused_imports)] // The installed sources expose more controls than this gallery uses.
 mod ui;
 
@@ -13,8 +13,8 @@ fn main() {
         cx.text_system()
             .add_fonts(vec![
                 Cow::Borrowed(include_bytes!("ui/preset/assets/Pretendard-Regular.otf")),
-                Cow::Borrowed(include_bytes!("fonts/Pretendard-Medium.otf")),
-                Cow::Borrowed(include_bytes!("fonts/Pretendard-SemiBold.otf")),
+                Cow::Borrowed(include_bytes!("ui/preset/assets/Pretendard-Medium.otf")),
+                Cow::Borrowed(include_bytes!("ui/preset/assets/Pretendard-SemiBold.otf")),
             ])
             .expect("register the gallery's Pretendard fonts");
         gpui_deck::init(cx);
@@ -35,7 +35,7 @@ fn main() {
             },
             |window, cx| {
                 let gallery = gallery::open(CREATE_DARK_MODE, window, cx);
-                cx.new(|cx| Root::new(gallery, window, cx))
+                cx.new(|cx| Root::new(gallery, window, cx).font_family("Pretendard"))
             },
         )
         .expect("open the GPUI Deck gallery");
