@@ -13,8 +13,10 @@ import { RegistryDetail, RegistryDirectory } from "@/components/directory/direct
 import { registries } from "@/components/directory/registries";
 import { Home } from "@/components/home";
 import { DocsShell } from "@/components/shell/docs-shell";
+import { CatalogSearchDialog } from "@/components/shell/catalog-search";
 import { accents, accentStorageKey } from "@/lib/accent";
 import { i18n, translations } from "@/lib/i18n";
+import { searchCatalog } from "@/lib/search-catalog";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const docs = defineDocs({
@@ -30,6 +32,28 @@ const docs = defineDocs({
 
 const app = createPress(docs.toFumadocsSource(), { i18n, mode: "force-static" }).plugins(
   oramaSearchPlugin(),
+  {
+    name: "deck:search-catalog",
+    routes({ createApi }) {
+      for (const lang of i18n.languages) {
+        createApi({
+          path: `/api/catalog/${lang}.json`,
+          render: "static",
+          GET: async () => {
+            const loader = await this.getLoader();
+            const entries = blocks.map((block) => {
+              const slugs = ["blocks", block.name];
+              const page = loader.getPage(slugs, lang);
+              const english = loader.getPage(slugs, "en");
+              if (!page || !english) throw new Error(`Missing ${lang} block ${block.name}`);
+              return { block, title: page.data.title, english: english.data.title };
+            });
+            return Response.json(searchCatalog(lang, entries));
+          },
+        });
+      }
+    },
+  },
   sitemapPlugin(),
 );
 
@@ -69,6 +93,7 @@ export default app.config({
     ];
   },
   ui: {
+    providerProps: { search: { SearchDialog: CatalogSearchDialog } },
     translations,
     async renderPage(props) {
       if (props.page.slugs[0] === "charts") {

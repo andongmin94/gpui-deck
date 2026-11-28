@@ -26,6 +26,20 @@ for (const [slug, title] of [
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
     await expect(page.locator(`img[src="/images/blocks/${slug}.webp"]`)).toBeVisible();
     await expect(page.locator("iframe")).toHaveCount(0);
+    if (slug === "billing-dashboard") {
+      const starter = page.getByRole("region", { name: "Run as a new app" });
+      const download = starter.getByRole("link", { name: "Download project (.zip)" });
+      await expect(download).toHaveAttribute("href", "/downloads/billing-dashboard.zip");
+      await expect(starter.getByText("cargo run", { exact: true })).toBeVisible();
+      const archive = await page.request.get((await download.getAttribute("href"))!);
+      expect(archive.ok()).toBe(true);
+      expect((await archive.body()).subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 3, 4]));
+      const existing = page.getByRole("region", { name: "Add to an existing app" });
+      await expect(existing.getByRole("textbox", { name: "Install command" })).toHaveValue(command);
+      await expect(
+        existing.getByRole("link", { name: "Connect the dashboard to your window" }),
+      ).toHaveAttribute("href", "/en/docs/guides/blocks#existing-app");
+    }
 
     const picker = page.getByRole("combobox", { name: "Source file" });
     await expect(async () => {

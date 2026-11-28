@@ -7,6 +7,16 @@ description: "Install a team's billing dashboard from GitHub, then publish a blo
 
 [Preview the billing dashboard](/en/blocks/billing-dashboard/) to try the chart and invoice table or read the Rust files before installation.
 
+### Run as a new app [#new-app]
+
+<a href="/downloads/billing-dashboard.zip" download>Download the billing dashboard project</a> and extract it. Open a terminal in the extracted `billing-dashboard` folder and run the command below with the [native build tools](/en/docs/installation/) installed.
+
+```sh
+cargo run
+```
+
+### Add to an existing app [#existing-app]
+
 Start with a Rust application and the Cargo dependencies in the [installation guide](/en/docs/installation/). Run these commands at the application root with `curl` on your PATH.
 
 ```sh
@@ -16,26 +26,17 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-
 
 The default destination is `src/ui`. The block’s Rust module and team palette land in `src/ui/billing_dashboard/`. Its chart and data table share that palette. The CLI also installs the table’s input group, pagination and empty state. Use `--to` to choose a different UI module.
 
-Put this in `src/main.rs`, then run `cargo build` or `cargo run`.
+Declare `mod ui;` in the crate root if your app does not already expose `src/ui`. In your view constructor, import `gpui::AppContext as _` and create the dashboard once:
 
 ```rust
-mod ui;
-
-use gpui::AppContext as _;
-use ui::billing_dashboard::BillingDashboard as Screen;
-
-fn main() {
-    gpui_platform::application().run(|cx| {
-        gpui_deck::init(cx);
-        cx.open_window(Default::default(), |window, cx| {
-            let screen = cx.new(|cx| Screen::new(window, cx));
-            cx.new(|cx| gpui_deck::Root::new(screen, window, cx))
-        })
-        .expect("open block window");
-        cx.activate(true);
-    });
-}
+let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(window, cx));
 ```
+
+Store the result in a `billing` field of type `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` and render it with `.child(self.billing.clone())` inside your existing GPUI Deck window.
+
+To open a separate billing window, copy the file below into `src/billing_window.rs` and declare `mod billing_window;` in the crate root. Call `billing_window::open(cx)` after `gpui_deck::init(cx)` in your application’s startup callback.
+
+<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
 
 ## Open a different block
 
@@ -43,9 +44,9 @@ Copy the install command from the block's page. In the app above, replace the `u
 
 | Block | Import |
 | --- | --- |
-| [Login](/en/blocks/login) | `use ui::login::Login as Screen;` |
-| [Sidebar settings](/en/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
-| [Neobrutal login](/en/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
+| [Login](/en/blocks/login) | `use crate::ui::login::Login as Screen;` |
+| [Sidebar settings](/en/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
+| [Neobrutal login](/en/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
 
 ## Publish your team's block [#publish]
 
@@ -72,13 +73,15 @@ Share the GitHub file URL for the manifest, or its `raw.githubusercontent.com` U
 
 `gpui-deck diff --to src/ui` compares the bundled recipes and their generated scaffolding. Use your project's Git diff for the team's block files.
 
-## Share a collection
+## Share a collection [#share-collection]
 
 The [Neobrutal registry](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal) shows how to share a visual style across items. Put one manifest per installable item next to the Rust source in your team's public GitHub repository. The login manifest lists the same button, input and palette files used by the individual components. One login install therefore includes all three.
 
-After a standalone install, render a button with `ui::neobrutal_button::press_button("save", "Save")` and attach your handler with `.on_click(...)`. For a field, create the input state once with `ui::neobrutal_input::editor` inside `cx.new(...)`, then pass that state to `ui::neobrutal_input::field` on each render.
+After a standalone install, render a button with `crate::ui::neobrutal_button::press_button("save", "Save")` and attach your handler with `.on_click(...)`. For a field, create the input state once with `crate::ui::neobrutal_input::editor` inside `cx.new(...)`, then pass that state to `crate::ui::neobrutal_input::field` on each render.
 
-List your item manifests in a `registry.json` catalog so readers can browse the collection. Share the GitHub URL of an **item manifest** for `gpui-deck add`. To browse a working collection, open the [registry directory](/en/directory).
+List each item's manifest and kind in a public [`registry.json` catalog](https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/registry.json). To install an item, pass its **item manifest** URL to `gpui-deck add`.
+
+Choose [Submit a registry in the directory](/en/directory#submit-registry) to open the GitHub issue form. Include the catalog URL and one installable item manifest. Maintainers review the request before adding the collection.
 
 ## Run an installed registry item [#registry]
 
@@ -89,7 +92,7 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 ```
 
 ```rust
-let screen = ui::neobrutal_select::preview(window, cx);
+let screen = crate::ui::neobrutal_select::preview(window, cx);
 ```
 
 Use the component's function directly in your own view when you are ready to supply your own state and content.
@@ -104,8 +107,8 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 ```
 
 ```rust
-let palette = ui::neobrutal_theme_blue::palette(false);
-let save = ui::neobrutal_button::press_button_with_palette("save", "Save", palette);
+let palette = crate::ui::neobrutal_theme_blue::palette(false);
+let save = crate::ui::neobrutal_button::press_button_with_palette("save", "Save", palette);
 ```
 
 To run the project dashboard with the same theme, install its template into the same app.
@@ -117,13 +120,13 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 In the window example above, replace the `use … as Screen;` import with the following one.
 
 ```rust
-use ui::neobrutal_dashboard_template::Dashboard as Screen;
+use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 Inside `open_window`, replace the line that creates `screen` with these two lines, then run `cargo run`.
 
 ```rust
-let palette = ui::neobrutal_theme_blue::palette(true);
+let palette = crate::ui::neobrutal_theme_blue::palette(true);
 let screen = cx.new(|cx| Screen::new(palette, window, cx));
 ```
 
@@ -137,6 +140,6 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neum
 ```
 
 ```rust
-let palette = ui::neumorphism_style_sage::palette(false);
-let save = ui::neumorphism_button::press_button_with_palette("save", "Save", palette);
+let palette = crate::ui::neumorphism_style_sage::palette(false);
+let save = crate::ui::neumorphism_button::press_button_with_palette("save", "Save", palette);
 ```

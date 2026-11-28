@@ -13,6 +13,19 @@ test.use({
   },
 });
 
+test("registry authors can reach the submission form and publishing guide", async ({ page }) => {
+  await page.goto("/ko/directory");
+  const form = page.getByRole("link", { name: "레지스트리 등록 요청", exact: true });
+  await expect(form).toHaveAttribute(
+    "href",
+    "https://github.com/andongmin94/gpui-deck/issues/new?template=registry-submission.yml",
+  );
+  await page.getByRole("link", { name: "레지스트리 게시 가이드" }).click();
+  await expect(page.locator("h2#share-collection")).toBeInViewport();
+  await page.getByRole("link", { name: "디렉터리에서 레지스트리 등록 요청" }).click();
+  await expect(form).toBeInViewport();
+});
+
 for (const collection of ["neobrutal", "neumorphism"]) {
   test(`every ${collection} item ships a desktop and mobile preview`, async ({ request }) => {
     const url = new URL(`../../registries/${collection}/registry.json`, import.meta.url);

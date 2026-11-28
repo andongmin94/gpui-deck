@@ -159,9 +159,19 @@ export function FilteredBlocks({
                         <ArrowUpRight aria-hidden className="size-3.5 text-fd-muted-foreground" />
                       </Link>
                     </h3>
-                    <span className="shrink-0 rounded-md bg-fd-secondary px-2 py-0.5 text-xs font-medium">
-                      {styles[style]}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {block.name === "billing-dashboard" && (
+                        <Link
+                          href={`${href}#new-app`}
+                          className="inline-flex min-h-8 items-center text-xs underline underline-offset-4"
+                        >
+                          {t.newApp}
+                        </Link>
+                      )}
+                      <span className="rounded-md bg-fd-secondary px-2 py-0.5 text-xs font-medium">
+                        {styles[style]}
+                      </span>
+                    </div>
                   </div>
                   <BlockViewer lang={lang} title={title} block={block} command={block.command} />
                   {description && (

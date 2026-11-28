@@ -69,6 +69,7 @@ const copy = {
   en: {
     all: "All blocks",
     galleryTitle: "Building blocks for GPUI",
+    newApp: "Run as a new app",
     purpose: "Purpose",
     style: "Style",
     everyPurpose: "All purposes",
@@ -101,6 +102,7 @@ const copy = {
   ko: {
     all: "모든 블록",
     galleryTitle: "GPUI 앱을 위한 블록",
+    newApp: "새 앱으로 실행",
     purpose: "용도",
     style: "스타일",
     everyPurpose: "모든 용도",
@@ -134,6 +136,7 @@ const copy = {
   ja: {
     all: "すべてのブロック",
     galleryTitle: "GPUI アプリのためのブロック",
+    newApp: "新しいアプリとして実行",
     purpose: "用途",
     style: "スタイル",
     everyPurpose: "すべての用途",
@@ -167,6 +170,7 @@ const copy = {
   zh: {
     all: "所有区块",
     galleryTitle: "适用于 GPUI 应用的区块",
+    newApp: "作为新应用运行",
     purpose: "用途",
     style: "风格",
     everyPurpose: "所有用途",

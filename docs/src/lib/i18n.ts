@@ -19,7 +19,7 @@ export const translations = i18n
     ko: {
       displayName: "한국어",
       "Search(search trigger)": "검색",
-      "Search(search dialog)": "문서 검색",
+      "Search(search dialog)": "사이트 검색",
       "No results found(search dialog)": "결과가 없습니다",
       "On this page(table of contents)": "이 페이지의 목차",
       "No Headings(table of contents)": "제목이 없습니다",
@@ -46,7 +46,7 @@ export const translations = i18n
     ja: {
       displayName: "日本語",
       "Search(search trigger)": "検索",
-      "Search(search dialog)": "ドキュメントを検索",
+      "Search(search dialog)": "サイト内検索",
       "No results found(search dialog)": "結果が見つかりません",
       "On this page(table of contents)": "このページの内容",
       "No Headings(table of contents)": "見出しがありません",
@@ -73,7 +73,7 @@ export const translations = i18n
     zh: {
       displayName: "简体中文",
       "Search(search trigger)": "搜索",
-      "Search(search dialog)": "搜索文档",
+      "Search(search dialog)": "站内搜索",
       "No results found(search dialog)": "未找到结果",
       "On this page(table of contents)": "本页内容",
       "No Headings(table of contents)": "没有标题",

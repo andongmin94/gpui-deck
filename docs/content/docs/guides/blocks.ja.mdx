@@ -7,6 +7,16 @@ description: "GitHub からチームの請求ダッシュボードを導入し�
 
 [請求ダッシュボードのプレビュー](/ja/blocks/billing-dashboard/)でチャートと請求書テーブルを操作し、インストールする Rust ソースを確認できます。
 
+### 新しいアプリとして実行 [#new-app]
+
+<a href="/downloads/billing-dashboard.zip" download>請求ダッシュボードのプロジェクト</a>をダウンロードして展開し、`billing-dashboard` フォルダーでターミナルを開きます。[OS 別のビルドツール](/ja/docs/installation/)を準備してから実行します。
+
+```sh
+cargo run
+```
+
+### 既存のアプリに追加 [#existing-app]
+
 Rust アプリに[インストールガイド](/ja/docs/installation/)の Cargo 依存関係を追加します。`curl` が使える環境で、アプリのルートから実行してください。
 
 ```sh
@@ -16,26 +26,17 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-
 
 既定のインストール先は `src/ui` です。ダッシュボードとチームのパレットは `src/ui/billing_dashboard/` に入ります。チャートと請求書テーブルは同じパレットを使い、テーブルが必要とする入力グループ、ページ送り、空状態のレシピも一緒に入ります。別の UI モジュールを選ぶには `--to` を指定します。
 
-次のコードを `src/main.rs` に置き、`cargo build` でビルドするか、`cargo run` でウィンドウを開きます。
+`src/ui` を新しく追加した場合は、クレートのルートで `mod ui;` を宣言します。既存ビューのコンストラクターで `gpui::AppContext as _` をインポートし、ダッシュボードを一度だけ生成します。
 
 ```rust
-mod ui;
-
-use gpui::AppContext as _;
-use ui::billing_dashboard::BillingDashboard as Screen;
-
-fn main() {
-    gpui_platform::application().run(|cx| {
-        gpui_deck::init(cx);
-        cx.open_window(Default::default(), |window, cx| {
-            let screen = cx.new(|cx| Screen::new(window, cx));
-            cx.new(|cx| gpui_deck::Root::new(screen, window, cx))
-        })
-        .expect("open block window");
-        cx.activate(true);
-    });
-}
+let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(window, cx));
 ```
+
+返り値を `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` 型の `billing` フィールドに保持し、既存の GPUI Deck ウィンドウ内で `.child(self.billing.clone())` として表示します。
+
+別のウィンドウで開く場合は、次のコードを `src/billing_window.rs` にコピーし、クレートのルートで `mod billing_window;` を宣言します。アプリの起動時に `gpui_deck::init(cx)` の後で `billing_window::open(cx)` を呼び出します。
+
+<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
 
 ## 別のブロックを開く
 
@@ -43,9 +44,9 @@ fn main() {
 
 | ブロック | インポート |
 | --- | --- |
-| [ログイン](/ja/blocks/login) | `use ui::login::Login as Screen;` |
-| [サイドバー付き設定](/ja/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
-| [Neobrutal ログイン](/ja/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
+| [ログイン](/ja/blocks/login) | `use crate::ui::login::Login as Screen;` |
+| [サイドバー付き設定](/ja/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
+| [Neobrutal ログイン](/ja/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
 
 ## チームのブロックを公開する [#publish]
 
@@ -72,13 +73,15 @@ fn main() {
 
 `gpui-deck diff --to src/ui` は同梱レシピと生成されたモジュール宣言を比較します。チームのブロックファイルの変更はアプリ側の Git diff で確認します。
 
-## コレクションを共有する
+## コレクションを共有する [#share-collection]
 
 [Neobrutal レジストリ](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal)のように、チームの公開 GitHub リポジトリに Rust ソースと項目ごとのマニフェストを置きます。ログイン画面のマニフェストは、個別に配布するボタン、入力欄と共通のパレットを参照するので、ログイン画面を追加するとすべて揃います。
 
-ボタンだけを追加した場合は、`ui::neobrutal_button::press_button("save", "保存")` に `.on_click(...)` を付けて描画します。入力欄では `cx.new(...)` の中で `ui::neobrutal_input::editor` を使って状態を一度生成し、描画のたびに `ui::neobrutal_input::field` に渡します。
+ボタンだけを追加した場合は、`crate::ui::neobrutal_button::press_button("save", "保存")` に `.on_click(...)` を付けて描画します。入力欄では `cx.new(...)` の中で `crate::ui::neobrutal_input::editor` を使って状態を一度生成し、描画のたびに `crate::ui::neobrutal_input::field` に渡します。
 
-`registry.json` に各項目のマニフェストを列挙してコレクションを紹介できます。`gpui-deck add` にはインストールしたい**項目のマニフェスト**の GitHub URL を渡します。[レジストリ一覧](/ja/directory)で実例を確認できます。
+公開の [`registry.json` カタログ](https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/registry.json)に各項目のマニフェストと種類を記載します。`gpui-deck add` には、インストールする**項目のマニフェスト**の URL を渡します。
+
+[レジストリ一覧から掲載を申請](/ja/directory#submit-registry)すると、GitHub の Issue フォームが開きます。カタログの URL と、インストールできる項目のマニフェスト URL を一つ添えてください。メンテナーが内容を確認してから掲載します。
 
 ## 導入したレジストリ項目を実行する [#registry]
 
@@ -89,7 +92,7 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 ```
 
 ```rust
-let screen = ui::neobrutal_select::preview(window, cx);
+let screen = crate::ui::neobrutal_select::preview(window, cx);
 ```
 
 独自のデータや動作を渡すには、同じモジュールのコンポーネント関数をビューから直接呼び出します。
@@ -104,8 +107,8 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 ```
 
 ```rust
-let palette = ui::neobrutal_theme_blue::palette(false);
-let save = ui::neobrutal_button::press_button_with_palette("save", "保存", palette);
+let palette = crate::ui::neobrutal_theme_blue::palette(false);
+let save = crate::ui::neobrutal_button::press_button_with_palette("save", "保存", palette);
 ```
 
 同じアプリでプロジェクトダッシュボードにもブルーテーマを適用するには、テンプレートを追加します。
@@ -117,13 +120,13 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 上のウィンドウの例で、`use … as Screen;` の行を次のインポートに置き換えます。
 
 ```rust
-use ui::neobrutal_dashboard_template::Dashboard as Screen;
+use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 `open_window` 内で `screen` を作成する行を次の 2 行に置き換え、`cargo run` で起動します。
 
 ```rust
-let palette = ui::neobrutal_theme_blue::palette(true);
+let palette = crate::ui::neobrutal_theme_blue::palette(true);
 let screen = cx.new(|cx| Screen::new(palette, window, cx));
 ```
 
@@ -137,6 +140,6 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neum
 ```
 
 ```rust
-let palette = ui::neumorphism_style_sage::palette(false);
-let save = ui::neumorphism_button::press_button_with_palette("save", "保存", palette);
+let palette = crate::ui::neumorphism_style_sage::palette(false);
+let save = crate::ui::neumorphism_button::press_button_with_palette("save", "保存", palette);
 ```

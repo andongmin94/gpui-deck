@@ -85,6 +85,8 @@ export type Registry = (typeof registries)[number];
 const copy = {
   en: {
     directory: "Registry directory",
+    submit: "Submit a registry",
+    publish: "Registry publishing guide",
     open: "Explore registry",
     original: "Original design system",
     guide: "Installation guide",
@@ -106,6 +108,8 @@ const copy = {
   },
   ko: {
     directory: "레지스트리",
+    submit: "레지스트리 등록 요청",
+    publish: "레지스트리 게시 가이드",
     open: "레지스트리 둘러보기",
     original: "원본 디자인 시스템",
     guide: "설치 가이드",
@@ -127,6 +131,8 @@ const copy = {
   },
   ja: {
     directory: "レジストリ一覧",
+    submit: "レジストリの掲載を申請",
+    publish: "レジストリ公開ガイド",
     open: "レジストリを見る",
     original: "元のデザインシステム",
     guide: "インストールガイド",
@@ -148,6 +154,8 @@ const copy = {
   },
   zh: {
     directory: "注册表目录",
+    submit: "申请收录注册表",
+    publish: "注册表发布指南",
     open: "浏览注册表",
     original: "原始设计系统",
     guide: "安装指南",

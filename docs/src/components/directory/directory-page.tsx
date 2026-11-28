@@ -1,5 +1,6 @@
 import { Link } from "fumapress/client";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import { GIT } from "@/lib/site";
 import { RegistryBrowser } from "./registry-browser";
 import { CatalogLayout } from "../catalog-layout";
 import { itemTitle, type Registry, registryCopy } from "./registries";
@@ -27,6 +28,19 @@ export function RegistryDirectory({
       <header className="py-10 sm:py-16">
         <h1 className={heading}>{page.title}</h1>
         <p className={description}>{page.description}</p>
+        <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
+          <a
+            id="submit-registry"
+            href={`https://github.com/${GIT.user}/${GIT.repo}/issues/new?template=registry-submission.yml`}
+            className="inline-flex min-h-10 scroll-mt-20 items-center gap-2 rounded-lg border px-4 text-sm font-medium hover:bg-fd-secondary"
+          >
+            {t.submit}
+            <ArrowUpRight aria-hidden className="size-4" />
+          </a>
+          <Link className={quietLink} href={`/${lang}/docs/guides/blocks#share-collection`}>
+            {t.publish}
+          </Link>
+        </div>
       </header>
       <div className="grid gap-5 md:grid-cols-2">
         {entries.map(({ registry, page: entry }) => {

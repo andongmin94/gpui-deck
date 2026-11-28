@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "fumapress/client";
 import { useTheme } from "next-themes";
 import {
   defaultPreset,
@@ -22,6 +23,7 @@ import {
   type Preset,
 } from "@/lib/create-preset";
 import { SiteHeader } from "../shell/header";
+import { useHydrated } from "../use-hydrated";
 import { createCopy, optionLabel } from "./copy";
 import { GetCode, OpenPreset } from "./preset-dialogs";
 
@@ -94,32 +96,24 @@ function SettingMark({ axis, value }: { axis: Axis; value: string }) {
   );
 }
 
-function readLocation() {
-  const code = new URLSearchParams(window.location.search).get("preset");
+function readSelection(query: string) {
+  const code = new URLSearchParams(query).get("preset");
   const preset = code === null ? defaultPreset : parsePreset(code);
   return { preset: preset ?? defaultPreset, invalid: !preset };
 }
 
 export function CreatePage({ lang, title }: { lang: string; title: string }) {
   const t = createCopy(lang);
+  const { query, push } = useRouter();
   const { resolvedTheme } = useTheme();
-  const [selection, setSelection] = useState<ReturnType<typeof readLocation> | null>(null);
+  const selection = useHydrated() ? readSelection(query) : null;
   const [expanded, setExpanded] = useState(false);
-  const [shared, setShared] = useState<"idle" | "copied" | "manual">("idle");
+  const [shareResult, setShareResult] = useState<{ code: string; status: "copied" | "manual" }>();
   const shareInput = useRef<HTMLInputElement>(null);
   const preset = selection?.preset ?? defaultPreset;
   const code = encodePreset(preset);
+  const shared = shareResult?.code === code ? shareResult.status : "idle";
   const posterTheme = resolvedTheme === "dark" ? "-dark" : "";
-
-  useEffect(() => {
-    function sync() {
-      setSelection(readLocation());
-      setShared("idle");
-    }
-    sync();
-    window.addEventListener("popstate", sync);
-    return () => window.removeEventListener("popstate", sync);
-  }, []);
 
   useEffect(() => {
     if (shared === "manual") {
@@ -132,9 +126,8 @@ export function CreatePage({ lang, title }: { lang: string; title: string }) {
     const url = new URL(window.location.href);
     if (reset) url.searchParams.delete("preset");
     else url.searchParams.set("preset", encodePreset(next));
-    if (url.href !== window.location.href) window.history.pushState(window.history.state, "", url);
-    setSelection({ preset: next, invalid: false });
-    setShared("idle");
+    if (url.href !== window.location.href) void push(url.pathname + url.search + url.hash);
+    setShareResult(undefined);
   }
 
   function shareUrl() {
@@ -269,9 +262,9 @@ export function CreatePage({ lang, title }: { lang: string; title: string }) {
                 onClick={async () => {
                   try {
                     await navigator.clipboard.writeText(shareUrl());
-                    setShared("copied");
+                    setShareResult({ code, status: "copied" });
                   } catch {
-                    setShared("manual");
+                    setShareResult({ code, status: "manual" });
                   }
                 }}
               >

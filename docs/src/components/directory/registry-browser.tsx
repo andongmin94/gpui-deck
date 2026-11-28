@@ -1,6 +1,7 @@
 "use client";
 
 import { Box, Search } from "lucide-react";
+import { useRouter } from "fumapress/client";
 import { useEffect, useRef, useState } from "react";
 import { BlockViewer } from "../blocks/block-viewer";
 import { InstallCommand } from "../blocks/install-command";
@@ -12,6 +13,7 @@ function fromHash(registry: Registry) {
 }
 
 export function RegistryBrowser({ lang, collection }: { lang: string; collection: string }) {
+  const { hash } = useRouter();
   const registry = registries.find((entry) => entry.slug === collection)!;
   const t = registryCopy(lang);
   // The static page cannot see the URL fragment. Resolve it before starting GPUI.
@@ -23,7 +25,7 @@ export function RegistryBrowser({ lang, collection }: { lang: string; collection
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
-  }, [registry]);
+  }, [registry, hash]);
   useEffect(() => {
     if (selected && window.location.hash === `#${selected}`)
       detail.current?.scrollIntoView({ block: "start" });

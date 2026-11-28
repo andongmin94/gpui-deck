@@ -7,6 +7,16 @@ description: "从 GitHub 安装团队的账单仪表盘，并发布包含自定�
 
 在[账单仪表盘预览](/zh/blocks/billing-dashboard/)中试用图表和账单表格，查看即将安装的 Rust 源码。
 
+### 作为新应用运行 [#new-app]
+
+<a href="/downloads/billing-dashboard.zip" download>下载账单仪表盘项目</a>并解压，然后在 `billing-dashboard` 文件夹中打开终端。准备好[对应平台的构建工具](/zh/docs/installation/)后运行以下命令。
+
+```sh
+cargo run
+```
+
+### 添加到现有应用 [#existing-app]
+
 按[安装指南](/zh/docs/installation/)为 Rust 应用添加 Cargo 依赖。确保 `curl` 在 PATH 中可用，然后在应用根目录执行以下命令。
 
 ```sh
@@ -16,26 +26,17 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/billing-
 
 默认安装目录是 `src/ui`。仪表盘模块和团队配色位于 `src/ui/billing_dashboard/`。图表和账单表格使用同一套配色。CLI 还会安装表格依赖的输入组、分页和空状态配方。可通过 `--to` 指定其他 UI 模块目录。
 
-将以下代码放入 `src/main.rs`，然后运行 `cargo build` 编译，或运行 `cargo run` 打开窗口。
+如果刚添加 `src/ui`，请在 crate 的根模块声明 `mod ui;`。在现有视图的构造函数中引入 `gpui::AppContext as _`，并创建一次仪表盘：
 
 ```rust
-mod ui;
-
-use gpui::AppContext as _;
-use ui::billing_dashboard::BillingDashboard as Screen;
-
-fn main() {
-    gpui_platform::application().run(|cx| {
-        gpui_deck::init(cx);
-        cx.open_window(Default::default(), |window, cx| {
-            let screen = cx.new(|cx| Screen::new(window, cx));
-            cx.new(|cx| gpui_deck::Root::new(screen, window, cx))
-        })
-        .expect("open block window");
-        cx.activate(true);
-    });
-}
+let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(window, cx));
 ```
+
+把返回值保存在类型为 `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` 的 `billing` 字段中，然后用 `.child(self.billing.clone())` 将它显示在现有的 GPUI Deck 窗口中。
+
+如需在单独的窗口中打开仪表盘，请将以下代码复制到 `src/billing_window.rs`，并在 crate 根模块声明 `mod billing_window;`。在应用启动回调中，先调用 `gpui_deck::init(cx)`，再调用 `billing_window::open(cx)`。
+
+<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
 
 ## 打开其他区块
 
@@ -43,9 +44,9 @@ fn main() {
 
 | 区块 | 导入语句 |
 | --- | --- |
-| [登录](/zh/blocks/login) | `use ui::login::Login as Screen;` |
-| [侧边栏设置](/zh/blocks/sidebar-settings) | `use ui::sidebar_settings::SidebarSettings as Screen;` |
-| [Neobrutal 登录](/zh/directory/neobrutal) | `use ui::neobrutal_login::Login as Screen;` |
+| [登录](/zh/blocks/login) | `use crate::ui::login::Login as Screen;` |
+| [侧边栏设置](/zh/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
+| [Neobrutal 登录](/zh/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
 
 ## 发布团队区块 [#publish]
 
@@ -72,13 +73,15 @@ fn main() {
 
 `gpui-deck diff --to src/ui` 可比较内置配方和生成的模块声明。团队区块源文件的修改可以用应用仓库的 Git diff 查看。
 
-## 分享组件集合
+## 分享组件集合 [#share-collection]
 
 可以参考 [Neobrutal 注册表](https://github.com/andongmin94/gpui-deck/tree/main/registries/neobrutal)，将 Rust 源文件和每个可安装项目的清单放在团队的公开 GitHub 仓库中。登录页的清单引用了与独立组件相同的按钮、输入框和调色板文件，安装一次即可获取完整界面。
 
-单独安装按钮后，使用 `ui::neobrutal_button::press_button("save", "保存")` 渲染按钮，并通过 `.on_click(...)` 绑定操作。对于输入框，在 `cx.new(...)` 中通过 `ui::neobrutal_input::editor` 创建一次状态，然后在每次渲染时将该状态传给 `ui::neobrutal_input::field`。
+单独安装按钮后，使用 `crate::ui::neobrutal_button::press_button("save", "保存")` 渲染按钮，并通过 `.on_click(...)` 绑定操作。对于输入框，在 `cx.new(...)` 中通过 `crate::ui::neobrutal_input::editor` 创建一次状态，然后在每次渲染时将该状态传给 `crate::ui::neobrutal_input::field`。
 
-在 `registry.json` 中列出各个项目的清单，供读者浏览。运行 `gpui-deck add` 时，传入要安装的**项目清单**的 GitHub 文件链接。[注册表目录](/zh/directory)中有可用的示例。
+在公开的 [`registry.json` 目录文件](https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/registry.json)中列出每个条目的清单和类型。运行 `gpui-deck add` 时，传入要安装的**条目清单**的 URL。
+
+在[注册表目录中申请收录](/zh/directory#submit-registry)即可打开 GitHub 议题表单。请提供目录文件 URL 和一个可安装条目的清单 URL。维护者审核后会将集合加入目录。
 
 ## 运行安装的注册表项目 [#registry]
 
@@ -89,7 +92,7 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 ```
 
 ```rust
-let screen = ui::neobrutal_select::preview(window, cx);
+let screen = crate::ui::neobrutal_select::preview(window, cx);
 ```
 
 要接入自己的数据和行为，可以在视图中直接调用同一模块的组件函数。
@@ -104,8 +107,8 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 ```
 
 ```rust
-let palette = ui::neobrutal_theme_blue::palette(false);
-let save = ui::neobrutal_button::press_button_with_palette("save", "保存", palette);
+let palette = crate::ui::neobrutal_theme_blue::palette(false);
+let save = crate::ui::neobrutal_button::press_button_with_palette("save", "保存", palette);
 ```
 
 要在同一应用中给项目仪表盘使用蓝色主题，先安装仪表盘模板。
@@ -117,13 +120,13 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neob
 将上面窗口示例中的 `use … as Screen;` 替换为下面的导入语句。
 
 ```rust
-use ui::neobrutal_dashboard_template::Dashboard as Screen;
+use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 在 `open_window` 中，用下面两行替换创建 `screen` 的语句，然后运行 `cargo run`。
 
 ```rust
-let palette = ui::neobrutal_theme_blue::palette(true);
+let palette = crate::ui::neobrutal_theme_blue::palette(true);
 let screen = cx.new(|cx| Screen::new(palette, window, cx));
 ```
 
@@ -137,6 +140,6 @@ gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neum
 ```
 
 ```rust
-let palette = ui::neumorphism_style_sage::palette(false);
-let save = ui::neumorphism_button::press_button_with_palette("save", "保存", palette);
+let palette = crate::ui::neumorphism_style_sage::palette(false);
+let save = crate::ui::neumorphism_button::press_button_with_palette("save", "保存", palette);
 ```

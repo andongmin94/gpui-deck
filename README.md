@@ -373,7 +373,9 @@ tests. Cloudflare Workers Builds deploys `main` to the site from `docs/` with
 translations with it (an untranslated page shows the English text). Preview the site locally with `npm ci`,
 `npm run preview:build` and `npm run dev` in `docs/`; the preview build needs
 the `wasm32-unknown-unknown` target and `wasm-bindgen-cli` 0.2.127, which it
-installs itself on Linux when they are missing.
+installs itself on Linux when they are missing. The docs dev and production
+builds also use Python 3.11+ (`python3`) and Cargo to assemble the downloadable
+billing dashboard from its block manifest and source recipes.
 
 | Check | Linux | Windows | macOS |
 | --- | --- | --- | --- |
