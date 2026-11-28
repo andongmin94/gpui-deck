@@ -10,7 +10,7 @@
     "start": "fumapress start",
     "deploy:cloudflare": "wrangler deploy",
     "preview:build": "node scripts/build-previews.mjs",
-    "starter:build": "python3 scripts/build-billing-starter.py",
+    "starter:build": "python3 scripts/build-block-starters.py",
     "format": "oxlint --fix src scripts tests press.config.tsx vite.config.ts playwright.config.ts && oxfmt --write src scripts tests press.config.tsx vite.config.ts playwright.config.ts tsconfig.json package.json .oxlintrc.json .oxfmtrc.json",
     "lint": "oxlint --deny-warnings --format unix src scripts tests press.config.tsx vite.config.ts playwright.config.ts && oxfmt --check src scripts tests press.config.tsx vite.config.ts playwright.config.ts tsconfig.json package.json .oxlintrc.json .oxfmtrc.json",
     "typecheck": "tsc --noEmit",

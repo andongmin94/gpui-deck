@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
-mod billing_window;
+mod block_window;
+mod screen;
 // Installed recipe modules expose more controls than this screen uses.
 #[allow(dead_code, unused_imports)]
 mod ui;
@@ -13,7 +14,7 @@ fn main() {
                 Cow::Borrowed(include_bytes!("../assets/fonts/Pretendard-Medium.otf")),
                 Cow::Borrowed(include_bytes!("../assets/fonts/Pretendard-SemiBold.otf")),
             ])
-            .expect("register the billing dashboard fonts");
+            .expect("register the block's Pretendard fonts");
         gpui_deck::init(cx);
         cx.on_window_closed(|cx, _| {
             if cx.windows().is_empty() {
@@ -21,7 +22,7 @@ fn main() {
             }
         })
         .detach();
-        billing_window::open(cx);
+        block_window::open(cx);
         cx.activate(true);
     });
 }

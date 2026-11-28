@@ -21,25 +21,28 @@ for (const [slug, title] of [
       if (url.pathname.startsWith("/preview")) runtimeRequests.push(url.pathname + url.search);
     });
     await page.goto("/en/blocks");
+    const card = page.getByRole("article", { name: title, exact: true });
+    await expect(card.getByRole("link", { name: "Run as a new app" })).toHaveAttribute(
+      "href",
+      `/en/blocks/${slug}#new-app`,
+    );
     await page.getByRole("link", { name: title, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`/en/blocks/${slug}/?$`));
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
     await expect(page.locator(`img[src="/images/blocks/${slug}.webp"]`)).toBeVisible();
     await expect(page.locator("iframe")).toHaveCount(0);
-    if (slug === "billing-dashboard") {
-      const starter = page.getByRole("region", { name: "Run as a new app" });
-      const download = starter.getByRole("link", { name: "Download project (.zip)" });
-      await expect(download).toHaveAttribute("href", "/downloads/billing-dashboard.zip");
-      await expect(starter.getByText("cargo run", { exact: true })).toBeVisible();
-      const archive = await page.request.get((await download.getAttribute("href"))!);
-      expect(archive.ok()).toBe(true);
-      expect((await archive.body()).subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 3, 4]));
-      const existing = page.getByRole("region", { name: "Add to an existing app" });
-      await expect(existing.getByRole("textbox", { name: "Install command" })).toHaveValue(command);
-      await expect(
-        existing.getByRole("link", { name: "Connect the dashboard to your window" }),
-      ).toHaveAttribute("href", "/en/docs/guides/blocks#existing-app");
-    }
+    const starter = page.getByRole("region", { name: "Run as a new app" });
+    const download = starter.getByRole("link", { name: "Download project (.zip)" });
+    await expect(download).toHaveAttribute("href", `/downloads/${slug}.zip`);
+    await expect(starter.getByText("cargo run", { exact: true })).toBeVisible();
+    const archive = await page.request.get((await download.getAttribute("href"))!);
+    expect(archive.ok()).toBe(true);
+    expect((await archive.body()).subarray(0, 4)).toEqual(Buffer.from([0x50, 0x4b, 3, 4]));
+    const existing = page.getByRole("region", { name: "Add to an existing app" });
+    await expect(existing.getByRole("textbox", { name: "Install command" })).toHaveValue(command);
+    const guide = existing.getByRole("link", { name: "Connect this screen to your window" });
+    const anchor = slug === "billing-dashboard" ? "existing-app" : slug;
+    await expect(guide).toHaveAttribute("href", `/en/docs/guides/blocks#${anchor}`);
 
     const picker = page.getByRole("combobox", { name: "Source file" });
     await expect(async () => {
@@ -70,6 +73,9 @@ for (const [slug, title] of [
     await page.getByRole("button", { name: "Run preview" }).click();
     await expect(page.locator("iframe")).toHaveAttribute("src", `/preview?c=${slug}`);
     await expect.poll(() => runtimeRequests).toContain(`/preview?c=${slug}`);
+    await guide.click();
+    await expect(page.locator(`#${anchor}`)).toBeInViewport();
+    await expect(page.locator("pre").filter({ hasText: command })).toHaveCount(1);
   });
 }
 

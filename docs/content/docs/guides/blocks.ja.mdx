@@ -34,19 +34,53 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 返り値を `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` 型の `billing` フィールドに保持し、既存の GPUI Deck ウィンドウ内で `.child(self.billing.clone())` として表示します。
 
-別のウィンドウで開く場合は、次のコードを `src/billing_window.rs` にコピーし、クレートのルートで `mod billing_window;` を宣言します。アプリの起動時に `gpui_deck::init(cx)` の後で `billing_window::open(cx)` を呼び出します。
+別の請求ウィンドウを開くには、以下の 2 ファイルを `src/` にコピーし、クレートのルートで `mod screen;` と `mod block_window;` を宣言します。起動時に `gpui_deck::init(cx)` の後で `block_window::open(cx)` を呼び出します。
 
-<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
+<include lang="rust" meta='title="src/screen.rs"'>../../../../blocks/billing-dashboard/app/screen.rs</include>
+
+<include lang="rust" meta='title="src/block_window.rs"'>../../../../blocks/starter/block_window.rs</include>
 
 ## 別のブロックを開く
 
-使いたいブロックのページでインストールコマンドをコピーして実行します。上のコードの `use ... as Screen` を、その画面に対応する行に置き換えてください。
+新しいアプリにはプロジェクトの ZIP を使えます。既存の GPUI アプリでは[導入手順](#existing-app)に従って Cargo の依存関係と `mod ui;` を準備し、使いたい画面を追加してください。親ビューで `gpui::AppContext as _` をインポートし、コンストラクターで子ビューを一度だけ作成します。
 
-| ブロック | インポート |
-| --- | --- |
-| [ログイン](/ja/blocks/login) | `use crate::ui::login::Login as Screen;` |
-| [サイドバー付き設定](/ja/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
-| [Neobrutal ログイン](/ja/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
+### ログイン [#login]
+
+[プレビュー](/ja/blocks/login) · <a href="/downloads/login.zip" download>プロジェクトをダウンロード (.zip)</a>
+
+ZIP を展開し、`login` フォルダーで `cargo run` を実行します。
+
+既存のアプリに追加する場合は、そのアプリのルートで以下を実行します。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/login/block.json
+```
+
+```rust
+let login = cx.new(|cx| crate::ui::login::Login::new(window, cx));
+```
+
+`login` を `gpui::Entity<crate::ui::login::Login>` 型のフィールドに保存し、`.child(self.login.clone())` で表示します。フォームはローカルで入力を検証します。認証サービスは `submit` の検証成功時に接続してください。
+
+### サイドバー付き設定画面 [#sidebar-settings]
+
+[プレビュー](/ja/blocks/sidebar-settings) · <a href="/downloads/sidebar-settings.zip" download>プロジェクトをダウンロード (.zip)</a>
+
+ZIP を展開し、`sidebar-settings` フォルダーで `cargo run` を実行します。
+
+既存のアプリに追加する場合は、そのアプリのルートで以下を実行します。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/sidebar-settings/block.json
+```
+
+```rust
+let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(window, cx));
+```
+
+`settings` を `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` 型のフィールドに保存し、`.child(self.settings.clone())` で表示します。適用した設定は現在のセッションに保持されます。
+
+[Neobrutal ログイン](/ja/directory/neobrutal#login)はレジストリからインストールし、別ウィンドウの例の `src/screen.rs` で `pub(crate) use crate::ui::neobrutal_login::Login as Screen;` を使います。
 
 ## チームのブロックを公開する [#publish]
 
@@ -85,7 +119,7 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 ## 導入したレジストリ項目を実行する [#registry]
 
-[Cargo の依存関係](/ja/docs/installation)を追加し、一覧から項目を選びます。Select を使う場合は以下のコマンドで追加します。上のウィンドウ例から `Screen` のインポートを削除し、`screen` を生成する行を以下の Rust コードに置き換えます。`cargo run` でサイトと同じ例をネイティブウィンドウで実行できます。
+[Cargo の依存関係](/ja/docs/installation)を追加し、以下のコマンドで Select をインストールします。別ウィンドウの例の `src/screen.rs` から `Screen` の別名を削除します。`src/block_window.rs` で `crate::screen::{TITLE, WINDOW_SIZE}` をインポートし、`screen` を生成する行を以下の Rust コードに置き換えます。`cargo run` で例を実行できます。
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
@@ -117,10 +151,10 @@ let save = crate::ui::neobrutal_button::press_button_with_palette("save", "保�
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-上のウィンドウの例で、`use … as Screen;` の行を次のインポートに置き換えます。
+`src/screen.rs` の `Screen` の別名を次のインポートに置き換えます。
 
 ```rust
-use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
+pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 `open_window` 内で `screen` を作成する行を次の 2 行に置き換え、`cargo run` で起動します。

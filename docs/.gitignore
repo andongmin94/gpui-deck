@@ -7,7 +7,7 @@ dist
 npm-debug.log*
 *.tsbuildinfo
 /public/preview/
-/public/downloads/billing-dashboard.zip
+/public/downloads/
 /playwright-report/
 /test-results/
 src/pages.gen.ts

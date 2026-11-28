@@ -34,19 +34,53 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 把返回值保存在类型为 `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` 的 `billing` 字段中，然后用 `.child(self.billing.clone())` 将它显示在现有的 GPUI Deck 窗口中。
 
-如需在单独的窗口中打开仪表盘，请将以下代码复制到 `src/billing_window.rs`，并在 crate 根模块声明 `mod billing_window;`。在应用启动回调中，先调用 `gpui_deck::init(cx)`，再调用 `billing_window::open(cx)`。
+如需打开独立的账单窗口，请将下面两个文件复制到 `src/`，并在 crate 根模块声明 `mod screen;` 和 `mod block_window;`。在启动回调中，先调用 `gpui_deck::init(cx)`，再调用 `block_window::open(cx)`。
 
-<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
+<include lang="rust" meta='title="src/screen.rs"'>../../../../blocks/billing-dashboard/app/screen.rs</include>
+
+<include lang="rust" meta='title="src/block_window.rs"'>../../../../blocks/starter/block_window.rs</include>
 
 ## 打开其他区块
 
-从区块页面复制并运行安装命令，再将上例中的 `use ... as Screen` 替换为对应的导入语句。
+新应用可以下载完整项目的 ZIP。在现有 GPUI 应用中，先按[现有应用安装指南](#existing-app)准备 Cargo 依赖并声明 `mod ui;`，再安装所需界面。在父视图中引入 `gpui::AppContext as _`，并在构造函数中创建一次子视图。
 
-| 区块 | 导入语句 |
-| --- | --- |
-| [登录](/zh/blocks/login) | `use crate::ui::login::Login as Screen;` |
-| [侧边栏设置](/zh/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
-| [Neobrutal 登录](/zh/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
+### 登录 [#login]
+
+[预览](/zh/blocks/login) · <a href="/downloads/login.zip" download>下载项目 (.zip)</a>
+
+解压 ZIP 后，在 `login` 文件夹中运行 `cargo run`。
+
+如需添加到现有应用，请在应用根目录运行以下命令。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/login/block.json
+```
+
+```rust
+let login = cx.new(|cx| crate::ui::login::Login::new(window, cx));
+```
+
+将 `login` 保存在类型为 `gpui::Entity<crate::ui::login::Login>` 的字段中，用 `.child(self.login.clone())` 显示。表单在本地校验输入。可以在 `submit` 校验成功的分支接入身份验证服务。
+
+### 侧边栏设置 [#sidebar-settings]
+
+[预览](/zh/blocks/sidebar-settings) · <a href="/downloads/sidebar-settings.zip" download>下载项目 (.zip)</a>
+
+解压 ZIP 后，在 `sidebar-settings` 文件夹中运行 `cargo run`。
+
+如需添加到现有应用，请在应用根目录运行以下命令。
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/sidebar-settings/block.json
+```
+
+```rust
+let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(window, cx));
+```
+
+将 `settings` 保存在类型为 `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` 的字段中，用 `.child(self.settings.clone())` 显示。应用后的设置会保留在当前会话中。
+
+[Neobrutal 登录](/zh/directory/neobrutal#login)可从注册表安装。在独立窗口示例的 `src/screen.rs` 中使用 `pub(crate) use crate::ui::neobrutal_login::Login as Screen;`。
 
 ## 发布团队区块 [#publish]
 
@@ -85,7 +119,7 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 ## 运行安装的注册表项目 [#registry]
 
-添加 [Cargo 依赖](/zh/docs/installation) 后，从目录选择项目。例如，使用下面的命令安装 Select。删除上方窗口示例中的 `Screen` 导入，将创建 `screen` 的一行替换为下面的 Rust 代码。运行 `cargo run` 即可在原生窗口中使用与网站相同的交互示例。
+添加 [Cargo 依赖](/zh/docs/installation)后，用下面的命令安装 Select。在独立窗口示例的 `src/screen.rs` 中删除 `Screen` 别名。在 `src/block_window.rs` 中引入 `crate::screen::{TITLE, WINDOW_SIZE}`，并将创建 `screen` 的语句替换为下面的 Rust 代码。运行 `cargo run` 即可打开示例。
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
@@ -117,10 +151,10 @@ let save = crate::ui::neobrutal_button::press_button_with_palette("save", "保�
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-将上面窗口示例中的 `use … as Screen;` 替换为下面的导入语句。
+把 `src/screen.rs` 中的 `Screen` 别名替换为以下导入。
 
 ```rust
-use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
+pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 在 `open_window` 中，用下面两行替换创建 `screen` 的语句，然后运行 `cargo run`。

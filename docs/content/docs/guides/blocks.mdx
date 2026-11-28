@@ -34,19 +34,53 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 Store the result in a `billing` field of type `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` and render it with `.child(self.billing.clone())` inside your existing GPUI Deck window.
 
-To open a separate billing window, copy the file below into `src/billing_window.rs` and declare `mod billing_window;` in the crate root. Call `billing_window::open(cx)` after `gpui_deck::init(cx)` in your application’s startup callback.
+To open a separate billing window, copy the two files below into `src/`, then declare `mod screen;` and `mod block_window;` in the crate root. In your startup callback, call `block_window::open(cx)` after `gpui_deck::init(cx)`.
 
-<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
+<include lang="rust" meta='title="src/screen.rs"'>../../../../blocks/billing-dashboard/app/screen.rs</include>
+
+<include lang="rust" meta='title="src/block_window.rs"'>../../../../blocks/starter/block_window.rs</include>
 
 ## Open a different block
 
-Copy the install command from the block's page. In the app above, replace the `use ... as Screen` line with the import for that screen.
+Download the project for a complete app, or run the install command in a GPUI app prepared with the [existing app setup](#existing-app). Import `gpui::AppContext as _` in the parent view and create the child once in its constructor.
 
-| Block | Import |
-| --- | --- |
-| [Login](/en/blocks/login) | `use crate::ui::login::Login as Screen;` |
-| [Sidebar settings](/en/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
-| [Neobrutal login](/en/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
+### Login [#login]
+
+[Preview](/en/blocks/login) · <a href="/downloads/login.zip" download>Download project (.zip)</a>
+
+Extract the ZIP and run `cargo run` in the `login` folder.
+
+To add this screen to an existing app, run this command in its root folder.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/login/block.json
+```
+
+```rust
+let login = cx.new(|cx| crate::ui::login::Login::new(window, cx));
+```
+
+Keep `login` in a `gpui::Entity<crate::ui::login::Login>` field and render it with `.child(self.login.clone())`. The form validates input locally. Connect the successful `submit` branch to your authentication service.
+
+### Sidebar settings [#sidebar-settings]
+
+[Preview](/en/blocks/sidebar-settings) · <a href="/downloads/sidebar-settings.zip" download>Download project (.zip)</a>
+
+Extract the ZIP and run `cargo run` in the `sidebar-settings` folder.
+
+To add this screen to an existing app, run this command in its root folder.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/sidebar-settings/block.json
+```
+
+```rust
+let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(window, cx));
+```
+
+Keep `settings` in a `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` field and render it with `.child(self.settings.clone())`. Apply keeps preferences for the current session.
+
+For the [Neobrutal login](/en/directory/neobrutal#login), install the block from its registry page and use `pub(crate) use crate::ui::neobrutal_login::Login as Screen;` in `src/screen.rs` in the separate-window example.
 
 ## Publish your team's block [#publish]
 
@@ -85,7 +119,7 @@ Choose [Submit a registry in the directory](/en/directory#submit-registry) to op
 
 ## Run an installed registry item [#registry]
 
-After adding the [Cargo dependencies](/en/docs/installation), install an item from the directory. For example, install Select with the command below. In the window example above, remove the `Screen` import and replace the line that constructs `screen` with the Rust line below. Run `cargo run` to open the same interactive example as the website.
+After adding the [Cargo dependencies](/en/docs/installation), install Select with the command below. In the separate-window example, delete the `Screen` alias in `src/screen.rs`. In `src/block_window.rs`, import `crate::screen::{TITLE, WINDOW_SIZE}` and replace the line that creates `screen` with the Rust line below. Run `cargo run` to open the example.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
@@ -117,10 +151,10 @@ To run the project dashboard with the same theme, install its template into the 
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-In the window example above, replace the `use … as Screen;` import with the following one.
+In `src/screen.rs`, replace the `Screen` alias with this import.
 
 ```rust
-use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
+pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 Inside `open_window`, replace the line that creates `screen` with these two lines, then run `cargo run`.

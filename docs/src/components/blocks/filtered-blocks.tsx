@@ -160,7 +160,7 @@ export function FilteredBlocks({
                       </Link>
                     </h3>
                     <div className="flex shrink-0 items-center gap-2">
-                      {block.name === "billing-dashboard" && (
+                      {style === "base" && (
                         <Link
                           href={`${href}#new-app`}
                           className="inline-flex min-h-8 items-center text-xs underline underline-offset-4"

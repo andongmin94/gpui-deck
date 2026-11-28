@@ -3,16 +3,17 @@ use gpui::{
 };
 use gpui_deck::Root;
 
-use crate::ui::billing_dashboard::BillingDashboard as Screen;
+use crate::screen::{Screen, TITLE, WINDOW_SIZE};
 
 pub(crate) fn open(cx: &mut App) {
+    let (width, height) = WINDOW_SIZE;
     cx.open_window(
         WindowOptions {
             titlebar: Some(TitlebarOptions {
-                title: Some("Billing dashboard".into()),
+                title: Some(TITLE.into()),
                 ..Default::default()
             }),
-            window_bounds: Some(WindowBounds::centered(size(px(1176.), px(806.)), cx)),
+            window_bounds: Some(WindowBounds::centered(size(px(width), px(height)), cx)),
             ..WindowOptions::default()
         },
         |window, cx| {
@@ -20,5 +21,5 @@ pub(crate) fn open(cx: &mut App) {
             cx.new(|cx| Root::new(screen, window, cx).font_family("Pretendard"))
         },
     )
-    .expect("open the billing dashboard");
+    .expect("open the block window");
 }

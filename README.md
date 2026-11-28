@@ -59,6 +59,11 @@ The [block gallery](https://gpui-deck.andongmin.com/en/blocks/) includes a
 [billing dashboard](https://gpui-deck.andongmin.com/en/blocks/billing-dashboard/),
 [login screen](https://gpui-deck.andongmin.com/en/blocks/login/) and
 [settings screen with sidebar navigation](https://gpui-deck.andongmin.com/en/blocks/sidebar-settings/).
+On any of these three pages, choose **Run as a new app**, download and extract
+the project, then run `cargo run` in the extracted folder. To use the same
+screen in an existing GPUI app, choose **Add to an existing app** for its
+install command and instructions for mounting the view in your window.
+
 Use the purpose and style filters to find more screens from the Neobrutal and
 Neumorphism registries. The [chart gallery](https://gpui-deck.andongmin.com/en/charts)
 groups their chart examples by type. Each item includes a preview, Rust source and an install command.
@@ -375,7 +380,7 @@ translations with it (an untranslated page shows the English text). Preview the 
 the `wasm32-unknown-unknown` target and `wasm-bindgen-cli` 0.2.127, which it
 installs itself on Linux when they are missing. The docs dev and production
 builds also use Python 3.11+ (`python3`) and Cargo to assemble the downloadable
-billing dashboard from its block manifest and source recipes.
+block apps from their manifests and source recipes.
 
 | Check | Linux | Windows | macOS |
 | --- | --- | --- | --- |

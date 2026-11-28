@@ -1,13 +1,12 @@
 import { Link } from "fumapress/client";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { CatalogLayout } from "../catalog-layout";
 import { itemTitle, registries } from "../directory/registries";
-import { BillingInstall } from "./billing-install";
+import { BlockInstall } from "./block-install";
 import { FilteredBlocks, type Screen } from "./filtered-blocks";
 import { type Block, blockCopy, purposes } from "./block-copy";
 import { BlockViewer } from "./block-viewer";
-import { InstallCommand } from "./install-command";
 
 type PageInfo = { title: string; description?: string };
 type GalleryEntry = PageInfo & { block: Block };
@@ -81,28 +80,7 @@ export function BlockDetail({ lang, page, block }: { lang: string; page: PageInf
           {page.description}
         </p>
       </div>
-      {block.name === "billing-dashboard" ? (
-        <BillingInstall lang={lang} command={block.command} />
-      ) : (
-        <div className="mb-5 flex flex-col gap-2">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="w-full min-w-0 max-w-[53rem]">
-              <InstallCommand key={block.name} lang={lang} command={block.command} />
-            </div>
-            <Link
-              href={`/${lang}/docs/guides/blocks`}
-              className="inline-flex min-h-8 shrink-0 items-center gap-1.5 self-start rounded px-1 text-sm font-medium text-fd-muted-foreground hover:text-fd-foreground sm:self-center"
-            >
-              {t.setup}
-              <ArrowRight aria-hidden className="size-3.5" />
-            </Link>
-          </div>
-          <p className="flex flex-wrap items-baseline gap-2 px-1 text-xs text-fd-muted-foreground">
-            {t.view}
-            <code className="font-mono text-fd-foreground">{block.view}</code>
-          </p>
-        </div>
-      )}
+      <BlockInstall lang={lang} block={block} />
       <BlockViewer key={block.name} lang={lang} title={page.title} block={block} />
     </CatalogLayout>
   );

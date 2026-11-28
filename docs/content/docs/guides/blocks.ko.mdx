@@ -34,19 +34,53 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 반환값을 `gpui::Entity<crate::ui::billing_dashboard::BillingDashboard>` 타입의 `billing` 필드에 보관하세요. 기존 GPUI Deck 창에서 `.child(self.billing.clone())`으로 표시할 수 있습니다.
 
-별도 창으로 열려면 아래 파일을 `src/billing_window.rs`에 복사하고 크레이트 루트에 `mod billing_window;`를 선언하세요. 앱 시작 시 `gpui_deck::init(cx)` 다음에 `billing_window::open(cx)`를 호출합니다.
+별도 청구 창을 열려면 아래 두 파일을 `src/`에 복사하고 크레이트 루트에 `mod screen;`과 `mod block_window;`를 선언하세요. 앱 시작 시 `gpui_deck::init(cx)` 다음에 `block_window::open(cx)`를 호출합니다.
 
-<include lang="rust" meta='title="src/billing_window.rs"'>../../../../blocks/billing-dashboard/app/billing_window.rs</include>
+<include lang="rust" meta='title="src/screen.rs"'>../../../../blocks/billing-dashboard/app/screen.rs</include>
+
+<include lang="rust" meta='title="src/block_window.rs"'>../../../../blocks/starter/block_window.rs</include>
 
 ## 다른 블록 열기
 
-원하는 블록 페이지에서 설치 명령을 복사해 실행하세요. 위 예제에서 `use ... as Screen` 한 줄을 해당 화면의 경로로 바꾸면 됩니다.
+새 앱은 프로젝트 ZIP으로 받을 수 있습니다. 기존 GPUI 앱에는 [기존 앱 설치 안내](#existing-app)에 따라 Cargo 의존성과 `mod ui;`를 준비한 뒤 원하는 화면을 추가하세요. 부모 뷰에서 `gpui::AppContext as _`를 가져오고 생성자에서 자식 뷰를 한 번 생성합니다.
 
-| 블록 | 가져올 뷰 |
-| --- | --- |
-| [로그인](/ko/blocks/login) | `use crate::ui::login::Login as Screen;` |
-| [사이드바 설정](/ko/blocks/sidebar-settings) | `use crate::ui::sidebar_settings::SidebarSettings as Screen;` |
-| [네오브루탈 로그인](/ko/directory/neobrutal) | `use crate::ui::neobrutal_login::Login as Screen;` |
+### 로그인 [#login]
+
+[미리보기](/ko/blocks/login) · <a href="/downloads/login.zip" download>프로젝트 다운로드 (.zip)</a>
+
+ZIP을 풀고 `login` 폴더에서 `cargo run`을 실행하세요.
+
+기존 앱에 붙이려면 앱 루트에서 아래 명령을 실행하세요.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/login/block.json
+```
+
+```rust
+let login = cx.new(|cx| crate::ui::login::Login::new(window, cx));
+```
+
+`login`을 `gpui::Entity<crate::ui::login::Login>` 필드에 보관하고 `.child(self.login.clone())`으로 표시하세요. 폼은 로컬에서 입력값을 검증합니다. 인증 서비스는 `submit`의 검증 성공 분기에 연결하세요.
+
+### 사이드바 설정 [#sidebar-settings]
+
+[미리보기](/ko/blocks/sidebar-settings) · <a href="/downloads/sidebar-settings.zip" download>프로젝트 다운로드 (.zip)</a>
+
+ZIP을 풀고 `sidebar-settings` 폴더에서 `cargo run`을 실행하세요.
+
+기존 앱에 붙이려면 앱 루트에서 아래 명령을 실행하세요.
+
+```sh
+gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/blocks/sidebar-settings/block.json
+```
+
+```rust
+let settings = cx.new(|cx| crate::ui::sidebar_settings::SidebarSettings::new(window, cx));
+```
+
+`settings`를 `gpui::Entity<crate::ui::sidebar_settings::SidebarSettings>` 필드에 보관하고 `.child(self.settings.clone())`으로 표시하세요. 적용한 설정은 현재 세션에 유지됩니다.
+
+[네오브루탈 로그인](/ko/directory/neobrutal#login)은 레지스트리에서 설치한 뒤 별도 창 예제의 `src/screen.rs`에서 `pub(crate) use crate::ui::neobrutal_login::Login as Screen;`을 사용하세요.
 
 ## 우리 팀의 블록 공유 [#publish]
 
@@ -85,7 +119,7 @@ let billing = cx.new(|cx| crate::ui::billing_dashboard::BillingDashboard::new(wi
 
 ## 설치한 레지스트리 항목 실행 [#registry]
 
-[Cargo 의존성](/ko/docs/installation)을 추가하고 디렉터리에서 원하는 항목을 설치하세요. 선택 상자를 예로 들면 다음과 같습니다. 위 창 실행 예제의 `Screen` 가져오기를 지우고 `screen`을 만드는 한 줄을 아래 Rust 코드로 바꾼 뒤 `cargo run`을 실행하세요. 사이트와 같은 예제가 네이티브 창에서 열립니다.
+[Cargo 의존성](/ko/docs/installation)을 추가하고 아래 명령으로 Select를 설치하세요. 별도 창 예제의 `src/screen.rs`에서 `Screen` 별칭을 지우세요. `src/block_window.rs`에서는 `crate::screen::{TITLE, WINDOW_SIZE}`를 가져오고 `screen`을 만드는 한 줄을 아래 Rust 코드로 바꾸세요. `cargo run`을 실행하면 예제가 열립니다.
 
 ```sh
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/select.json
@@ -117,10 +151,10 @@ let save = crate::ui::neobrutal_button::press_button_with_palette("save", "저�
 gpui-deck add https://github.com/andongmin94/gpui-deck/blob/main/registries/neobrutal/dashboard-template.json
 ```
 
-위 창 실행 예제의 `use … as Screen;` 줄을 아래 코드로 바꾸세요.
+`src/screen.rs`의 `Screen` 별칭을 아래 코드로 바꾸세요.
 
 ```rust
-use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
+pub(crate) use crate::ui::neobrutal_dashboard_template::Dashboard as Screen;
 ```
 
 `open_window` 안에서 `screen`을 만드는 한 줄을 아래 두 줄로 바꾼 뒤 `cargo run`으로 창을 여세요.

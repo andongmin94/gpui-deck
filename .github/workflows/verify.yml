@@ -79,12 +79,15 @@ jobs:
           cargo build --manifest-path "$RUNNER_TEMP/deck-sample/Cargo.toml" \
             --config "patch.crates-io.gpui-deck.path='$GITHUB_WORKSPACE/crates/base'"
 
-      - name: Build the downloadable billing dashboard
+      - name: Build the downloadable block apps
         if: runner.os == 'Linux'
         env:
           CARGO_TARGET_DIR: ${{ github.workspace }}/target
         run: |
-          python3 docs/scripts/build-billing-starter.py
-          python3 -m zipfile -e docs/public/downloads/billing-dashboard.zip "$RUNNER_TEMP/downloads"
-          cargo build --manifest-path "$RUNNER_TEMP/downloads/billing-dashboard/Cargo.toml" \
-            --config "patch.crates-io.gpui-deck.path='$GITHUB_WORKSPACE/crates/base'"
+          python3 docs/scripts/build-block-starters.py
+          for archive in docs/public/downloads/*.zip; do
+            name=$(basename "$archive" .zip)
+            python3 -m zipfile -e "$archive" "$RUNNER_TEMP/downloads"
+            cargo build --manifest-path "$RUNNER_TEMP/downloads/$name/Cargo.toml" \
+              --config "patch.crates-io.gpui-deck.path='$GITHUB_WORKSPACE/crates/base'"
+          done
